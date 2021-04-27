@@ -1,0 +1,41 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+ColumnLimit: 100
+TabWidth: 4
+IndentWidth: 4
+AccessModifierOffset: -4
+DeriveLineEnding: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+AlignConsecutiveMacros: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignEscapedNewlines: Left
+ReflowComments: true
+
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortFunctionsOnASingleLine: Empty
+BreakBeforeBraces: Mozilla
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+PointerAlignment: Left
+
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Local includes always come first
+  - Regex:           '^"'
+    Priority:        0
+    SortPriority:    0
+
+  # Standard includes come last
+  - Regex:           '<[^/]+>'
+    Priority:        999
+    SortPriority:    999
+
+  # Other includes (third party, etc) come in the middle
+  - Regex:           '.*'
+    Priority:        2
+    SortPriority:    2
