@@ -11,9 +11,10 @@ To be able to run OpenEAW, you must own and have installed a copy of the origina
 OpenEAW requires:
 
 * a C++17-capable compiler
-* [CMake](https://cmake.org/) 3.12 or newer.
-* [Git](https://git-scm.com/) 1.7 or newer.
-* [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html) 10.
+* [Conan](https://conan.io/) 1.46 or newer.
+* [CMake](https://cmake.org/) 3.15 or newer.
+* [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html) 12.
+* [ClangTidy](https://clang.llvm.org/extra/clang-tidy/) 10.
 
 ## Getting Started
 
@@ -21,10 +22,13 @@ Make sure that the requirements mentioned above are installed.
 
 ## Building
 
+Building uses Conan to automatically install all required dependencies.
+CMake uses a _multi-configuration generator_ for Visual Studio which ignores `CMAKE_BUILD_TYPE` and allows specifying the build type at build time, rather than configuration time:
 ```
 mkdir build && cd build
-cmake ..
-cmake --build .
+conan install .. -s build_type=Release
+cmake .. -DCMAKE_TOOLCHAIN_FILE=conan/conan_toolchain.cmake
+cmake --build . --config Release
 ```
 
 ## Contributing
