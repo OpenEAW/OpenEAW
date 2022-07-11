@@ -1,2 +1,5 @@
 /.vscode
 /build
+/test_package/build
+/CMakeUserPresets.json
+/cmake-build-*
