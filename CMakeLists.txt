@@ -7,6 +7,8 @@ project(OpenEAW CXX)
 # External libraries
 find_package(openglyph REQUIRED)
 find_package(khepri REQUIRED)
+find_package(cxxopts REQUIRED)
+find_package(fmt REQUIRED)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
@@ -31,6 +33,8 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    cxxopts::cxxopts
+    fmt::fmt
     openglyph::openglyph
     khepri::khepri
 )

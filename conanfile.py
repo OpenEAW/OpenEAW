@@ -34,6 +34,8 @@ class OpenEawConan(ConanFile):
     generators = "CMakeDeps"
 
     requires = [
+        ("cxxopts/3.0.0"),
+        ("fmt/[>=6.0 <7.0]"),
         ("openglyph/[<1.0]"),
         ("khepri/[<1.0]"),
     ]
