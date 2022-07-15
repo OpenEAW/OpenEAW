@@ -35,7 +35,7 @@ class OpenEawConan(ConanFile):
 
     requires = [
         ("cxxopts/3.0.0"),
-        ("fmt/[>=6.0 <7.0]"),
+        ("fmt/9.0.0"),
         ("openglyph/[<1.0]"),
         ("khepri/[<1.0]"),
     ]

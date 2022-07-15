@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<Materials>
+    <Material Name="MeshGloss">
+        <Shader>MeshGloss</Shader>
+        <Param Name="Emissive" Type="float3">0, 0, 0</Param>
+        <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
+        <Param Name="Specular" Type="float3">0, 0, 0</Param>
+        <Param Name="Shininess" Type="float">1</Param>
+        <Param Name="BaseTexture" Type="texture"></Param>
+    </Material>
+</Materials>
