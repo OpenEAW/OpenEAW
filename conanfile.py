@@ -1,5 +1,6 @@
-from conans import ConanFile, CMake, tools
-from conan.tools.cmake import cmake_layout, CMakeToolchain
+from conan import ConanFile, tools
+from conan.tools.cmake import CMake, cmake_layout, CMakeToolchain
+from conan.tools.scm import Git
 import re
 
 class OpenEawConan(ConanFile):
@@ -9,7 +10,7 @@ class OpenEawConan(ConanFile):
     description = "An open-source implementation of the game Empire at War"
 
     def set_version(self):
-        git = tools.Git(folder=self.recipe_folder)
+        git = Git(self)
 
         self.version = "0.0.0"
         try:
@@ -23,7 +24,7 @@ class OpenEawConan(ConanFile):
 
         try:
             # Store the short Git version because Conan has a limit of the length of the version string
-            self.version += "+{}".format(git.get_revision()[:GIT_SHORT_HASH_LENGH])
+            self.version += "+{}".format(git.get_commit()[:GIT_SHORT_HASH_LENGH])
             if not git.is_pristine():
                 self.version += ".dirty"
         except Exception:
@@ -33,12 +34,11 @@ class OpenEawConan(ConanFile):
 
     generators = "CMakeDeps"
 
-    requires = [
-        ("cxxopts/3.0.0"),
-        ("fmt/9.0.0"),
-        ("openglyph/[<1.0]"),
-        ("khepri/[<1.0]"),
-    ]
+    def requirements(self):
+        self.requires("cxxopts/3.0.0")
+        self.requires("fmt/9.0.0")
+        self.requires("openglyph/[<1.0]")
+        self.requires("khepri/[<1.0]")
 
     exports_sources = "CMakeLists.txt", "src/*"
 
