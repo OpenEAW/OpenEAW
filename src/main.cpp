@@ -10,13 +10,16 @@
 #include <khepri/renderer/diligent/renderer.hpp>
 #include <khepri/renderer/io/shader.hpp>
 #include <khepri/renderer/io/texture.hpp>
-#include <khepri/scene/scene.hpp>
 #include <khepri/scene/scene_object.hpp>
 #include <khepri/utility/cache.hpp>
 #include <khepri/utility/string.hpp>
 #include <khepri/version.hpp>
+#include <openglyph/assets/asset_cache.hpp>
 #include <openglyph/assets/asset_loader.hpp>
+#include <openglyph/assets/io/map.hpp>
 #include <openglyph/game/behaviors/render_behavior.hpp>
+#include <openglyph/game/game_object_type_store.hpp>
+#include <openglyph/game/scene.hpp>
 #include <openglyph/game/scene_renderer.hpp>
 #include <openglyph/renderer/io/material.hpp>
 #include <openglyph/renderer/io/model.hpp>
@@ -148,59 +151,26 @@ int main(int argc, const char* argv[])
         openglyph::AssetLoader asset_loader(std::move(data_paths));
 
         khepri::application::Window          window(APPLICATION_NAME);
-        khepri::renderer::diligent::Renderer renderer(
-            Diligent::Win32NativeWindow(window.native_handle()));
+        khepri::renderer::diligent::Renderer renderer(window.native_handle());
         window.add_size_listener([&] { renderer.render_size(window.render_size()); });
         renderer.render_size(window.render_size());
 
-        // Create the shader cache
-        khepri::OwningCache<khepri::renderer::Shader> shader_cache(
-            [&](std::string_view name) -> std::unique_ptr<khepri::renderer::Shader> {
-                const auto& shader_desc_loader = [&](const std::filesystem::path& path)
-                    -> std::optional<khepri::renderer::ShaderDesc> {
-                    if (auto stream = asset_loader.open_shader(path.string())) {
-                        return khepri::renderer::io::load_shader(*stream);
-                    }
-                    return {};
-                };
-                return renderer.create_shader(name, shader_desc_loader);
-            });
+        openglyph::AssetCache          asset_cache(asset_loader, renderer);
+        openglyph::GameObjectTypeStore game_object_types(asset_loader, "GameObjectFiles.xml");
+        openglyph::Environment         environment{};
 
-        // Create the texture cache
-        khepri::OwningCache<khepri::renderer::Texture> texture_cache(
-            [&](std::string_view name) -> std::unique_ptr<khepri::renderer::Texture> {
-                if (auto stream = asset_loader.open_texture(name)) {
-                    auto texture_desc = khepri::renderer::io::load_texture(*stream);
-                    return renderer.create_texture(texture_desc);
-                }
-                return {};
-            });
-
-        openglyph::renderer::MaterialStore materials(renderer, shader_cache.as_loader(),
-                                                     texture_cache.as_loader());
-        if (auto stream = asset_loader.open_config("Materials")) {
-            materials.register_materials(openglyph::renderer::io::load_materials(*stream));
-        } else {
-            LOG.error("Unable to load rendering material definitions");
+        if (auto stream = asset_loader.open_map("_SPACE_PLANET_ALDERAAN_01")) {
+            const auto map = openglyph::io::read_map(*stream);
+            if (!map.environments.empty()) {
+                assert(map.active_environment < map.environments.size());
+                environment = map.environments[map.active_environment];
+            }
         }
 
-        // Define the render model cache
-        openglyph::renderer::ModelCreator model_creator(renderer, materials.as_loader(),
-                                                        texture_cache.as_loader());
-
-        khepri::OwningCache<openglyph::renderer::RenderModel> render_model_cache(
-            [&](std::string_view name) -> std::unique_ptr<openglyph::renderer::RenderModel> {
-                if (auto stream = asset_loader.open_model(name)) {
-                    const auto model = openglyph::io::read_model(*stream);
-                    return model_creator.create_model(model);
-                }
-                return {};
-            });
-
-        khepri::scene::Scene     scene;
+        openglyph::Scene         scene(asset_cache, game_object_types, environment);
         openglyph::SceneRenderer scene_renderer(renderer);
 
-        const auto* render_model = render_model_cache.get("W_STARS_HIGH");
+        const auto* render_model = asset_cache.get_render_model("W_STARS_HIGH");
         assert(render_model != nullptr);
 
         auto stars = std::make_shared<khepri::scene::SceneObject>();
