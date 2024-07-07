@@ -36,7 +36,7 @@ class OpenEawConan(ConanFile):
 
     def requirements(self):
         self.requires("cxxopts/3.0.0")
-        self.requires("fmt/9.0.0")
+        self.requires("fmt/10.1.0")
         self.requires("openglyph/[<1.0]")
         self.requires("khepri/[<1.0]")
 
