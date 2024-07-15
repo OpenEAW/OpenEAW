@@ -1,11 +1,46 @@
 <?xml version="1.0"?>
 <Materials>
-    <Material Name="MeshGloss">
+    <!-- Note: the order of (non-texture) parameters in a material must be the same as in its shader's constant buffer -->
+
+    <!-- Special material for GUI rendering. See GUIDialogs.xml -->
+    <Material Name="GUI" AlphaBlend="blend_src" DepthEnable="false" ScissorEnable="true">
+        <Shader>GUI</Shader>
+        <Param Name="BaseTexture" Type="texture"></Param>
+    </Material>
+
+    <!-- Special material for Font rendering. See GUIDialogs.xml -->
+    <Material Name="Font" AlphaBlend="blend_src" DepthEnable="false">
+        <Shader>GUI</Shader>
+        <Param Name="BaseTexture" Type="texture"></Param>
+    </Material>
+
+    <Material Name="MeshBumpColorize">
+        <Shader>MeshBumpColorize</Shader>
+        <Param Name="Colorization" Type="float3">1, 1, 1</Param>
+        <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
+        <Param Name="BaseTexture" Type="texture"></Param>
+        <Param Name="NormalTexture" Type="texture"></Param>
+    </Material>
+
+    <Material Name="MeshGloss" AlphaBlend="blend_src" DepthFunc="less_equal">
         <Shader>MeshGloss</Shader>
         <Param Name="Emissive" Type="float3">0, 0, 0</Param>
         <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
         <Param Name="Specular" Type="float3">0, 0, 0</Param>
         <Param Name="Shininess" Type="float">1</Param>
+        <Param Name="BaseTexture" Type="texture"></Param>
+    </Material>
+
+    <Material Name="MeshAdditive" AlphaBlend="additive" DepthWriteEnable="false" DepthFunc="less_equal">
+        <Shader>MeshAdditive</Shader>
+        <Param Name="Color" Type="float3">1, 0, 1</Param>
+        <Param Name="UVScrollRate" Type="float2">0, 0</Param>
+        <Param Name="BaseTexture" Type="texture"></Param>
+    </Material>
+
+    <Material Name="MeshAdditiveVColor" AlphaBlend="additive" DepthWriteEnable="false" DepthFunc="less_equal">
+        <Shader>MeshAdditiveVColor</Shader>
+        <Param Name="UVScrollRate" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
     </Material>
 </Materials>

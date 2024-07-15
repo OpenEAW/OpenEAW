@@ -99,14 +99,14 @@ auto create_camera(const khepri::Size& render_size)
 {
     const struct khepri::renderer::Camera::Properties properties = {
         khepri::renderer::Camera::Type::perspective,
-        {100, -100, 150},
+        {100, 100, 150},
         {0, 0, 0},
         {0, 0, 1},
         khepri::to_radians(90.0f),
         0,
         static_cast<float>(render_size.width) / render_size.height,
-        0.1f,
-        40000.0f};
+        10.0f,
+        100000.0f};
     return khepri::renderer::Camera{properties};
 }
 
@@ -169,13 +169,6 @@ int main(int argc, const char* argv[])
 
         openglyph::Scene         scene(asset_cache, game_object_types, environment);
         openglyph::SceneRenderer scene_renderer(renderer);
-
-        const auto* render_model = asset_cache.get_render_model("W_STARS_HIGH");
-        assert(render_model != nullptr);
-
-        auto stars = std::make_shared<khepri::scene::SceneObject>();
-        stars->create_behavior<openglyph::RenderBehavior>(*render_model);
-        scene.add_object(stars);
 
         while (!window.should_close()) {
             khepri::application::Window::poll_events();
