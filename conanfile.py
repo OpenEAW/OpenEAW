@@ -10,7 +10,7 @@ class OpenEawConan(ConanFile):
     description = "An open-source implementation of the game Empire at War"
 
     def set_version(self):
-        git = Git(self)
+        git = Git(self, self.recipe_folder)
 
         self.version = "0.0.0"
         try:
@@ -37,8 +37,8 @@ class OpenEawConan(ConanFile):
     def requirements(self):
         self.requires("cxxopts/3.0.0")
         self.requires("fmt/10.1.0")
-        self.requires("openglyph/[<1.0]")
-        self.requires("khepri/[<1.0]")
+        self.requires("openglyph/[>=0.0 <1.0]")
+        self.requires("khepri/[>=0.0 <1.0]")
 
     exports_sources = "CMakeLists.txt", "src/*"
 
