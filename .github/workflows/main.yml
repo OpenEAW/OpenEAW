@@ -34,10 +34,5 @@ jobs:
         run: .github/scripts/build-dependency.sh khepri https://github.com/KhepriEngine/KhepriEngine.git
         shell: bash
 
-      # OpenGlyph does not exist on Conan Center Index, so clone the repo, check out the version required by the lockfile and build it into the Conan cache.
-      - name: Checkout and build OpenGlyph dependency
-        run: .github/scripts/build-dependency.sh openglyph https://github.com/OpenEAW/OpenGlyph.git
-        shell: bash
-
       - name: Build project in ${{ matrix.build_type }} mode
         run: conan create . -s compiler.cppstd=17 -s "&:build_type=${{ matrix.build_type }}" -s build_type=Release --build=missing --lockfile conan.lock

@@ -25,7 +25,6 @@
 #include <openglyph/renderer/io/model.hpp>
 #include <openglyph/renderer/material_store.hpp>
 #include <openglyph/renderer/model_creator.hpp>
-#include <openglyph/version.hpp>
 
 #include <cstdlib>
 #include <cxxopts.hpp>
@@ -38,9 +37,8 @@ constexpr khepri::log::Logger LOG("openeaw");
 
 auto full_version_string()
 {
-    return fmt::format(FMT_STRING("{} {} (OpenGlyph {}, Khepri {})"), APPLICATION_NAME,
-                       to_string(openeaw::version()), to_string(openglyph::version()),
-                       to_string(khepri::version()));
+    return fmt::format(FMT_STRING("{} {} (Khepri {})"), APPLICATION_NAME,
+                       to_string(openeaw::version()), to_string(khepri::version()));
 }
 
 struct CmdlineArgs

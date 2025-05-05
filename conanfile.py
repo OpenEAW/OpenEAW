@@ -37,10 +37,10 @@ class OpenEawConan(ConanFile):
     def requirements(self):
         self.requires("cxxopts/3.0.0")
         self.requires("fmt/10.1.0")
-        self.requires("openglyph/[>=0.0 <1.0]")
         self.requires("khepri/[>=0.0 <1.0]")
+        self.requires("rapidxml/1.13")
 
-    exports_sources = "CMakeLists.txt", "src/*"
+    exports_sources = "CMakeLists.txt", "openglyph/*", "src/*"
 
     def layout(self):
         cmake_layout(self)

@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 project(OpenEAW CXX)
 
 # External libraries
-find_package(openglyph REQUIRED)
 find_package(khepri REQUIRED)
 find_package(cxxopts REQUIRED)
 find_package(fmt REQUIRED)
@@ -43,3 +42,5 @@ install(
     TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION .
 )
+
+add_subdirectory(openglyph)
