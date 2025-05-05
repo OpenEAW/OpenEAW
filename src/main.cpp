@@ -13,7 +13,6 @@
 #include <khepri/scene/scene_object.hpp>
 #include <khepri/utility/cache.hpp>
 #include <khepri/utility/string.hpp>
-#include <khepri/version.hpp>
 #include <openglyph/assets/asset_cache.hpp>
 #include <openglyph/assets/asset_loader.hpp>
 #include <openglyph/assets/io/map.hpp>
@@ -37,8 +36,7 @@ constexpr khepri::log::Logger LOG("openeaw");
 
 auto full_version_string()
 {
-    return fmt::format(FMT_STRING("{} {} (Khepri {})"), APPLICATION_NAME,
-                       to_string(openeaw::version()), to_string(khepri::version()));
+    return fmt::format(FMT_STRING("{} {}"), APPLICATION_NAME, to_string(openeaw::version()));
 }
 
 struct CmdlineArgs

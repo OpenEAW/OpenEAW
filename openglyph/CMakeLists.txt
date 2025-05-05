@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 project(OpenGlyph CXX)
 
 # External libraries
-find_package(khepri REQUIRED)
 find_package(rapidxml REQUIRED)
 
 add_library(${PROJECT_NAME}
