@@ -24,7 +24,7 @@ Make sure that the requirements mentioned above are installed.
 
 Building uses Conan to automatically install all required dependencies and set up CMake presets:
 ```
-conan install . -s build_type=Release -of build-release
+conan install . -s build_type=Release -of build-release --build=missing
 cmake --preset conan-default
 cmake --build --preset conan-release
 ```
@@ -43,5 +43,11 @@ ctest --preset conan-debug
 ```
 This will build OpenEAW in Debug mode, but use Release builds for its dependencies.
 
+## visual studio
+
+To genrate visual studio Solution files enter the follwing command int the project root:
+```
+cmake -S . -B build -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE=build/build/generators/conan_toolchain.cmake
+```
 ## Contributing
 Please refer to the [Code of Conduct](CODE_OF_CONDUCT.md) and the [Contributing guidelines](CONTRIBUTING.md).
