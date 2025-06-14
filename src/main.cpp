@@ -138,6 +138,12 @@ int main(int argc, const char* argv[])
         const auto curdir     = khepri::application::get_current_directory();
         auto       data_paths = args->modpaths;
         data_paths.push_back(curdir);
+       
+#ifndef NDEBUG
+        //on windows add the data path
+        std::filesystem::path data_extra_path = std::filesystem::path(curdir) / "data-extra";
+        data_paths.push_back(data_extra_path);
+#endif
 
         LOG.info("Starting up in \"{}\" with {} data path(s):", curdir.string(), data_paths.size());
         for (const auto& data_path : data_paths) {

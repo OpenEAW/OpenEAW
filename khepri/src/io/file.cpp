@@ -44,6 +44,9 @@ long long File::seek(long long offset, SeekOrigin origin)
 
 File::File(const Path& path, OpenMode mode) : m_mode(mode)
 {
+    std::replace(path.begin(), path.end(), '\\', '/');
+
+
     const char* modestr = "";
     switch (mode) {
     default:
