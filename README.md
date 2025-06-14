@@ -47,7 +47,7 @@ This will build OpenEAW in Debug mode, but use Release builds for its dependenci
 
 To genrate visual studio Solution files enter the follwing command int the project root:
 ```
-cmake -S . -B build -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE=build/build/generators/conan_toolchain.cmake
+cmake -S . -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE=build/build/generators/conan_toolchain.cmake
 ```
 ## Contributing
 Please refer to the [Code of Conduct](CODE_OF_CONDUCT.md) and the [Contributing guidelines](CONTRIBUTING.md).
