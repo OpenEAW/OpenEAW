@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 
 namespace khepri::io {
@@ -62,8 +63,8 @@ public:
     long long seek(long long offset, io::SeekOrigin origin) override;
 
 private:
-    gsl::owner<Handle> m_handle;
-    OpenMode           m_mode;
+    std::fstream m_stream;
+    OpenMode     m_mode;
 };
 
 } // namespace khepri::io
