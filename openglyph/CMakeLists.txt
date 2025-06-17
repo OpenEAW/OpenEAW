@@ -15,6 +15,7 @@ add_library(${PROJECT_NAME}
     src/game/scene_renderer.cpp
     src/game/scene.cpp
     src/io/chunk_reader.cpp
+    src/io/mega_filesystem.cpp
     src/renderer/io/material.cpp
     src/renderer/io/model.cpp
     src/renderer/material_store.cpp
