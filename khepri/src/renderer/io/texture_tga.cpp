@@ -48,35 +48,35 @@ void verify(bool condition)
 Header read_header(khepri::io::Stream& stream)
 {
     Header hdr{};
-    hdr.image_id_length  = stream.read_byte();
-    hdr.color_map_type   = stream.read_byte();
-    hdr.image_type       = stream.read_byte();
-    hdr.color_map_start  = stream.read_short();
-    hdr.color_map_length = stream.read_short();
-    hdr.color_map_bpp    = stream.read_byte();
-    hdr.image_x          = stream.read_short();
-    hdr.image_y          = stream.read_short();
-    hdr.image_width      = stream.read_short();
-    hdr.image_height     = stream.read_short();
-    hdr.image_bpp        = stream.read_byte();
-    hdr.image_descriptor = stream.read_byte();
+    hdr.image_id_length  = stream.read_uint8();
+    hdr.color_map_type   = stream.read_uint8();
+    hdr.image_type       = stream.read_uint8();
+    hdr.color_map_start  = stream.read_int16();
+    hdr.color_map_length = stream.read_int16();
+    hdr.color_map_bpp    = stream.read_uint8();
+    hdr.image_x          = stream.read_int16();
+    hdr.image_y          = stream.read_int16();
+    hdr.image_width      = stream.read_int16();
+    hdr.image_height     = stream.read_int16();
+    hdr.image_bpp        = stream.read_uint8();
+    hdr.image_descriptor = stream.read_uint8();
     return hdr;
 }
 
 void write_header(khepri::io::Stream& stream, const Header& hdr)
 {
-    stream.write_byte(hdr.image_id_length);
-    stream.write_byte(hdr.color_map_type);
-    stream.write_byte(hdr.image_type);
-    stream.write_short(hdr.color_map_start);
-    stream.write_short(hdr.color_map_length);
-    stream.write_byte(hdr.color_map_bpp);
-    stream.write_short(hdr.image_x);
-    stream.write_short(hdr.image_y);
-    stream.write_short(hdr.image_width);
-    stream.write_short(hdr.image_height);
-    stream.write_byte(hdr.image_bpp);
-    stream.write_byte(hdr.image_descriptor);
+    stream.write_uint8(hdr.image_id_length);
+    stream.write_uint8(hdr.color_map_type);
+    stream.write_uint8(hdr.image_type);
+    stream.write_int16(hdr.color_map_start);
+    stream.write_int16(hdr.color_map_length);
+    stream.write_uint8(hdr.color_map_bpp);
+    stream.write_int16(hdr.image_x);
+    stream.write_int16(hdr.image_y);
+    stream.write_int16(hdr.image_width);
+    stream.write_int16(hdr.image_height);
+    stream.write_uint8(hdr.image_bpp);
+    stream.write_uint8(hdr.image_descriptor);
 }
 
 bool is_valid_header(const Header& header)

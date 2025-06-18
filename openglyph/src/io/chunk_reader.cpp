@@ -100,8 +100,8 @@ void ChunkReader::read_next()
         throw khepri::io::InvalidFormatError();
     }
 
-    auto id   = m_stream.read_uint();
-    auto size = m_stream.read_uint();
+    auto id   = m_stream.read_uint32();
+    auto size = m_stream.read_uint32();
     bool data = ((size & 0x80000000u) == 0);
     pos += 8;
     size = (size & 0x7fffffffu);
