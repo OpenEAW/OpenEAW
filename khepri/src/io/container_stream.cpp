@@ -36,16 +36,16 @@ ContainerStream::ContainerStream(Stream& underlying_stream, ContentTypeId type_i
         underlying_stream.read(file_magic.data(), file_magic.size());
         require(file_magic == MAGIC);
 
-        const auto version = underlying_stream.read_byte();
+        const auto version = underlying_stream.read_uint8();
         require(version == FORMAT_VERSION);
 
-        const auto file_type_id = underlying_stream.read_uint();
+        const auto file_type_id = underlying_stream.read_uint32();
         require(type_id == file_type_id);
 
-        const auto flags = underlying_stream.read_uint();
+        const auto flags = underlying_stream.read_uint32();
         require(flags == 0);
 
-        m_content_size = underlying_stream.read_uint();
+        m_content_size = underlying_stream.read_uint32();
 
         if (underlying_stream.seekable()) {
             m_content_start = underlying_stream.seek(0, SeekOrigin::current);
@@ -59,10 +59,10 @@ ContainerStream::ContainerStream(Stream& underlying_stream, ContentTypeId type_i
 
         // Write the file header
         underlying_stream.write(MAGIC.data(), MAGIC.size());
-        underlying_stream.write_byte(FORMAT_VERSION);
-        underlying_stream.write_uint(type_id);
-        underlying_stream.write_uint(0); // flags
-        underlying_stream.write_uint(0); // size
+        underlying_stream.write_uint8(FORMAT_VERSION);
+        underlying_stream.write_uint32(type_id);
+        underlying_stream.write_uint32(0); // flags
+        underlying_stream.write_uint32(0); // size
 
         m_content_start = underlying_stream.seek(0, SeekOrigin::current);
     }
@@ -75,7 +75,7 @@ void ContainerStream::close()
             const auto size_offset =
                 m_content_start - static_cast<long long>(sizeof(std::uint32_t));
             m_underlying_stream->seek(size_offset, SeekOrigin::begin);
-            m_underlying_stream->write_uint(static_cast<std::uint32_t>(m_content_size));
+            m_underlying_stream->write_uint32(static_cast<std::uint32_t>(m_content_size));
         }
         m_underlying_stream = nullptr;
     }
