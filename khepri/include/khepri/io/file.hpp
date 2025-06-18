@@ -22,7 +22,6 @@ enum class OpenMode
 class File : public Stream
 {
     using Path   = std::filesystem::path;
-    using Handle = FILE*;
 
 public:
     /// Opens a file for reading or reading and writing.
