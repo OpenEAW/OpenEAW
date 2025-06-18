@@ -68,28 +68,28 @@ public:
     }
 
     /// Reads a 16-bit signed little-endian integer from the stream
-    int16_t read_int16();
+    std::int16_t read_int16();
 
     /// Reads a 32-bit signed little-endian integer from the stream
-    int32_t read_int32();
+    std::int32_t read_int32();
 
     /// Reads a 64-bit signed little-endian integer from the stream
-    int64_t read_int64();
+    std::int64_t read_int64();
 
     /// Reads a 32-bit little-endian IEEE 754 floating-point number from the stream
     float read_float();
 
     /// Reads an unsigned byte from the stream
-    uint8_t read_uint8();
+    std::uint8_t read_uint8();
 
     /// Reads a 16-bit unsigned little-endian integer from the stream
-    uint16_t read_uint16();
+    std::uint16_t read_uint16();
 
     /// Reads a 32-bit unsigned little-endian integer from the stream
-    uint32_t read_uint32();
+    std::uint32_t read_uint32();
 
     /// Reads a 64-bit unsigned little-endian integer from the stream
-    uint64_t read_uint64();
+    std::uint64_t read_uint64();
 
     /**
      * \brief Reads a string from the stream.
@@ -106,28 +106,28 @@ public:
     }
 
     /// Writes a 16-bit signed little-endian integer to the stream
-    void write_int8(int8_t i8);
+    void write_int8(std::int8_t i8);
 
     /// Writes a 16-bit signed little-endian integer to the stream
-    void write_int16(int16_t i16);
+    void write_int16(std::int16_t i16);
 
     /// Writes a 32-bit signed little-endian integer to the stream
-    void write_int32(int32_t i32);
+    void write_int32(std::int32_t i32);
 
     /// Writes a 64-bit signed little-endian integer to the stream
-    void write_int64(int64_t i64);
+    void write_int64(std::int64_t i64);
 
     /// Writes a byte/uint8_t to the stream
-    void write_uint8(uint8_t u8);
+    void write_uint8(std::uint8_t u8);
 
     /// Writes a 16-bit unsigned little-endian integer to the stream
-    void write_uint16(uint16_t u16);
+    void write_uint16(std::uint16_t u16);
 
     /// Writes a 32-bit unsigned little-endian integer to the stream
-    void write_uint32(uint32_t u32);
+    void write_uint32(std::uint32_t u32);
 
     /// Writes a 32-bit unsigned little-endian integer to the stream
-    void write_uint64(uint64_t u64);
+    void write_uint64(std::uint64_t u64);
 
     /// Writes a 32-bit little-endian IEEE-754 floating-point number to the stream
     void write_float(float f);

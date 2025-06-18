@@ -23,21 +23,21 @@ void write_checked(Stream& stream, const void* data, std::size_t count)
 }
 } // namespace
 
-int16_t Stream::read_int16()
+std::int16_t Stream::read_int16()
 {
     std::int16_t x{};
     read_checked(*this, &x, sizeof x);
     return x;
 }
 
-int32_t Stream::read_int32()
+std::int32_t Stream::read_int32()
 {
     std::int32_t x{};
     read_checked(*this, &x, sizeof x);
     return x;
 }
 
-int64_t Stream::read_int64()
+std::int64_t Stream::read_int64()
 {
     std::int64_t x{};
     read_checked(*this, &x, sizeof x);
@@ -51,28 +51,28 @@ float Stream::read_float()
     return x;
 }
 
-uint8_t Stream::read_uint8()
+std::uint8_t Stream::read_uint8()
 {
     std::int8_t x{};
     read_checked(*this, &x, sizeof x);
     return x;
 }
 
-uint16_t Stream::read_uint16()
+std::uint16_t Stream::read_uint16()
 {
     std::int16_t x{};
     read_checked(*this, &x, sizeof x);
     return x;
 }
 
-uint32_t Stream::read_uint32()
+std::uint32_t Stream::read_uint32()
 {
     std::int32_t x{};
     read_checked(*this, &x, sizeof x);
     return x;
 }
 
-uint64_t Stream::read_uint64()
+std::uint64_t Stream::read_uint64()
 {
     std::int64_t x{};
     read_checked(*this, &x, sizeof x);
@@ -89,42 +89,42 @@ std::string Stream::read_string()
     return "";
 }
 
-void Stream::write_int8(int8_t i8)
+void Stream::write_int8(std::int8_t i8)
 {
     write_checked(*this, &i8, sizeof i8);
 }
 
-void Stream::write_int16(int16_t i16)
+void Stream::write_int16(std::int16_t i16)
 {
     write_checked(*this, &i16, sizeof i16);
 }
 
-void Stream::write_int32(int32_t i32)
+void Stream::write_int32(std::int32_t i32)
 {
     write_checked(*this, &i32, sizeof i32);
 }
 
-void Stream::write_int64(int64_t i64)
+void Stream::write_int64(std::int64_t i64)
 {
     write_checked(*this, &i64, sizeof i64);
 }
 
-void Stream::write_uint8(uint8_t u8)
+void Stream::write_uint8(std::uint8_t u8)
 {
     write_checked(*this, &u8, sizeof u8);
 }
 
-void Stream::write_uint16(uint16_t u16)
+void Stream::write_uint16(std::uint16_t u16)
 {
     write_checked(*this, &u16, sizeof u16);
 }
 
-void Stream::write_uint32(uint32_t u32)
+void Stream::write_uint32(std::uint32_t u32)
 {
     write_checked(*this, &u32, sizeof u32);
 }
 
-void Stream::write_uint64(uint64_t u64)
+void Stream::write_uint64(std::uint64_t u64)
 {
     write_checked(*this, &u64, sizeof u64);
 }
