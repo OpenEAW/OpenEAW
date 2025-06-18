@@ -2,7 +2,6 @@
 #include <khepri/io/stream.hpp>
 
 #include <cassert>
-#include <cstdint>
 #include <vector>
 
 namespace khepri::io {
