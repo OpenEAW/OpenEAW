@@ -64,31 +64,37 @@ public:
     /// Reads a boolean (one byte) from the stream
     bool read_bool()
     {
-        return read_byte() != 0;
+        return read_uint8() != 0;
     }
 
     /// Reads a 16-bit signed little-endian integer from the stream
-    int read_short();
+    int16_t read_int16();
 
     /// Reads a 32-bit signed little-endian integer from the stream
-    long read_int();
+    int32_t read_int32();
+
+    /// Reads a 64-bit signed little-endian integer from the stream
+    int64_t read_int64();
 
     /// Reads a 32-bit little-endian IEEE 754 floating-point number from the stream
     float read_float();
 
     /// Reads an unsigned byte from the stream
-    unsigned char read_byte();
+    uint8_t read_uint8();
 
     /// Reads a 16-bit unsigned little-endian integer from the stream
-    unsigned int read_ushort();
+    uint16_t read_uint16();
 
     /// Reads a 32-bit unsigned little-endian integer from the stream
-    unsigned long read_uint();
+    uint32_t read_uint32();
+
+    /// Reads a 64-bit unsigned little-endian integer from the stream
+    uint64_t read_uint64();
 
     /**
      * \brief Reads a string from the stream.
      *
-     * This first reads the length of the string as if via #read_ushort(), followed
+     * This first reads the length of the string as if via #read_uint16(), followed
      * by that many bytes as the contents of the string.
      */
     std::string read_string();
@@ -96,31 +102,40 @@ public:
     /// Writes a boolean (one byte) to the stream
     void write_bool(bool b)
     {
-        write_byte(b ? 1 : 0);
+        write_uint8(b ? 1 : 0);
     }
 
     /// Writes a 16-bit signed little-endian integer to the stream
-    void write_short(int s);
+    void write_int8(int8_t i8);
+
+    /// Writes a 16-bit signed little-endian integer to the stream
+    void write_int16(int16_t i16);
 
     /// Writes a 32-bit signed little-endian integer to the stream
-    void write_int(long i);
+    void write_int32(int32_t i32);
+
+    /// Writes a 64-bit signed little-endian integer to the stream
+    void write_int64(int64_t i64);
+
+    /// Writes a byte/uint8_t to the stream
+    void write_uint8(uint8_t u8);
+
+    /// Writes a 16-bit unsigned little-endian integer to the stream
+    void write_uint16(uint16_t u16);
+
+    /// Writes a 32-bit unsigned little-endian integer to the stream
+    void write_uint32(uint32_t u32);
+
+    /// Writes a 32-bit unsigned little-endian integer to the stream
+    void write_uint64(uint64_t u64);
 
     /// Writes a 32-bit little-endian IEEE-754 floating-point number to the stream
     void write_float(float f);
 
-    /// Writes a byte to the stream
-    void write_byte(unsigned char b);
-
-    /// Writes a 16-bit unsigned little-endian integer to the stream
-    void write_ushort(unsigned int s);
-
-    /// Writes a 32-bit unsigned little-endian integer to the stream
-    void write_uint(unsigned long i);
-
     /**
      * \brief Writes a string to the stream.
      *
-     * This first writes the length of the string as if via #write_ushort(), followed
+     * This first writes the length of the string as if via #write_uint16(), followed
      * by that many bytes as the contents of the string.
      *
      * \note The length of \a s must not exceed 65535.

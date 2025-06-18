@@ -279,7 +279,7 @@ bool is_texture_dds(khepri::io::Stream& stream)
 {
     assert(stream.readable() && stream.seekable());
     try {
-        const auto magic = stream.read_uint();
+        const auto magic = stream.read_uint32();
         return magic == DDS_MAGIC;
     } catch (const khepri::io::Error&) {
     }
@@ -315,29 +315,29 @@ TextureDesc load_texture_dds(khepri::io::Stream& stream)
     assert(stream.readable() && stream.seekable());
     TextureDimension dimension = TextureDimension::texture_2d;
 
-    auto magic = stream.read_uint();
+    auto magic = stream.read_uint32();
     verify(magic == DDS_MAGIC);
 
-    auto size   = stream.read_uint();
-    auto flags  = stream.read_uint();
-    auto height = stream.read_uint();
-    auto width  = stream.read_uint();
+    auto size   = stream.read_uint32();
+    auto flags  = stream.read_uint32();
+    auto height = stream.read_uint32();
+    auto width  = stream.read_uint32();
 
     // Ignore pitch/linear size, it's unreliable. We must calculate it ourselves.
-    stream.read_uint();
+    stream.read_uint32();
 
-    auto depth = stream.read_uint();
+    auto depth = stream.read_uint32();
     if ((flags & ddsf_depth) != 0) {
         // 3D (volume) texture
-        depth     = std::max(1UL, depth);
+        depth     = std::max((uint32_t)1, depth);
         dimension = TextureDimension::texture_3d;
     } else {
         depth = 1;
     }
 
-    auto mip_levels = stream.read_uint();
+    auto mip_levels = stream.read_uint32();
     if ((flags & ddsf_mipmapcount) != 0) {
-        mip_levels = std::max(1UL, mip_levels);
+        mip_levels = std::max((uint32_t)1, mip_levels);
     } else {
         mip_levels = 1;
     }
@@ -345,25 +345,25 @@ TextureDesc load_texture_dds(khepri::io::Stream& stream)
     // Reserved data
     constexpr auto num_reserved_uints = 11;
     for (int i = 0; i < num_reserved_uints; ++i) {
-        stream.read_uint();
+        stream.read_uint32();
     }
 
     // Pixel format
-    auto           pf_size = stream.read_uint();
+    auto           pf_size = stream.read_uint32();
     DdsPixelFormat ddpf{};
-    ddpf.flags        = stream.read_uint();
-    ddpf.fourcc       = stream.read_uint();
-    ddpf.rgb_bitcount = stream.read_uint();
-    ddpf.r_mask       = stream.read_uint();
-    ddpf.g_mask       = stream.read_uint();
-    ddpf.b_mask       = stream.read_uint();
-    ddpf.a_mask       = stream.read_uint();
+    ddpf.flags        = stream.read_uint32();
+    ddpf.fourcc       = stream.read_uint32();
+    ddpf.rgb_bitcount = stream.read_uint32();
+    ddpf.r_mask       = stream.read_uint32();
+    ddpf.g_mask       = stream.read_uint32();
+    ddpf.b_mask       = stream.read_uint32();
+    ddpf.a_mask       = stream.read_uint32();
 
-    stream.read_uint(); // Caps. Ignored, contains no relevant data.
-    auto caps2 = stream.read_uint();
-    stream.read_uint(); // Caps3. Unused
-    stream.read_uint(); // Caps4. Unused.
-    stream.read_uint(); // Reserved
+    stream.read_uint32(); // Caps. Ignored, contains no relevant data.
+    auto caps2 = stream.read_uint32();
+    stream.read_uint32(); // Caps3. Unused
+    stream.read_uint32(); // Caps4. Unused.
+    stream.read_uint32(); // Reserved
 
     verify(size == DDS_HEADER_SIZE);
     verify((flags & DDS_REQUIRED_FLAGS) == DDS_REQUIRED_FLAGS);
