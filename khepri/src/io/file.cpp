@@ -69,9 +69,11 @@ long long File::seek(long long offset, SeekOrigin origin)
     return static_cast<long long>(pos);
 }
 
-File::File(const Path& path, OpenMode mode)
+File::File(const std::filesystem::path& path, OpenMode mode)
     : m_mode(mode)
-    , m_stream(path, (mode == OpenMode::read) ? (std::ios::in | std::ios::binary) : (std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc))
+    , m_stream(path, (mode == OpenMode::read)
+                         ? (std::ios::in | std::ios::binary)
+                         : (std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc))
 {
     if (!m_stream.is_open()) {
         throw Error("Unable to open file");

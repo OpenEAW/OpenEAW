@@ -21,12 +21,10 @@ enum class OpenMode
 /// A file-based stream
 class File : public Stream
 {
-    using Path   = std::filesystem::path;
-
 public:
     /// Opens a file for reading or reading and writing.
     /// \throws khepri::io::error if the file cannot be opened.
-    File(const Path& path, OpenMode mode);
+    File(const std::filesystem::path& path, OpenMode mode);
     ~File() override;
 
     File(const File&) = delete;
