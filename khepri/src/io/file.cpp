@@ -6,6 +6,12 @@
 #include <cstring>
 
 namespace khepri::io {
+namespace {
+bool Foo()
+{
+    return true;
+}
+} // namespace
 
 size_t File::read(void* buffer, size_t count)
 {
