@@ -95,7 +95,7 @@ class PixelFormatHandler
 public:
     explicit PixelFormatHandler(PixelFormat output_format) : m_output_format(output_format) {}
 
-    PixelFormatHandler(const PixelFormatHandler&) = delete;
+    PixelFormatHandler(const PixelFormatHandler&)            = delete;
     PixelFormatHandler& operator=(const PixelFormatHandler&) = delete;
 
     virtual ~PixelFormatHandler() = default;

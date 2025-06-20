@@ -15,10 +15,10 @@ class ConsoleLogger final
 {
 public:
     ConsoleLogger();
-    ConsoleLogger(const ConsoleLogger&) = delete;
-    ConsoleLogger(ConsoleLogger&&)      = delete;
+    ConsoleLogger(const ConsoleLogger&)            = delete;
+    ConsoleLogger(ConsoleLogger&&)                 = delete;
     ConsoleLogger& operator=(const ConsoleLogger&) = delete;
-    ConsoleLogger& operator=(ConsoleLogger&&) = delete;
+    ConsoleLogger& operator=(ConsoleLogger&&)      = delete;
     ~ConsoleLogger();
 
 private:

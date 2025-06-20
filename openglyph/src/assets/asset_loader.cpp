@@ -2,6 +2,7 @@
 #include <khepri/io/file.hpp>
 #include <khepri/log/log.hpp>
 #include <khepri/utility/string.hpp>
+
 #include <openglyph/assets/asset_loader.hpp>
 
 #include <algorithm>
@@ -12,8 +13,8 @@ namespace fs = std::filesystem;
 namespace openglyph {
 namespace {
 khepri::log::Logger LOG("assets");
-const fs::path BASE_PATH = "Data";
-}
+const fs::path      BASE_PATH = "Data";
+} // namespace
 
 AssetLoader::AssetLoader(std::vector<fs::path> data_paths) : m_data_paths(std::move(data_paths)) {}
 

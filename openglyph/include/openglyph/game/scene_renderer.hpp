@@ -2,6 +2,7 @@
 
 #include <khepri/renderer/camera.hpp>
 #include <khepri/renderer/renderer.hpp>
+
 #include <openglyph/game/scene.hpp>
 
 namespace openglyph {

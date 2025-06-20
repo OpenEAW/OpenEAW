@@ -1,7 +1,8 @@
 #pragma once
 
-#include <gsl/gsl-lite.hpp>
 #include <khepri/io/stream.hpp>
+
+#include <gsl/gsl-lite.hpp>
 
 #include <filesystem>
 #include <memory>

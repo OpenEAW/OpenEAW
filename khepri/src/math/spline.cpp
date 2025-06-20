@@ -142,7 +142,8 @@ CubicSpline::Polynomials::Polynomials(gsl::span<const Vector3> points)
     : m_polynomials_x(calculate_polynomials(pluck(points, &Vector3::x)))
     , m_polynomials_y(calculate_polynomials(pluck(points, &Vector3::y)))
     , m_polynomials_z(calculate_polynomials(pluck(points, &Vector3::z)))
-{}
+{
+}
 
 Vector3 CubicSpline::Polynomials::sample(std::size_t index, double u) const noexcept
 {
@@ -161,11 +162,13 @@ CubicSpline::CubicSpline(gsl::span<const Vector3> points)
     : m_polynomials(points)
     , m_arc_offsets(calculate_arc_offsets(m_polynomials))
     , m_points{points.begin(), points.end()}
-{}
+{
+}
 
 CubicSpline::CubicSpline(std::initializer_list<Vector3> points)
     : CubicSpline({points.begin(), points.end()})
-{}
+{
+}
 
 double CubicSpline::arc_length(const Polynomials& polynomials, std::size_t index, double u_from,
                                double u_to) noexcept
@@ -239,7 +242,7 @@ Vector3 CubicSpline::sample(double t) const noexcept
     const auto arc_offset    = t * spline_length;
     const auto index         = std::min<std::size_t>(
         std::distance(m_arc_offsets.begin(),
-                      std::upper_bound(m_arc_offsets.begin(), m_arc_offsets.end(), arc_offset)),
+                              std::upper_bound(m_arc_offsets.begin(), m_arc_offsets.end(), arc_offset)),
         m_arc_offsets.size() - 1);
 
     auto arc_offset_segment = (index > 0 ? m_arc_offsets[index - 1] : 0.0f);

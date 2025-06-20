@@ -1,4 +1,5 @@
 #include <khepri/utility/string.hpp>
+
 #include <openglyph/renderer/model_creator.hpp>
 
 namespace openglyph::renderer {
@@ -9,7 +10,8 @@ ModelCreator::ModelCreator(khepri::renderer::Renderer&        renderer,
     : m_renderer(renderer)
     , m_material_loader(std::move(material_loader))
     , m_texture_loader(std::move(texture_loader))
-{}
+{
+}
 
 std::unique_ptr<RenderModel> ModelCreator::create_model(const Model& model)
 {

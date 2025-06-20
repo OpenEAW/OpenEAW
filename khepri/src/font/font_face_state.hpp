@@ -18,10 +18,10 @@ public:
     explicit FontFaceState(const FontFaceDesc& font_face_desc);
     ~FontFaceState();
 
-    FontFaceState(const FontFaceState&) = delete;
-    FontFaceState(FontFaceState&&)      = delete;
+    FontFaceState(const FontFaceState&)            = delete;
+    FontFaceState(FontFaceState&&)                 = delete;
     FontFaceState& operator=(const FontFaceState&) = delete;
-    FontFaceState& operator=(FontFaceState&&) = delete;
+    FontFaceState& operator=(FontFaceState&&)      = delete;
 
     TextRender render(std::u16string_view text, const FontOptions& options) const;
 

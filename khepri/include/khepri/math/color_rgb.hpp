@@ -44,7 +44,8 @@ public:
     /// Constructs the color_rgb from literals
     constexpr ColorRGB(ComponentType fr, ComponentType fg, ComponentType fb) noexcept
         : r(fr), g(fg), b(fb)
-    {}
+    {
+    }
 
     /// Constructs the color_rgb from a ColorRGBA by throwing away the Alpha component
     explicit constexpr ColorRGB(const ColorRGBA& c) noexcept;

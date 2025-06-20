@@ -6,7 +6,8 @@ namespace khepri::font {
 
 FontFace::FontFace(const FontFaceDesc& font_face_desc)
     : m_state(std::make_shared<detail::FontFaceState>(font_face_desc))
-{}
+{
+}
 
 FontFace::~FontFace() = default;
 

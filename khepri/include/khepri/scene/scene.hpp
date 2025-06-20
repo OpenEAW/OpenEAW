@@ -18,10 +18,10 @@ public:
     Scene()          = default;
     virtual ~Scene() = default;
 
-    Scene(const Scene&) = delete;
-    Scene(Scene&&)      = delete;
+    Scene(const Scene&)            = delete;
+    Scene(Scene&&)                 = delete;
     Scene& operator=(const Scene&) = delete;
-    Scene& operator=(Scene&&) = delete;
+    Scene& operator=(Scene&&)      = delete;
 
     /// Returns the objects in the scene
     [[nodiscard]] const auto& objects() const noexcept

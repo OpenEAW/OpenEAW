@@ -1,0 +1,25 @@
+---
+Language: Cpp
+BasedOnStyle: InheritParentConfig 
+
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Local includes always come first
+  - Regex:           '^"'
+    Priority:        0
+    SortPriority:    0
+
+  # Standard includes come last
+  - Regex:           '<[^/]+>'
+    Priority:        999
+    SortPriority:    999
+
+  # Includes from this library come after the locals
+  - Regex:           '^<khepri/'
+    Priority:        1
+    SortPriority:    1
+
+  # Other includes (third party, etc) come before standard includes
+  - Regex:           '.*'
+    Priority:        800
+    SortPriority:    800

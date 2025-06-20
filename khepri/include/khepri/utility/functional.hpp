@@ -17,7 +17,7 @@ namespace khepri {
  * @param member_ptr    The pointer-to-member of the class member to copy.
  */
 template <class ClassT, class ValueT>
-auto pluck(gsl::span<const ClassT> collection, ValueT ClassT::*member_ptr)
+auto pluck(gsl::span<const ClassT> collection, ValueT ClassT::* member_ptr)
 {
     std::vector<ValueT> v;
     v.reserve(collection.size());

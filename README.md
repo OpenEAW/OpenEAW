@@ -13,8 +13,6 @@ OpenEAW requires:
 * a C++17-capable compiler
 * [Conan](https://conan.io/) 2.5 or newer.
 * [CMake](https://cmake.org/) 3.15 or newer.
-* [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html) 12.
-* [ClangTidy](https://clang.llvm.org/extra/clang-tidy/) 10.
 
 ## Getting Started
 

@@ -40,10 +40,10 @@ public:
     ContainerStream(Stream& underlying_stream, ContentTypeId type_id, OpenMode open_mode);
     ~ContainerStream() noexcept override = default;
 
-    ContainerStream(const ContainerStream&) = delete;
+    ContainerStream(const ContainerStream&)            = delete;
     ContainerStream& operator=(const ContainerStream&) = delete;
     ContainerStream(ContainerStream&&)                 = delete;
-    ContainerStream& operator=(ContainerStream&&) = delete;
+    ContainerStream& operator=(ContainerStream&&)      = delete;
 
     /**
      * \brief Closes the container.

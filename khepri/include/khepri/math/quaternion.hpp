@@ -36,7 +36,8 @@ public:
     /// Constructs a quaternion from immediate floats
     BasicQuaternion(ComponentType fx, ComponentType fy, ComponentType fz, ComponentType fw) noexcept
         : x(fx), y(fy), z(fz), w(fw)
-    {}
+    {
+    }
 
     /// Implicitly constructs the quaternion from another quaternion with a
     /// non-narrowing-convertible
@@ -47,7 +48,8 @@ public:
                                         void*> = nullptr>
     constexpr BasicQuaternion(const BasicQuaternion<U>& q)
         : x(ComponentType{q.x}), y(ComponentType{q.y}), z(ComponentType{q.z}), w(ComponentType{q.w})
-    {}
+    {
+    }
 
     /// Explicitly constructs the quaternion from another quaternion with a narrowing-convertible
     /// component type
@@ -55,7 +57,8 @@ public:
                                                         is_narrowing_conversion_v<U, ComponentType>,
                                                     void*> = nullptr>
     explicit constexpr BasicQuaternion(const BasicQuaternion<U>& q) : x(q.x), y(q.y), z(q.z), w(q.w)
-    {}
+    {
+    }
 
     /// Adds another quaternion to this quaternion
     BasicQuaternion& operator+=(const BasicQuaternion& q) noexcept
