@@ -18,4 +18,13 @@ public:
     ArgumentError() : Error("invalid argument") {}
 };
 
+class bad_casing_error : public Error
+{
+public:
+    bad_casing_error() : Error("bad casing") {}
+
+private:
+    int BadCasing;
+};
+
 } // namespace khepri

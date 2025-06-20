@@ -28,5 +28,5 @@ CheckOptions:
     - { key: readability-identifier-naming.PrivateMemberPrefix, value: m_ }
     - { key: readability-identifier-naming.GlobalConstantCase, value: UPPER_CASE }
     - { key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic, value: true }
-    - { key: readability-magic-numbers.IgnoredIntegerValues, value: {0,1,2,3,4,8,16,24,32} }
+    - { key: readability-magic-numbers.IgnoredIntegerValues, value: 0;1;2;3;4;8;16;24;32 }
 
