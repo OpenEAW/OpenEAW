@@ -23,8 +23,9 @@ jobs:
   build:
     needs: [formatting-check]
 
-    # Use Windows 2022 specifically to get VS2022, which allows downloading pre-built binaries from conan center, rather than rebuilding them in CI.
-    runs-on: windows-2022
+    # Use Windows 2019 specifically to get VS2019, which allows downloading pre-built binaries
+    # from conan center (compiler.version=193), rather than rebuilding them in CI.
+    runs-on: windows-2019
     strategy:
       matrix:
         build_type: ['Debug','Release']
