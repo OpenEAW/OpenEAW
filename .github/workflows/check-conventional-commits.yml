@@ -1,0 +1,20 @@
+name: check-conventional-commits
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    types: [opened, synchronize, reopened, edited]
+
+  workflow_dispatch:
+
+jobs:
+  validate-pr-title:
+    name: Check Conventional Commit title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check Conventional Commit title
+        uses:  ytanikin/pr-conventional-commits@1.4.0
+        with:
+          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
+          add_label: 'true'
