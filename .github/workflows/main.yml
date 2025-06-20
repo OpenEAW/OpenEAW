@@ -9,7 +9,20 @@ on:
   workflow_dispatch:
 
 jobs:
+  formatting-check:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run clang-format style check for C/C++.
+      uses: jidicula/clang-format-action@v4.15.0
+      with:
+        clang-format-version: '20'
+        check-path: '.'
+
   build:
+    needs: [formatting-check]
+
     # Use Windows 2022 specifically to get VS2022, which allows downloading pre-built binaries from conan center, rather than rebuilding them in CI.
     runs-on: windows-2022
     strategy:

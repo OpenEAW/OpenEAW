@@ -1,6 +1,7 @@
 #pragma once
 
 #include <khepri/io/stream.hpp>
+
 #include <openglyph/assets/map.hpp>
 
 namespace openglyph::io {

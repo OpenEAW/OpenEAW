@@ -3,6 +3,7 @@
 #include "game_object_type.hpp"
 
 #include <khepri/utility/string.hpp>
+
 #include <openglyph/assets/asset_loader.hpp>
 #include <openglyph/parser/xml_parser.hpp>
 
@@ -30,7 +31,7 @@ public:
      */
     GameObjectTypeStore(AssetLoader& asset_loader, std::string_view index_filename);
 
-    GameObjectTypeStore(const GameObjectTypeStore&) = delete;
+    GameObjectTypeStore(const GameObjectTypeStore&)            = delete;
     GameObjectTypeStore& operator=(const GameObjectTypeStore&) = delete;
     ~GameObjectTypeStore();
 

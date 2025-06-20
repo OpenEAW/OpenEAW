@@ -43,7 +43,8 @@ bool case_insensitive_equals(std::string_view s1, std::string_view s2)
 
 Tokenizer::Tokenizer(std::string_view input, std::string_view delimiters)
     : m_input(input), m_delimiters(delimiters), m_next(m_input.find_first_not_of(m_delimiters))
-{}
+{
+}
 
 std::optional<std::string_view> Tokenizer::next() noexcept
 {

@@ -5,6 +5,7 @@
 
 #include <khepri/scene/scene.hpp>
 #include <khepri/utility/cache.hpp>
+
 #include <openglyph/assets/asset_cache.hpp>
 
 #include <vector>
@@ -23,7 +24,7 @@ public:
     Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_types,
           Environment environment);
 
-    Scene(const Scene&) = delete;
+    Scene(const Scene&)            = delete;
     Scene& operator=(const Scene&) = delete;
     ~Scene();
 

@@ -96,7 +96,8 @@ public:
 
         explicit AttributeRange(const rapidxml::xml_attribute<Char>* first) noexcept
             : m_first(first)
-        {}
+        {
+        }
 
         Iterator begin() const noexcept
         {

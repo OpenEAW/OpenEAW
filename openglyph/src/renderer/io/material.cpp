@@ -1,4 +1,5 @@
 #include <khepri/log/log.hpp>
+
 #include <openglyph/parser/parsers.hpp>
 #include <openglyph/parser/xml_parser.hpp>
 #include <openglyph/renderer/io/material.hpp>

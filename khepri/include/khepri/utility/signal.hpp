@@ -22,7 +22,8 @@ public:
      */
     template <typename Callable>
     Slot(const Callable& callable) : m_func(callable)
-    {}
+    {
+    }
 
     /// Invokes the slot
     void invoke(Args&&... args) const
@@ -143,7 +144,7 @@ public:
     /// Constructs a scoped connection for a given connection
     explicit ScopedConnection(const Connection& conn) noexcept : Connection(conn) {}
 
-    ScopedConnection(const ScopedConnection& conn) = delete;
+    ScopedConnection(const ScopedConnection& conn)       = delete;
     ScopedConnection& operator=(const ScopedConnection&) = delete;
 
     /**

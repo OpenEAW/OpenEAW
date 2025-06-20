@@ -45,6 +45,7 @@ ModelDesc::ModelDesc(std::vector<MeshDesc> meshes)
     : m_meshes(std::move(meshes))
     , m_bounding_sphere(compute_bounding_sphere(m_meshes))
     , m_collision_mesh(create_collision_mesh(m_meshes))
-{}
+{
+}
 
 } // namespace khepri::renderer

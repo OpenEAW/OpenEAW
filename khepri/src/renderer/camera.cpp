@@ -27,7 +27,8 @@ Camera::Camera(const Properties& properties)
     : m_properties(properties)
     , m_matrices(create_matrices(properties))
     , m_frustum(frustum({-1, -1}, {1, 1}))
-{}
+{
+}
 
 Frustum Camera::frustum(const Vector2& p1, const Vector2& p2) const noexcept
 {

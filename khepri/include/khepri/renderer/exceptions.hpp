@@ -30,7 +30,8 @@ public:
      */
     ShaderCompileError(const char* message, std::string_view error_message)
         : Error(message), m_error_message(error_message)
-    {}
+    {
+    }
 
     /// Returns the detailed compilation error message
     [[nodiscard]] std::string_view error_message() const noexcept

@@ -158,10 +158,10 @@ public:
     Sink()          = default;
     virtual ~Sink() = default;
 
-    Sink(const Sink&) = delete;
-    Sink(Sink&&)      = delete;
+    Sink(const Sink&)            = delete;
+    Sink(Sink&&)                 = delete;
     Sink& operator=(const Sink&) = delete;
-    Sink& operator=(Sink&&) = delete;
+    Sink& operator=(Sink&&)      = delete;
 
     /**
      * Called by the logging system to write a log record to the sink.

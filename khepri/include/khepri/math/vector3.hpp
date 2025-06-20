@@ -45,7 +45,8 @@ public:
     /// Constructs the vector from literals
     constexpr BasicVector3(ComponentType fx, ComponentType fy, ComponentType fz) noexcept
         : x(fx), y(fy), z(fz)
-    {}
+    {
+    }
 
     /// Implicitly constructs the vector from another vector with a non-narrowing-convertible
     /// component
@@ -55,7 +56,8 @@ public:
                                         void*> = nullptr>
     constexpr BasicVector3(const BasicVector3<U>& v)
         : x(ComponentType{v.x}), y(ComponentType{v.y}), z(ComponentType{v.z})
-    {}
+    {
+    }
 
     /// Explicitly constructs the vector from another vector with a narrowing-convertible component
     /// type
@@ -63,7 +65,8 @@ public:
                                                         is_narrowing_conversion_v<U, ComponentType>,
                                                     void*> = nullptr>
     explicit constexpr BasicVector3(const BasicVector3<U>& v) : x(v.x), y(v.y), z(v.z)
-    {}
+    {
+    }
 
     /// Implicitly constructs the vector from a Vector2 with a non-narrowing-convertible component
     /// type, and a Z component
@@ -73,7 +76,8 @@ public:
                                         void*> = nullptr>
     constexpr BasicVector3(const BasicVector2<U>& v, ComponentType z)
         : x(ComponentType{v.x}), y(ComponentType{v.y}), z(z)
-    {}
+    {
+    }
 
     /// Explicitly constructs the vector from a Vector2 with a narrowing-convertible component
     /// type, and a Z component
@@ -82,7 +86,8 @@ public:
                                                     void*> = nullptr>
     explicit constexpr BasicVector3(const BasicVector2<U>& v, ComponentType z)
         : x(v.x), y(v.y), z(z)
-    {}
+    {
+    }
 
     /// Implicitly constructs the vector from a Vector4 with a non-narrowing-convertible component
     /// type by throwing away the W component.
@@ -357,7 +362,8 @@ template <typename U, typename std::enable_if_t<std::is_convertible_v<U, Compone
                                                 void*>>
 constexpr BasicVector2<ComponentT>::BasicVector2(const BasicVector3<U>& v)
     : x(ComponentT{v.x}), y(ComponentT{v.y})
-{}
+{
+}
 
 /// Explicitly constructs the vector from a BasicVector3 with a narrowing-convertible component
 /// type by throwing away the Z component.
@@ -366,7 +372,8 @@ template <typename U, typename std::enable_if_t<std::is_convertible_v<U, Compone
                                                     is_narrowing_conversion_v<U, ComponentT>,
                                                 void*>>
 constexpr BasicVector2<ComponentT>::BasicVector2(const BasicVector3<U>& v) : x(v.x), y(v.y)
-{}
+{
+}
 
 /**
  * Checks if two vectors are colinear.

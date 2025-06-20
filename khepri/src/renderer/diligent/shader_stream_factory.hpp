@@ -20,7 +20,8 @@ class ShaderStreamFactory final
     public:
         MemoryStream(Diligent::IReferenceCounters* pRefCounters, ShaderDesc shader)
             : Diligent::ObjectBase<Diligent::IFileStream>(pRefCounters), m_shader(std::move(shader))
-        {}
+        {
+        }
 
         void DILIGENT_CALL_TYPE ReadBlob(Diligent::IDataBlob* data) override
         {
@@ -70,7 +71,8 @@ public:
                                  Renderer::ShaderLoader        loader)
         : Diligent::ObjectBase<Diligent::IShaderSourceInputStreamFactory>(pRefCounters)
         , m_loader(std::move(loader))
-    {}
+    {
+    }
 
     void DILIGENT_CALL_TYPE CreateInputStream(const char*             name,
                                               Diligent::IFileStream** ppStream) final

@@ -6,11 +6,12 @@ namespace khepri::font {
 
 Font::Font(std::shared_ptr<detail::FontFaceState> face, const FontOptions& options)
     : m_face(std::move(face)), m_options(options)
-{}
+{
+}
 
-Font::Font(const Font& font)     = default;
-Font::Font(Font&& font) noexcept = default;
-Font& Font::operator=(const Font& font) = default;
+Font::Font(const Font& font)                = default;
+Font::Font(Font&& font) noexcept            = default;
+Font& Font::operator=(const Font& font)     = default;
 Font& Font::operator=(Font&& font) noexcept = default;
 
 Font::~Font() = default;

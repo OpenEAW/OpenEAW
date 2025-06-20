@@ -42,7 +42,8 @@ public:
     /// Constructs the ColorSRGB from literals
     constexpr ColorSRGB(ComponentType fr, ComponentType fg, ComponentType fb) noexcept
         : r(fr), g(fg), b(fb)
-    {}
+    {
+    }
 
     /**
      * Constructs a ColorSRGB from a color_rgb by performing linear-to-sRGB conversion.
@@ -56,7 +57,8 @@ public:
                                        std::numeric_limits<ColorSRGB::ComponentType>::max()))
         , b(static_cast<ComponentType>(linear_to_srgb(saturate(c.b)) *
                                        std::numeric_limits<ColorSRGB::ComponentType>::max()))
-    {}
+    {
+    }
 
     /// Indexes the color. 0 is Red, 1 is Green, etc
     const ComponentType& operator[](int index) const noexcept
@@ -105,6 +107,7 @@ inline constexpr ColorRGB::ColorRGB(const ColorSRGB& c) noexcept
                                   std::numeric_limits<ColorSRGB::ComponentType>::max()))
     , b(ColorSRGB::srgb_to_linear(static_cast<float>(c.b) /
                                   std::numeric_limits<ColorSRGB::ComponentType>::max()))
-{}
+{
+}
 
 } // namespace khepri

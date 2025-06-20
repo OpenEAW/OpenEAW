@@ -40,7 +40,8 @@ auto Near(const Vector3& rhs, float abs_error = 0.001f)
 
         explicit Vector3NearMatcher(const Vector3& rhs, float abs_error)
             : m_rhs(rhs), m_abs_error(abs_error)
-        {}
+        {
+        }
 
         bool MatchAndExplain(const Vector3& lhs, std::ostream*) const
         {

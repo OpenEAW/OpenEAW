@@ -49,7 +49,8 @@ public:
      */
     explicit StepInterpolator(std::initializer_list<Point> points)
         : StepInterpolator({points.begin(), points.end()})
-    {}
+    {
+    }
 
     /**
      * \brief Constructs a new StepInterpolator from a sequence of points.
@@ -88,7 +89,8 @@ public:
      */
     explicit LinearInterpolator(std::initializer_list<Point> points)
         : LinearInterpolator({points.begin(), points.end()})
-    {}
+    {
+    }
 
     /**
      * \brief Constructs a new LinearInterpolator from a sequence of points.
@@ -129,7 +131,8 @@ public:
      */
     explicit CosineInterpolator(std::initializer_list<Point> points)
         : CosineInterpolator({points.begin(), points.end()})
-    {}
+    {
+    }
 
     /**
      * \brief Constructs a new CosineInterpolator from a sequence of points.
@@ -170,7 +173,8 @@ public:
      */
     explicit CubicInterpolator(std::initializer_list<Point> points)
         : CubicInterpolator({points.begin(), points.end()})
-    {}
+    {
+    }
 
     /**
      * \brief Constructs a new CubicInterpolator from a sequence of points.
