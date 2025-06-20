@@ -27,10 +27,10 @@ public:
     SceneObject()          = default;
     virtual ~SceneObject() = default;
 
-    SceneObject(const SceneObject&) = delete;
-    SceneObject(SceneObject&&)      = delete;
+    SceneObject(const SceneObject&)            = delete;
+    SceneObject(SceneObject&&)                 = delete;
     SceneObject& operator=(const SceneObject&) = delete;
-    SceneObject& operator=(SceneObject&&) = delete;
+    SceneObject& operator=(SceneObject&&)      = delete;
 
     /// Returns the position of the object in the scene
     const auto& position() const noexcept

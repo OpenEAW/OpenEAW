@@ -20,10 +20,10 @@ public:
         m_log_start = log::Clock::now();
     }
 
-    BaseLogger(const BaseLogger&) = delete;
-    BaseLogger(BaseLogger&&)      = delete;
+    BaseLogger(const BaseLogger&)            = delete;
+    BaseLogger(BaseLogger&&)                 = delete;
     BaseLogger& operator=(const BaseLogger&) = delete;
-    BaseLogger& operator=(BaseLogger&&) = delete;
+    BaseLogger& operator=(BaseLogger&&)      = delete;
 
     ~BaseLogger() noexcept override
     {
@@ -86,12 +86,13 @@ public:
     Impl()
         // Logging goes to stderr by convention
         : m_owns_console(AllocConsole() != FALSE), m_output_handle(GetStdHandle(STD_ERROR_HANDLE))
-    {}
+    {
+    }
 
-    Impl(const Impl&) = delete;
-    Impl(Impl&&)      = delete;
+    Impl(const Impl&)            = delete;
+    Impl(Impl&&)                 = delete;
     Impl& operator=(const Impl&) = delete;
-    Impl& operator=(Impl&&) = delete;
+    Impl& operator=(Impl&&)      = delete;
 
     ~Impl() noexcept override
     {

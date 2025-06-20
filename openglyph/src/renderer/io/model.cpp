@@ -1,8 +1,9 @@
-#include <gsl/gsl-lite.hpp>
 #include <khepri/io/exceptions.hpp>
 #include <khepri/io/serialize.hpp>
 #include <khepri/math/serialize.hpp>
 #include <khepri/utility/string.hpp>
+
+#include <gsl/gsl-lite.hpp>
 #include <openglyph/io/chunk_reader.hpp>
 #include <openglyph/renderer/io/model.hpp>
 

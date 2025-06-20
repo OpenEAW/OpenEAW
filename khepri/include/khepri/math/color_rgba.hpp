@@ -41,12 +41,14 @@ public:
     constexpr ColorRGBA(ComponentType fr, ComponentType fg, ComponentType fb,
                         ComponentType fa) noexcept
         : r(fr), g(fg), b(fb), a(fa)
-    {}
+    {
+    }
 
     /// Constructs the ColorRGBA from a ColorRGB, and a float for Alpha
     constexpr ColorRGBA(const ColorRGB& c, ComponentType fa) noexcept
         : r(c.r), g(c.g), b(c.b), a(fa)
-    {}
+    {
+    }
 
     /// Adds color \a c to the vector
     ColorRGBA& operator+=(const ColorRGBA& c) noexcept

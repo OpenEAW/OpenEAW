@@ -1,8 +1,8 @@
 #pragma once
 
-#include <openglyph/renderer/material_desc.hpp>
-
 #include <khepri/io/stream.hpp>
+
+#include <openglyph/renderer/material_desc.hpp>
 
 #include <vector>
 

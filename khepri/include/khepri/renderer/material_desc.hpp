@@ -8,8 +8,8 @@
 #include <khepri/math/vector3.hpp>
 #include <khepri/math/vector4.hpp>
 
-#include <string>
 #include <optional>
+#include <string>
 #include <variant>
 #include <vector>
 

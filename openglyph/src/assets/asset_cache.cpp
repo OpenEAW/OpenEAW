@@ -1,6 +1,7 @@
 #include <khepri/log/log.hpp>
 #include <khepri/renderer/io/shader.hpp>
 #include <khepri/renderer/io/texture.hpp>
+
 #include <openglyph/assets/asset_cache.hpp>
 #include <openglyph/renderer/io/material.hpp>
 #include <openglyph/renderer/io/model.hpp>

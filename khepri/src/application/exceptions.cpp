@@ -143,9 +143,10 @@ class ScopedTerminateHandler
 public:
     ScopedTerminateHandler(const std::terminate_handler& handler)
         : m_previous_handler{std::set_terminate(handler)}
-    {}
+    {
+    }
 
-    ScopedTerminateHandler(const ScopedTerminateHandler&) = delete;
+    ScopedTerminateHandler(const ScopedTerminateHandler&)            = delete;
     ScopedTerminateHandler& operator=(const ScopedTerminateHandler&) = delete;
 
     ~ScopedTerminateHandler()

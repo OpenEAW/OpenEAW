@@ -1,7 +1,6 @@
 #pragma once
 
 #include <NativeWindow.h>
-
 #include <any>
 
 namespace khepri::renderer::diligent {

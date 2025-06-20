@@ -90,24 +90,24 @@ TEXTURE_FORMAT to_texture_format(PixelFormat format)
     return TEX_FORMAT_UNKNOWN;
 }
 
-COMPARISON_FUNCTION to_comparison_func(MaterialDesc::ComparisonFunc func) {
-    switch (func)
-    {
-        case MaterialDesc::ComparisonFunc::never:
+COMPARISON_FUNCTION to_comparison_func(MaterialDesc::ComparisonFunc func)
+{
+    switch (func) {
+    case MaterialDesc::ComparisonFunc::never:
         return COMPARISON_FUNC_NEVER;
-        case MaterialDesc::ComparisonFunc::less:
+    case MaterialDesc::ComparisonFunc::less:
         return COMPARISON_FUNC_LESS;
-        case MaterialDesc::ComparisonFunc::equal:
+    case MaterialDesc::ComparisonFunc::equal:
         return COMPARISON_FUNC_EQUAL;
-        case MaterialDesc::ComparisonFunc::less_equal:
+    case MaterialDesc::ComparisonFunc::less_equal:
         return COMPARISON_FUNC_LESS_EQUAL;
-        case MaterialDesc::ComparisonFunc::greater:
+    case MaterialDesc::ComparisonFunc::greater:
         return COMPARISON_FUNC_GREATER;
-        case MaterialDesc::ComparisonFunc::not_equal:
+    case MaterialDesc::ComparisonFunc::not_equal:
         return COMPARISON_FUNC_NOT_EQUAL;
-        case MaterialDesc::ComparisonFunc::greater_equal:
+    case MaterialDesc::ComparisonFunc::greater_equal:
         return COMPARISON_FUNC_GREATER_EQUAL;
-        case MaterialDesc::ComparisonFunc::always:
+    case MaterialDesc::ComparisonFunc::always:
         return COMPARISON_FUNC_ALWAYS;
     }
     assert(false);
@@ -373,17 +373,19 @@ public:
             ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = false;
             break;
         }
-        ci.GraphicsPipeline.NumRenderTargets             = 1;
-        ci.GraphicsPipeline.RTVFormats[0]                = m_swapchain->GetDesc().ColorBufferFormat;
-        ci.GraphicsPipeline.DSVFormat                    = m_swapchain->GetDesc().DepthBufferFormat;
+        ci.GraphicsPipeline.NumRenderTargets = 1;
+        ci.GraphicsPipeline.RTVFormats[0]    = m_swapchain->GetDesc().ColorBufferFormat;
+        ci.GraphicsPipeline.DSVFormat        = m_swapchain->GetDesc().DepthBufferFormat;
         if (material_desc.depth_buffer) {
             ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = true;
-            ci.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = material_desc.depth_buffer->write_enable;
-            ci.GraphicsPipeline.DepthStencilDesc.DepthFunc = to_comparison_func(material_desc.depth_buffer->comparison_func);
+            ci.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable =
+                material_desc.depth_buffer->write_enable;
+            ci.GraphicsPipeline.DepthStencilDesc.DepthFunc =
+                to_comparison_func(material_desc.depth_buffer->comparison_func);
         } else {
             ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = false;
         }
-        ci.GraphicsPipeline.RasterizerDesc.CullMode      = to_cull_mode(material_desc.cull_mode);
+        ci.GraphicsPipeline.RasterizerDesc.CullMode = to_cull_mode(material_desc.cull_mode);
 
         static_assert(sizeof(MeshDesc::Vertex) < std::numeric_limits<Uint32>::max(),
                       "Vertex is too large");
