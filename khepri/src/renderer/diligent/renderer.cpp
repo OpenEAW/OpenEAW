@@ -5,6 +5,7 @@
 #include <khepri/log/log.hpp>
 #include <khepri/renderer/camera.hpp>
 #include <khepri/renderer/diligent/renderer.hpp>
+#include <khepri/renderer/exceptions.hpp>
 
 #ifdef _MSC_VER
 #include <EngineFactoryD3D11.h>
@@ -336,7 +337,16 @@ public:
 
         auto shader           = std::make_unique<Shader>();
         shader->vertex_shader = create_shader_object(path.string(), SHADER_TYPE_VERTEX, "vs_main");
-        shader->pixel_shader  = create_shader_object(path.string(), SHADER_TYPE_PIXEL, "ps_main");
+        if (!shader->vertex_shader) {
+            throw khepri::renderer::Error("Failed to create vertex shader from file: " +
+                                          path.string());
+        }
+
+        shader->pixel_shader = create_shader_object(path.string(), SHADER_TYPE_PIXEL, "ps_main");
+        if (!shader->pixel_shader) {
+            throw khepri::renderer::Error("Failed to create pixel shader from file: " +
+                                          path.string());
+        }
         return shader;
     }
 
