@@ -183,7 +183,7 @@ class Renderer::Impl
     };
 
 public:
-    Impl::Impl(std::any window)
+    Impl(std::any window)
     {
         SetDebugMessageCallback(diligent_debug_message_callback);
 
@@ -301,7 +301,7 @@ public:
     Impl& operator=(const Impl&) = delete;
     Impl& operator=(Impl&&)      = delete;
 
-    Impl::~Impl() = default;
+    ~Impl() = default;
 
     void render_size(const Size& size)
     {
