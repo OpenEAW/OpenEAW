@@ -12,10 +12,10 @@ public:
     Behavior()          = default;
     virtual ~Behavior() = default;
 
-    Behavior(const Behavior&) = delete;
-    Behavior(Behavior&&)      = delete;
+    Behavior(const Behavior&)            = delete;
+    Behavior(Behavior&&)                 = delete;
     Behavior& operator=(const Behavior&) = delete;
-    Behavior& operator=(Behavior&&) = delete;
+    Behavior& operator=(Behavior&&)      = delete;
 };
 
 } // namespace khepri::scene

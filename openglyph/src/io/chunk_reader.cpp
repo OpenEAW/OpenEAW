@@ -1,6 +1,6 @@
-#include <openglyph/io/chunk_reader.hpp>
-
 #include <khepri/io/exceptions.hpp>
+
+#include <openglyph/io/chunk_reader.hpp>
 
 #include <cassert>
 

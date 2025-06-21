@@ -35,7 +35,7 @@ IncludeCategories:
     Priority:        999
     SortPriority:    999
 
-  # Other includes (third party, etc) come in the middle
+  # Other includes (third party, etc) come before standard includes
   - Regex:           '.*'
-    Priority:        2
-    SortPriority:    2
+    Priority:        800
+    SortPriority:    800

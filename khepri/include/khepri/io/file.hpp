@@ -27,10 +27,10 @@ public:
     File(const std::filesystem::path& path, OpenMode mode);
     ~File() override;
 
-    File(const File&) = delete;
-    File(File&&)      = delete;
+    File(const File&)            = delete;
+    File(File&&)                 = delete;
     File& operator=(const File&) = delete;
-    File& operator=(File&&) = delete;
+    File& operator=(File&&)      = delete;
 
     /// \see stream::readable
     [[nodiscard]] bool readable() const noexcept override

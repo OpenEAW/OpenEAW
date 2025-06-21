@@ -1,8 +1,9 @@
-#include <gsl/gsl-lite.hpp>
 #include <khepri/io/exceptions.hpp>
 #include <khepri/io/serialize.hpp>
 #include <khepri/math/serialize.hpp>
 #include <khepri/utility/string.hpp>
+
+#include <gsl/gsl-lite.hpp>
 #include <openglyph/io/chunk_reader.hpp>
 #include <openglyph/renderer/io/model.hpp>
 
@@ -14,7 +15,7 @@ using Model = openglyph::renderer::Model;
 
 namespace openglyph::io {
 namespace {
-enum class ChunkId
+enum ModelChunkId : std::uint32_t
 {
     mesh                 = 0x400,
     mesh_name            = 0x401,
@@ -187,7 +188,7 @@ auto read_submesh(ChunkReader& reader)
 
     for (; reader.has_chunk(); reader.next()) {
         switch (reader.id()) {
-        case ChunkId::submesh_info: {
+        case ModelChunkId::submesh_info: {
             verify(reader.has_data());
             const auto               data = reader.read_data();
             khepri::io::Deserializer d(data);
@@ -196,7 +197,7 @@ auto read_submesh(ChunkReader& reader)
             break;
         }
 
-        case ChunkId::submesh_vertices_v1: {
+        case ModelChunkId::submesh_vertices_v1: {
             verify(reader.has_data());
             const auto               data = reader.read_data();
             khepri::io::Deserializer d(data);
@@ -205,7 +206,7 @@ auto read_submesh(ChunkReader& reader)
             break;
         }
 
-        case ChunkId::submesh_vertices_v2: {
+        case ModelChunkId::submesh_vertices_v2: {
             verify(reader.has_data());
             const auto               data = reader.read_data();
             khepri::io::Deserializer d(data);
@@ -214,7 +215,7 @@ auto read_submesh(ChunkReader& reader)
             break;
         }
 
-        case ChunkId::submesh_indices: {
+        case ModelChunkId::submesh_indices: {
             verify(reader.has_data());
             const auto               data = reader.read_data();
             khepri::io::Deserializer d(data);
@@ -264,27 +265,27 @@ auto read_shader_info(ChunkReader& reader)
     for (; reader.has_chunk(); reader.next()) {
         auto id = reader.id();
         switch (id) {
-        case ChunkId::shader_name:
+        case ModelChunkId::shader_name:
             verify(reader.has_data());
             name = as_string(reader.read_data());
             break;
-        case ChunkId::shader_param_int:
+        case ModelChunkId::shader_param_int:
             verify(reader.has_data());
             params.push_back(read_material_param<std::int32_t>(reader.read_data()));
             break;
-        case ChunkId::shader_param_float:
+        case ModelChunkId::shader_param_float:
             verify(reader.has_data());
             params.push_back(read_material_param<float>(reader.read_data()));
             break;
-        case ChunkId::shader_param_float3:
+        case ModelChunkId::shader_param_float3:
             verify(reader.has_data());
             params.push_back(read_material_param<khepri::Vector3f>(reader.read_data()));
             break;
-        case ChunkId::shader_param_float4:
+        case ModelChunkId::shader_param_float4:
             verify(reader.has_data());
             params.push_back(read_material_param<khepri::Vector4f>(reader.read_data()));
             break;
-        case ChunkId::shader_param_texture:
+        case ModelChunkId::shader_param_texture:
             verify(reader.has_data());
             params.push_back(read_material_param<std::string>(reader.read_data()));
             break;
@@ -301,13 +302,13 @@ Model::Mesh read_mesh(ChunkReader& reader)
 
     for (; reader.has_chunk(); reader.next()) {
         switch (reader.id()) {
-        case ChunkId::mesh_name:
+        case ModelChunkId::mesh_name:
             verify(reader.has_data());
             std::tie(mesh.name, mesh.lod, mesh.alt) =
                 parse_mesh_name(as_string(reader.read_data()));
             break;
 
-        case ChunkId::mesh_info: {
+        case ModelChunkId::mesh_info: {
             verify(reader.has_data());
             const auto               data = reader.read_data();
             khepri::io::Deserializer d(data);
@@ -319,7 +320,7 @@ Model::Mesh read_mesh(ChunkReader& reader)
             break;
         }
 
-        case ChunkId::submesh: {
+        case ModelChunkId::submesh: {
             verify(!reader.has_data());
             verify(submesh_idx < mesh.materials.size());
             auto& mat = mesh.materials[submesh_idx];
@@ -330,7 +331,7 @@ Model::Mesh read_mesh(ChunkReader& reader)
             break;
         }
 
-        case ChunkId::shader_info:
+        case ModelChunkId::shader_info:
             verify(!reader.has_data());
             verify(shader_idx < mesh.materials.size());
             auto& mat = mesh.materials[shader_idx];
@@ -351,7 +352,7 @@ Model read_model(khepri::io::Stream& stream)
     ChunkReader reader(stream);
     for (; reader.has_chunk(); reader.next()) {
         switch (reader.id()) {
-        case ChunkId::mesh:
+        case ModelChunkId::mesh:
             verify(!reader.has_data());
             reader.open();
             model.meshes.push_back(read_mesh(reader));

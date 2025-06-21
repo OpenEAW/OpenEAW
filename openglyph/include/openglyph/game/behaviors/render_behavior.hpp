@@ -1,6 +1,7 @@
 #pragma once
 
 #include <khepri/scene/behavior.hpp>
+
 #include <openglyph/renderer/render_model.hpp>
 
 namespace openglyph {

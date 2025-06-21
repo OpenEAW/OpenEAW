@@ -2,11 +2,12 @@
 
 #include "material_desc.hpp"
 
-#include <gsl/gsl-lite.hpp>
 #include <khepri/renderer/renderer.hpp>
 #include <khepri/renderer/shader.hpp>
 #include <khepri/renderer/texture.hpp>
 #include <khepri/utility/string.hpp>
+
+#include <gsl/gsl-lite.hpp>
 
 #include <map>
 #include <memory>
@@ -27,7 +28,8 @@ public:
         : m_renderer(renderer)
         , m_shader_loader(std::move(shader_loader))
         , m_texture_loader(std::move(texture_loader))
-    {}
+    {
+    }
 
     void register_materials(gsl::span<const MaterialDesc> material_descs);
 

@@ -53,7 +53,8 @@ public:
                                             !is_narrowing_conversion_v<U, ComponentType>,
                                         void*> = nullptr>
     constexpr BasicVector2(const BasicVector2<U>& v) : x(ComponentType{v.x}), y(ComponentType{v.y})
-    {}
+    {
+    }
 
     /// Explicitly constructs the vector from another vector with a narrowing-convertible component
     /// type
@@ -61,7 +62,8 @@ public:
                                                         is_narrowing_conversion_v<U, ComponentType>,
                                                     void*> = nullptr>
     explicit constexpr BasicVector2(const BasicVector2<U>& v) : x(v.x), y(v.y)
-    {}
+    {
+    }
 
     /// Implicitly constructs the vector from a BasicVector3 with a non-narrowing-convertible
     /// component type by throwing away the Z component.

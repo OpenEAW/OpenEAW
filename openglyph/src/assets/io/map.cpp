@@ -1,11 +1,12 @@
 #include <khepri/io/exceptions.hpp>
 #include <khepri/io/serialize.hpp>
+
 #include <openglyph/assets/io/map.hpp>
 #include <openglyph/io/chunk_reader.hpp>
 
 namespace openglyph::io {
 namespace {
-enum class ChunkId
+enum MapChunkId
 {
     map_info = 0x00,
     map_data = 0x01,
@@ -115,7 +116,7 @@ auto read_map_environments(ChunkReader& reader)
     std::vector<Environment> environments;
     for (; reader.has_chunk(); reader.next()) {
         switch (reader.id()) {
-        case ChunkId::map_data_environment:
+        case MapChunkId::map_data_environment:
             verify(reader.has_data());
             environments.push_back(read_map_environment(reader.read_data()));
             break;
@@ -128,13 +129,13 @@ auto read_map_environment_set(Map& map, ChunkReader& reader)
 {
     for (; reader.has_chunk(); reader.next()) {
         switch (reader.id()) {
-        case ChunkId::map_data_environments:
+        case MapChunkId::map_data_environments:
             verify(!reader.has_data());
             reader.open();
             map.environments = read_map_environments(reader);
             reader.close();
             break;
-        case ChunkId::map_data_active_environment:
+        case MapChunkId::map_data_active_environment:
             verify(reader.has_data());
             map.active_environment = read_active_environment(reader.read_data());
             break;
@@ -150,7 +151,7 @@ void read_map_data(Map& map, ChunkReader& reader)
 {
     for (; reader.has_chunk(); reader.next()) {
         switch (reader.id()) {
-        case ChunkId::map_data_environment_set:
+        case MapChunkId::map_data_environment_set:
             verify(!reader.has_data());
             reader.open();
             read_map_environment_set(map, reader);
@@ -168,13 +169,13 @@ openglyph::Map read_map(khepri::io::Stream& stream)
     ChunkReader reader(stream);
     for (; reader.has_chunk(); reader.next()) {
         switch (reader.id()) {
-        case ChunkId::map_info:
+        case MapChunkId::map_info:
             verify(reader.has_data());
             map.header = read_map_header(reader.read_data());
             verify(map.header.version == MAP_FORMAT_VERSION);
             break;
 
-        case ChunkId::map_data:
+        case MapChunkId::map_data:
             verify(!reader.has_data());
             reader.open();
             read_map_data(map, reader);

@@ -4,6 +4,7 @@
 
 #include <khepri/renderer/renderer.hpp>
 #include <khepri/utility/cache.hpp>
+
 #include <openglyph/renderer/material_store.hpp>
 #include <openglyph/renderer/model_creator.hpp>
 
@@ -22,7 +23,7 @@ class AssetCache final
 public:
     AssetCache(AssetLoader& asset_loader, khepri::renderer::Renderer& renderer);
 
-    AssetCache(const AssetCache&) = delete;
+    AssetCache(const AssetCache&)            = delete;
     AssetCache& operator=(const AssetCache&) = delete;
     ~AssetCache();
 

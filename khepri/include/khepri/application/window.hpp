@@ -58,10 +58,10 @@ public:
      * \param[in] title the title of the window, as visible in the title bar.
      */
     explicit Window(const std::string& title);
-    Window(const Window&) = delete;
-    Window(Window&&)      = delete;
+    Window(const Window&)            = delete;
+    Window(Window&&)                 = delete;
     Window& operator=(const Window&) = delete;
-    Window& operator=(Window&&) = delete;
+    Window& operator=(Window&&)      = delete;
     ~Window();
 
     /**

@@ -27,10 +27,10 @@ public:
         Deleter(m_object);
     }
 
-    FTScoped(const FTScoped&) = delete;
-    FTScoped(FTScoped&&)      = delete;
+    FTScoped(const FTScoped&)            = delete;
+    FTScoped(FTScoped&&)                 = delete;
     FTScoped& operator=(const FTScoped&) = delete;
-    FTScoped& operator=(FTScoped&&) = delete;
+    FTScoped& operator=(FTScoped&&)      = delete;
 
     T get()
     {

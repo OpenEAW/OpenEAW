@@ -39,13 +39,13 @@ public:
 
     /// Serializes byte \a x and stores it in the serializer's buffer
     template <typename T>
-    void write(uint8_t x)
+    void write(std::uint8_t x)
     {
         m_data.push_back(x);
     }
 
     /// Returns the buffer with serialized data
-    [[nodiscard]] gsl::span<const uint8_t> data() const noexcept
+    [[nodiscard]] gsl::span<const std::uint8_t> data() const noexcept
     {
         return m_data;
     }
@@ -67,15 +67,14 @@ public:
      * \brief Constructs a deserializer from a buffer with data.
      * \note This object does NOT take ownership of the data.
      */
-    explicit Deserializer(gsl::span<const uint8_t> data) noexcept : m_data(data) {}
+    explicit Deserializer(gsl::span<const std::uint8_t> data) noexcept : m_data(data) {}
 
     /// Deserializes an object from the buffer
     template <typename T>
     T read();
 
     /// Deserializes a byte from the buffer
-    template <>
-    uint8_t read<uint8_t>()
+    std::uint8_t read_byte()
     {
         if (m_position >= m_data.size()) {
             throw khepri::io::Error("unexpected end of data");
@@ -84,8 +83,8 @@ public:
     }
 
 private:
-    gsl::span<const uint8_t> m_data;
-    std::size_t              m_position{0};
+    gsl::span<const std::uint8_t> m_data;
+    std::size_t                   m_position{0};
 };
 
 namespace detail {
@@ -108,7 +107,7 @@ struct FixedWidthUintSerializeTraits
     {
         T result = 0;
         for (std::size_t i = 0; i < sizeof(T); ++i) {
-            result |= (static_cast<T>(d.read<std::uint8_t>()) << (i * BITS_PER_BYTE));
+            result |= (static_cast<T>(d.read_byte()) << (i * BITS_PER_BYTE));
         }
         return result;
     }
@@ -177,6 +176,14 @@ T Deserializer::read()
 }
 
 template <>
+struct SerializeTraits<std::uint8_t> : detail::FixedWidthUintSerializeTraits<std::uint8_t>
+{};
+
+template <>
+struct SerializeTraits<std::int8_t> : detail::FixedWidthIntSerializeTraits<std::int8_t>
+{};
+
+template <>
 struct SerializeTraits<std::uint16_t> : detail::FixedWidthUintSerializeTraits<std::uint16_t>
 {};
 
@@ -219,7 +226,7 @@ struct SerializeTraits<gsl::span<T>>
     /// \see #khepri::io::SerializeTraits::serialize
     static void serialize(Serializer& s, const gsl::span<T>& value)
     {
-        s.write(static_cast<uint32_t>(value.size()));
+        s.write(static_cast<std::uint32_t>(value.size()));
         for (const auto& elem : value) {
             s.write(elem);
         }
@@ -235,7 +242,7 @@ struct SerializeTraits<std::vector<T>>
     /// \see #khepri::io::SerializeTraits::serialize
     static void serialize(Serializer& s, const std::vector<T>& value)
     {
-        s.write(static_cast<uint32_t>(value.size()));
+        s.write(static_cast<std::uint32_t>(value.size()));
         for (const auto& elem : value) {
             s.write(elem);
         }

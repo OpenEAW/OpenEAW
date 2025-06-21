@@ -2,6 +2,7 @@
 #include <khepri/io/stream.hpp>
 
 #include <cassert>
+#include <limits>
 #include <vector>
 
 namespace khepri::io {
