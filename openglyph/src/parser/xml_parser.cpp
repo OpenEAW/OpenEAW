@@ -1,5 +1,7 @@
 #include <openglyph/parser/xml_parser.hpp>
 
+#include <algorithm>
+
 namespace openglyph {
 
 XmlParser::XmlParser(khepri::io::Stream& stream)

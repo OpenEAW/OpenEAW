@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cassert>
+#include <limits>
 #include <type_traits>
 
 namespace khepri::io {

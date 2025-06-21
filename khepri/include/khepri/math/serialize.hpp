@@ -24,8 +24,8 @@ struct SerializeTraits<BasicVector2<T>>
     static BasicVector2<T> deserialize(Deserializer& d)
     {
         BasicVector2<T> v;
-        v.x = d.read<BasicVector2<T>::ComponentType>();
-        v.y = d.read<BasicVector2<T>::ComponentType>();
+        v.x = d.read<typename BasicVector2<T>::ComponentType>();
+        v.y = d.read<typename BasicVector2<T>::ComponentType>();
         return v;
     }
 };
@@ -46,9 +46,9 @@ struct SerializeTraits<BasicVector3<T>>
     static BasicVector3<T> deserialize(Deserializer& d)
     {
         BasicVector3<T> v;
-        v.x = d.read<BasicVector3<T>::ComponentType>();
-        v.y = d.read<BasicVector3<T>::ComponentType>();
-        v.z = d.read<BasicVector3<T>::ComponentType>();
+        v.x = d.read<typename BasicVector3<T>::ComponentType>();
+        v.y = d.read<typename BasicVector3<T>::ComponentType>();
+        v.z = d.read<typename BasicVector3<T>::ComponentType>();
         return v;
     }
 };
@@ -70,10 +70,10 @@ struct SerializeTraits<BasicVector4<T>>
     static BasicVector4<T> deserialize(Deserializer& d)
     {
         BasicVector4<T> v;
-        v.x = d.read<BasicVector4<T>::ComponentType>();
-        v.y = d.read<BasicVector4<T>::ComponentType>();
-        v.z = d.read<BasicVector4<T>::ComponentType>();
-        v.w = d.read<BasicVector4<T>::ComponentType>();
+        v.x = d.read<typename BasicVector4<T>::ComponentType>();
+        v.y = d.read<typename BasicVector4<T>::ComponentType>();
+        v.z = d.read<typename BasicVector4<T>::ComponentType>();
+        v.w = d.read<typename BasicVector4<T>::ComponentType>();
         return v;
     }
 };

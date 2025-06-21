@@ -108,21 +108,24 @@ bool handle_native_exceptions(const std::string& context, TCallable callable)
 }
 #else
 template <typename TCallable>
-void handle_native_exceptions(const std::string& /*context*/, TCallable callable)
+bool handle_native_exceptions(const std::string& /*context*/, TCallable callable)
 {
     callable();
+    return true;
 }
 #endif
 
 template <typename TCallable>
 bool handle_language_exceptions(const std::string& context, TCallable callable)
 {
+#ifdef _MSC_VER
 #ifndef NDEBUG
     // Don't catch exceptions in debug builds if a debugger is attached -- the debugger will catch
     // them instead
     if (IsDebuggerPresent()) {
         return callable();
     }
+#endif
 #endif
 
     try {
