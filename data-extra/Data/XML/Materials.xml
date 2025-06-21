@@ -3,16 +3,20 @@
     <!-- Note: the order of (non-texture) parameters in a material must be the same as in its shader's constant buffer -->
 
     <!-- Special material for GUI rendering. See GUIDialogs.xml -->
+    <!--
     <Material Name="GUI" AlphaBlend="blend_src" DepthEnable="false" ScissorEnable="true">
         <Shader>GUI</Shader>
         <Param Name="BaseTexture" Type="texture"></Param>
     </Material>
+    -->
 
     <!-- Special material for Font rendering. See GUIDialogs.xml -->
+    <!--
     <Material Name="Font" AlphaBlend="blend_src" DepthEnable="false">
         <Shader>GUI</Shader>
         <Param Name="BaseTexture" Type="texture"></Param>
     </Material>
+    -->
 
     <Material Name="MeshBumpColorize">
         <Shader>MeshBumpColorize</Shader>
