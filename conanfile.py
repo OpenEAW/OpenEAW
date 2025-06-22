@@ -54,6 +54,10 @@ class OpenEawConan(ConanFile):
 
     def generate(self):
         tc = CMakeToolchain(self)
+
+        # To enable static analyses tools like clang-tidy
+        tc.cache_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
+
         # Propagate version info into CMake
         version_info = self._parse_version(self.version)
         if version_info:

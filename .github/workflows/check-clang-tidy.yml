@@ -1,0 +1,42 @@
+name: check-clang-tidy
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  check-clang-tidy:
+    name: Check clang-tidy
+
+    # Use Ubuntu 22.04 to get GCC 11, which allows downloading pre-built binaries from conan center, rather than rebuilding them in CI.
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Conan
+        id: conan
+        uses: turtlebrowser/get-conan@v1.0
+
+      - name: Print Conan version
+        run: echo "Using Conan ${{ steps.conan.outputs.version }}"
+
+      # A custom "Visual Studio shell" is necessary because when using the Ninja generator, CMake cannot find "cl.exe".
+      - name: Set up Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+  
+      - name: Create default Conan profile
+        run: conan profile detect
+        
+      - name: Produce compile-commands.json
+        run: |
+          conan install . -s compiler.cppstd=17 -s build_type=Release --build=missing --lockfile conan.lock -c tools.cmake.cmaketoolchain:generator=Ninja -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True
+          cmake --preset conan-release
+
+      - name: Run clang-tidy
+        uses: ZehMatt/clang-tidy-annotations@v1.1.2
+        with:
+          build_dir: 'build/Release'
+          clang_tidy_args: '--header-filter=.*'
