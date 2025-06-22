@@ -68,6 +68,8 @@ public:
      * Returns the native handle of this window.
      * The returned type depends on the target platform:
      * - Windows: a HWND is returned.
+     * - Linux:   a std::tuple<void*, std::uint32_t> is returned where the first element is
+     *            the X11 display pointer and the second element is the X11 window ID.
      */
     [[nodiscard]] std::any native_handle() const;
 
@@ -86,6 +88,19 @@ public:
      * \note If this is the only window in the application, it may want to shut down.
      */
     [[nodiscard]] bool should_close() const;
+
+    /**
+     * \brief Returns true if the window's render buffers need to be swapped with this method.
+     *
+     * In practice, this is true for OpenGL contexts. Otherwise, the renderer should be used to
+     * present the rendered content.
+     */
+    [[nodiscard]] bool use_swap_buffers() const;
+
+    /**
+     * Swaps the front and back buffers of the window.
+     */
+    void swap_buffers() const;
 
     /**
      * Adds a listener for "window size changed" events.

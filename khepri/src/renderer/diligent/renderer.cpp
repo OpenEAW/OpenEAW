@@ -6,6 +6,7 @@
 #include <khepri/renderer/camera.hpp>
 #include <khepri/renderer/diligent/renderer.hpp>
 #include <khepri/renderer/exceptions.hpp>
+#include <khepri/utility/string.hpp>
 
 #ifdef _MSC_VER
 #include <EngineFactoryD3D11.h>
@@ -14,6 +15,7 @@
 #endif
 #include <DebugOutput.h>
 #include <DeviceContext.h>
+#include <HLSL2GLSLConverter.h>
 #include <MapHelper.hpp>
 #include <RefCntAutoPtr.hpp>
 #include <RenderDevice.h>
@@ -187,10 +189,9 @@ public:
     Impl(std::any window)
     {
         SetDebugMessageCallback(diligent_debug_message_callback);
-
-#ifdef _MSC_VER
         const auto native_window = get_native_window(window);
 
+#ifdef _MSC_VER
         auto* factory = GetEngineFactoryD3D11();
 
         EngineD3D11CreateInfo engine_ci;
@@ -210,11 +211,20 @@ public:
 #ifndef NDEBUG
         engine_ci.SetValidationLevel(VALIDATION_LEVEL_2);
 #endif
-        engine_ci.Window = window;
+        // Enable separate programs to support querying shader resources
+        engine_ci.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
+
+        engine_ci.Window = native_window;
         SwapChainDesc swapchain_desc;
         factory->CreateDeviceAndSwapChainGL(engine_ci, &m_device, &m_context, swapchain_desc,
                                             &m_swapchain);
+
+        // OpenGL uses shader conversion
+        m_using_shader_conversion = true;
 #endif
+        if (m_device == nullptr || m_context == nullptr || m_swapchain == nullptr) {
+            throw khepri::renderer::Error("Failed to create renderer");
+        }
 
         // Create constants buffers for vertex shader
         {
@@ -235,28 +245,6 @@ public:
             desc.BindFlags      = BIND_UNIFORM_BUFFER;
             desc.CPUAccessFlags = CPU_ACCESS_WRITE;
             m_device->CreateBuffer(desc, nullptr, &m_constants_view);
-        }
-
-        {
-            SamplerDesc desc;
-            desc.Name      = "LinearSampler";
-            desc.MinFilter = FILTER_TYPE_LINEAR;
-            desc.MagFilter = FILTER_TYPE_LINEAR;
-            desc.MipFilter = FILTER_TYPE_LINEAR;
-            desc.AddressU  = TEXTURE_ADDRESS_WRAP;
-            desc.AddressV  = TEXTURE_ADDRESS_WRAP;
-            m_device->CreateSampler(desc, &m_linear_sampler);
-        }
-
-        {
-            SamplerDesc desc;
-            desc.Name      = "LinearClampSampler";
-            desc.MinFilter = FILTER_TYPE_LINEAR;
-            desc.MagFilter = FILTER_TYPE_LINEAR;
-            desc.MipFilter = FILTER_TYPE_LINEAR;
-            desc.AddressU  = TEXTURE_ADDRESS_CLAMP;
-            desc.AddressV  = TEXTURE_ADDRESS_CLAMP;
-            m_device->CreateSampler(desc, &m_linear_clamp_sampler);
         }
 
         // Create dynamic buffers for sprite rendering
@@ -323,6 +311,9 @@ public:
         const auto& create_shader_object = [&, this](const std::string& path,
                                                      SHADER_TYPE        shader_type,
                                                      const std::string& entrypoint) {
+            RefCntAutoPtr<IDataBlob>                  compiler_output;
+            RefCntAutoPtr<IHLSL2GLSLConversionStream> conversion_stream;
+
             ShaderCreateInfo ci;
             ci.Desc.Name                  = path.c_str();
             ci.Desc.ShaderType            = shader_type;
@@ -330,8 +321,51 @@ public:
             ci.pShaderSourceStreamFactory = factory;
             ci.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
             ci.EntryPoint                 = entrypoint.c_str();
+            ci.ppCompilerOutput           = &compiler_output;
+            ci.ppConversionStream         = &conversion_stream;
+
+            // Note: to support OpenGL, we need to use combined texture samplers.
+            // This means HLSL shaders need to define a "Foo" texture and associated "FooSampler"
+            // sampler, which are treated as one by Diligent. This does increase the number of
+            // samplers.
+            ci.Desc.UseCombinedTextureSamplers = true;
+            ci.Desc.CombinedSamplerSuffix      = "Sampler";
+
             RefCntAutoPtr<IShader> shader;
             m_device->CreateShader(ci, &shader);
+            if (shader == nullptr) {
+                LOG.error("Failed to create shader from file: {}, error: {}", path,
+                          compiler_output
+                              ? static_cast<const char*>(compiler_output->GetConstDataPtr())
+                              : "<unknown>");
+                if (m_using_shader_conversion) {
+                    if (!conversion_stream) {
+                        // If we didn't get a conversion stream, try to create one ourselves
+                        RefCntAutoPtr<IHLSL2GLSLConverter> converter;
+                        Diligent::CreateHLSL2GLSLConverter(&converter);
+                        converter->CreateStream(path.c_str(), factory, nullptr, 0,
+                                                &conversion_stream);
+                    }
+
+                    RefCntAutoPtr<IDataBlob> glsl_source;
+                    if (conversion_stream) {
+                        conversion_stream->Convert(entrypoint.c_str(), shader_type, true, "Sampler",
+                                                   false, &glsl_source);
+                    }
+
+                    if (glsl_source) {
+                        const char* glsl = static_cast<const char*>(glsl_source->GetConstDataPtr());
+                        LOG.info("Converted GLSL source:");
+                        int line_number = 1;
+                        for (const auto& line : khepri::split(glsl, "\n", true)) {
+                            LOG.info("{}: {}", line_number++, line);
+                        }
+                        LOG.info("---End of GLSL source---");
+                    } else {
+                        LOG.info("Couldn't convert shader to GLSL for diagnostics.");
+                    }
+                }
+            }
             return shader;
         };
 
@@ -449,14 +483,6 @@ public:
                 material->pipeline->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ViewConstants")) {
             var->Set(m_constants_view);
         }
-        if (auto* var =
-                material->pipeline->GetStaticVariableByName(SHADER_TYPE_PIXEL, "LinearSampler")) {
-            var->Set(m_linear_sampler);
-        }
-        if (auto* var = material->pipeline->GetStaticVariableByName(SHADER_TYPE_PIXEL,
-                                                                    "LinearClampSampler")) {
-            var->Set(m_linear_clamp_sampler);
-        }
         material->pipeline->CreateShaderResourceBinding(&material->shader_resource_binding, true);
 
         const auto& property_size = [](const MaterialDesc::PropertyValue& value) -> Uint32 {
@@ -530,7 +556,25 @@ public:
 
         auto texture = std::make_unique<Texture>(Size{texture_desc.width(), texture_desc.height()});
         m_device->CreateTexture(desc, &texdata, &texture->texture);
+        if (!texture->texture) {
+            throw khepri::renderer::Error("Failed to create texture");
+        }
         texture->shader_view = texture->texture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+        // Create the associated sampler. We use combined samplers to simplify OpenGL development.
+        SamplerDesc sampler_desc;
+        sampler_desc.MinFilter = FILTER_TYPE_LINEAR;
+        sampler_desc.MagFilter = FILTER_TYPE_LINEAR;
+        sampler_desc.MipFilter = FILTER_TYPE_LINEAR;
+        sampler_desc.AddressU  = TEXTURE_ADDRESS_WRAP;
+        sampler_desc.AddressV  = TEXTURE_ADDRESS_WRAP;
+        Diligent::RefCntAutoPtr<Diligent::ISampler> sampler;
+        m_device->CreateSampler(sampler_desc, &sampler);
+        if (!sampler) {
+            throw khepri::renderer::Error("Failed to create texture sampler");
+        }
+        texture->shader_view->SetSampler(sampler);
+
         return texture;
     }
 
@@ -778,8 +822,6 @@ private:
         const std::unordered_map<std::string, SHADER_RESOURCE_TYPE> predefined_variables{
             {"InstanceConstants", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
             {"ViewConstants", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
-            {"LinearSampler", SHADER_RESOURCE_TYPE_SAMPLER},
-            {"LinearClampSampler", SHADER_RESOURCE_TYPE_SAMPLER},
             {"Material", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
         };
 
@@ -791,6 +833,10 @@ private:
             for (Uint32 i = 0; i < count; ++i) {
                 ShaderResourceDesc desc;
                 shader->GetResourceDesc(i, desc);
+                if (desc.Type == SHADER_RESOURCE_TYPE_SAMPLER) {
+                    // We're using combined samplers, so we don't need to track these
+                    continue;
+                }
 
                 const auto it = predefined_variables.find(desc.Name);
                 if (it == predefined_variables.end()) {
@@ -845,13 +891,12 @@ private:
         return dynamic_variables;
     }
 
+    bool                                              m_using_shader_conversion{false};
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice>  m_device;
     Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_context;
     Diligent::RefCntAutoPtr<Diligent::ISwapChain>     m_swapchain;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_constants_instance;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_constants_view;
-    Diligent::RefCntAutoPtr<Diligent::ISampler>       m_linear_sampler;
-    Diligent::RefCntAutoPtr<Diligent::ISampler>       m_linear_clamp_sampler;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_sprite_vertex_buffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_sprite_index_buffer;
 };

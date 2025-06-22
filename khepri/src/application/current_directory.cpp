@@ -1,4 +1,4 @@
-#include <Khepri/application/current_directory.hpp>
+#include <khepri/application/current_directory.hpp>
 
 #if defined(_MSC_VER)
 #include <Windows.h>
