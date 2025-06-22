@@ -96,10 +96,12 @@ public:
      *
      * \param input the input string to tokenize
      * \param delimiters the delimiters to tokenize on (default = all whitespace characters)
+     * \param keep_empty if true, empty tokens are included in the result
      *
      * \note the input strings are not copied, the caller must ensure they remain valid.
      */
-    Tokenizer(std::string_view input, std::string_view delimiters = " \t\r\n\v\f");
+    Tokenizer(std::string_view input, std::string_view delimiters = " \t\r\n\v\f",
+              bool keep_empty = false);
 
     /**
      * Returns the next token from the input string, or std::none if there are no more tokens.
@@ -109,6 +111,7 @@ public:
 private:
     std::string_view            m_input;
     std::string_view            m_delimiters;
+    bool                        m_keep_empty;
     std::string_view::size_type m_next;
 };
 
@@ -117,8 +120,10 @@ private:
  *
  * @param str the string to split
  * @param delimiters the delimiters to split the string on
+ * @param keep_empty if true, empty substrings are included in the result
  */
-std::vector<std::string_view> split(std::string_view str, std::string_view delimiters);
+std::vector<std::string_view> split(std::string_view str, std::string_view delimiters,
+                                    bool keep_empty = false);
 
 template <typename ContainerT>
 std::string join(const ContainerT& container, std::string_view separator)

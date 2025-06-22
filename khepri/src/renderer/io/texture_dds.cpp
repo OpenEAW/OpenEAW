@@ -152,6 +152,9 @@ public:
 };
 
 // Handler for 32-bit RGBA formats
+//
+// \tparam Swizzle If true, the RGB pixel data is swizzled around (i.e. red and blue are flipped).
+template <bool Swizzle>
 class RGBA32PixelFormatHandler : public PixelFormatHandler
 {
 public:
@@ -167,11 +170,27 @@ public:
         subresource.depth_stride = subresource.stride * mip_height;
         return subresource;
     }
+
+    std::vector<std::uint8_t>
+    read_pixel_data(khepri::io::Stream&                       stream,
+                    gsl::span<const TextureDesc::Subresource> subresources) const override
+    {
+        auto data = PixelFormatHandler::read_pixel_data(stream, subresources);
+        if constexpr (Swizzle) {
+            for (std::size_t i = 0; i < data.size(); i += 4) {
+                std::swap(data[i + 0], data[i + 2]);
+            }
+        }
+        return data;
+    }
 };
 
 // Handler for 24-bit RGB formats.
 // Since 24-bits RGB formats are not supported by the renderer, such textures must be converted to
 // 32-bit RGBA formats.
+//
+// \tparam Swizzle If true, the RGB pixel data is swizzled around (i.e. red and blue are flipped).
+template <bool Swizzle>
 class RGB24PixelFormatHandler : public PixelFormatHandler
 {
 public:
@@ -205,9 +224,15 @@ public:
 
         std::vector<std::uint8_t> output_data(output_data_size);
         for (std::size_t i = 0, o = 0; i < input_data_size; i += 3, o += 4) {
-            output_data[o + 0] = input_data[i + 0];
-            output_data[o + 1] = input_data[i + 1];
-            output_data[o + 2] = input_data[i + 2];
+            if constexpr (Swizzle) {
+                output_data[o + 0] = input_data[i + 2];
+                output_data[o + 1] = input_data[i + 1];
+                output_data[o + 2] = input_data[i + 0];
+            } else {
+                output_data[o + 0] = input_data[i + 0];
+                output_data[o + 1] = input_data[i + 1];
+                output_data[o + 2] = input_data[i + 2];
+            }
             output_data[o + 3] = 255; // Set the alpha channel since the source didn't have it
         }
 
@@ -232,22 +257,30 @@ std::unique_ptr<PixelFormatHandler> pixel_format_handler(const DdsPixelFormat& d
         case 24: {
             if (ddpf.r_mask == RGBA_MASK_R && ddpf.g_mask == RGBA_MASK_G &&
                 ddpf.b_mask == RGBA_MASK_B && ddpf.a_mask == 0) {
-                return std::make_unique<RGB24PixelFormatHandler>(PixelFormat::r8g8b8a8_unorm_srgb);
+                return std::make_unique<RGB24PixelFormatHandler<false>>(
+                    PixelFormat::r8g8b8a8_unorm_srgb);
             }
             if (ddpf.r_mask == BGRA_MASK_R && ddpf.g_mask == BGRA_MASK_G &&
                 ddpf.b_mask == BGRA_MASK_B && ddpf.a_mask == 0) {
-                return std::make_unique<RGB24PixelFormatHandler>(PixelFormat::b8g8r8a8_unorm_srgb);
+                // b8g8r8a8_unorm_srgb, but swizzle it into r8g8b8a8_unorm_srgb, which is more
+                // widely supported
+                return std::make_unique<RGB24PixelFormatHandler<true>>(
+                    PixelFormat::r8g8b8a8_unorm_srgb);
             }
             break;
         }
         case 32: {
             if (ddpf.r_mask == RGBA_MASK_R && ddpf.g_mask == RGBA_MASK_G &&
                 ddpf.b_mask == RGBA_MASK_B && ddpf.a_mask == RGBA_MASK_A) {
-                return std::make_unique<RGBA32PixelFormatHandler>(PixelFormat::r8g8b8a8_unorm_srgb);
+                return std::make_unique<RGBA32PixelFormatHandler<false>>(
+                    PixelFormat::r8g8b8a8_unorm_srgb);
             }
             if (ddpf.r_mask == BGRA_MASK_R && ddpf.g_mask == BGRA_MASK_G &&
                 ddpf.b_mask == BGRA_MASK_B && ddpf.a_mask == BGRA_MASK_A) {
-                return std::make_unique<RGBA32PixelFormatHandler>(PixelFormat::b8g8r8a8_unorm_srgb);
+                // b8g8r8a8_unorm_srgb, but swizzle it into r8g8b8a8_unorm_srgb, which is more
+                // widely supported
+                return std::make_unique<RGBA32PixelFormatHandler<true>>(
+                    PixelFormat::r8g8b8a8_unorm_srgb);
             }
             break;
         }

@@ -174,7 +174,14 @@ int main(int argc, const char* argv[])
             khepri::renderer::Camera camera = create_camera(renderer.render_size());
             scene_renderer.render_scene(scene, camera);
 
-            renderer.present();
+            // Presenting the rendered content has two different approaches, depending on the
+            // rendering system: For OpenGL, the window needs to swap the front and back buffers.
+            // For other systems, the renderer handles the presentation.
+            if (window.use_swap_buffers()) {
+                window.swap_buffers();
+            } else {
+                renderer.present();
+            }
         }
 
         LOG.info("Shutting down");
