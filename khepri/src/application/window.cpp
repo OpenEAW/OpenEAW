@@ -3,8 +3,11 @@
 
 #ifdef _MSC_VER
 #define GLFW_EXPOSE_NATIVE_WIN32
-#else
+#elif __APPLE__
 #define GLFW_EXPOSE_NATIVE_COCOA
+#else
+#define GLFW_EXPOSE_NATIVE_X11
+#define GLFW_EXPOSE_NATIVE_GLX
 #endif
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
@@ -25,19 +28,38 @@ class Window::Impl
     static auto create_window(const std::string& title)
     {
         glfwInit();
+#if defined(_MSC_VER) || defined(__APPLE__)
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#else
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+        glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
+#endif
         return glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, title.c_str(), nullptr, nullptr);
     }
 
 public:
     Impl(const std::string& title) : m_window(create_window(title))
     {
+        // Make the window's context current on the current thread. This is required for renderers
+        // to pick up the current context. This does introduce the constraint that the rendering
+        // logic must run from the same thread that created the window.
+        glfwMakeContextCurrent(m_window);
+
         glfwSetWindowUserPointer(m_window, this);
         glfwSetFramebufferSizeCallback(m_window, framebuffer_size_changed);
         glfwSetCursorPosCallback(m_window, cursor_position_callback);
         glfwSetMouseButtonCallback(m_window, mouse_button_callback);
         glfwSetScrollCallback(m_window, mouse_scroll_callback);
-        LOG.info("Created window: {}", (void*)m_window);
+#ifdef _MSC_VER
+        LOG.info("Created window: {}; hWnd: {}", (void*)m_window,
+                 (void*)glfwGetWin32Window(m_window));
+#elif __APPLE__
+        LOG.info("Created window: {}; NSWindow: {}", (void*)m_window, glfwGetCocoaWindow(m_window);
+#else
+        m_use_swap_buffers = true;
+        LOG.info("Created window: {}; X11 display; {}, X11 window: {:#x}", (void*)m_window,
+                 static_cast<void*>(glfwGetX11Display()), glfwGetX11Window(m_window));
+#endif
     }
 
     Impl(const Impl&)            = delete;
@@ -56,8 +78,10 @@ public:
     {
 #ifdef _MSC_VER
         return glfwGetWin32Window(m_window);
-#else
+#elif __APPLE__
         return glfwGetCocoaWindow(m_window);
+#else
+        return std::tuple<void*, std::uint32_t>(glfwGetX11Display(), glfwGetX11Window(m_window));
 #endif
     }
 
@@ -72,6 +96,16 @@ public:
     bool should_close() const
     {
         return glfwWindowShouldClose(m_window) == GLFW_TRUE;
+    }
+
+    bool use_swap_buffers() const
+    {
+        return m_use_swap_buffers;
+    }
+
+    void swap_buffers() const
+    {
+        glfwSwapBuffers(m_window);
     }
 
     void add_size_listener(const SizeListener& listener)
@@ -164,6 +198,7 @@ private:
     std::vector<CursorPositionListener> m_cursor_position_listeners;
     std::vector<MouseButtonListener>    m_mouse_button_listeners;
     std::vector<MouseScrollListener>    m_mouse_scroll_listeners;
+    bool                                m_use_swap_buffers{false};
 
     khepri::Pointi m_cursor_pos{0, 0};
 };
@@ -185,6 +220,16 @@ Size Window::render_size() const
 bool Window::should_close() const
 {
     return m_impl->should_close();
+}
+
+bool Window::use_swap_buffers() const
+{
+    return m_impl->use_swap_buffers();
+}
+
+void Window::swap_buffers() const
+{
+    return m_impl->swap_buffers();
 }
 
 void Window::add_size_listener(const SizeListener& listener)

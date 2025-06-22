@@ -41,8 +41,11 @@ bool case_insensitive_equals(std::string_view s1, std::string_view s2)
                       [&](CharType c1, CharType c2) { return ct.tolower(c1) == ct.tolower(c2); });
 }
 
-Tokenizer::Tokenizer(std::string_view input, std::string_view delimiters)
-    : m_input(input), m_delimiters(delimiters), m_next(m_input.find_first_not_of(m_delimiters))
+Tokenizer::Tokenizer(std::string_view input, std::string_view delimiters, bool keep_empty)
+    : m_input(input)
+    , m_delimiters(delimiters)
+    , m_keep_empty(keep_empty)
+    , m_next(m_keep_empty ? 0 : m_input.find_first_not_of(m_delimiters))
 {
 }
 
@@ -56,15 +59,22 @@ std::optional<std::string_view> Tokenizer::next() noexcept
     const auto end   = m_input.find_first_of(m_delimiters, start);
     const auto count = ((end != std::string_view::npos) ? end : m_input.size()) - start;
 
-    m_next = m_input.find_first_not_of(m_delimiters, end);
+    if (!m_keep_empty) {
+        m_next = m_input.find_first_not_of(m_delimiters, end);
+    } else if (end != std::string_view::npos) {
+        m_next = end + 1;
+    } else {
+        m_next = std::string_view::npos;
+    }
     return m_input.substr(start, count);
 }
 
-std::vector<std::string_view> split(std::string_view str, std::string_view delimiters)
+std::vector<std::string_view> split(std::string_view str, std::string_view delimiters,
+                                    bool keep_empty)
 {
     std::vector<std::string_view> result;
 
-    Tokenizer tokenizer(str, delimiters);
+    Tokenizer tokenizer(str, delimiters, keep_empty);
     while (auto token = tokenizer.next()) {
         result.push_back(*token);
     }

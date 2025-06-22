@@ -23,12 +23,14 @@ jobs:
   build:
     needs: [formatting-check]
 
-    # Use Windows 2022 specifically to get VS2022, which allows downloading pre-built binaries from conan center, rather than rebuilding them in CI.
-    runs-on: windows-2022
     strategy:
       matrix:
         build_type: ['Debug','Release']
+        # Use Windows 2022 specifically to get VS2022, which allows downloading pre-built binaries from conan center, rather than rebuilding them in CI.
+        # Use Ubuntu 22.04 to get GCC 11, which allows downloading pre-built binaries from conan center, rather than rebuilding them in CI.
+        os: ['windows-2022', 'ubuntu-22.04']
 
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
 
@@ -43,4 +45,4 @@ jobs:
         run: conan profile detect
 
       - name: Build project in ${{ matrix.build_type }} mode
-        run: conan create . -s compiler.cppstd=17 -s "&:build_type=${{ matrix.build_type }}" -s build_type=Release --build=missing --lockfile conan.lock
+        run: conan create . -s compiler.cppstd=17 -s "&:build_type=${{ matrix.build_type }}" -s build_type=Release --build=missing --lockfile conan.lock -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True

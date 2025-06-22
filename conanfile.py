@@ -37,7 +37,7 @@ class OpenEawConan(ConanFile):
     def requirements(self):
         self.requires("assimp/[>=5.0 <6.0]")
         self.requires("cxxopts/3.0.0")
-        self.requires("diligent-core/2.5.1")
+        self.requires("diligent-core/api.252009")
         self.requires("fmt/10.1.0")
         self.requires("freetype/[>=2.0 <3.0]")
         self.requires("glfw/[>=3.0 <4.0]")

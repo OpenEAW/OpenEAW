@@ -18,11 +18,10 @@ cbuffer Material
 };
 
 Texture2D BaseTexture;
+SamplerState BaseTextureSampler;
+
 Texture2D NormalTexture;
-
-////////////////////////////////////////////////
-
-SamplerState LinearSampler;
+SamplerState NormalTextureSampler;
 
 ////////////////////////////////////////////////
 
@@ -88,7 +87,7 @@ VS_OUTPUT vs_main(VS_INPUT_MESH In)
 {
 	float3 Light0_Dir = normalize(float3(-1, 0, 0));
 
-    VS_OUTPUT Out = (VS_OUTPUT)0;
+    VS_OUTPUT Out;
    	Out.Pos = mul(float4(In.Pos, 1), mul(World, ViewProj));
 
 	// Store the light direction in tangent space
@@ -105,13 +104,13 @@ float4 ps_main(VS_OUTPUT In) : SV_Target
 	float3 Light_Ambient = {0.1, 0.1, 0.1};
 
 	// Normal vector and light direction (both in tangent space)
-	float3 normal = decode_vector(NormalTexture.Sample(LinearSampler, In.UV)).rgb;
+	float3 normal = decode_vector(NormalTexture.Sample(NormalTextureSampler, In.UV)).rgb;
 	float3 light_dir = decode_vector(In.LightDir).rgb;
 
 	float3 diffuse = Diffuse * Light0_Color * saturate(dot(normal, -light_dir));
 
 	// Texel alpha contains colorization channel
-	float4 texel = BaseTexture.Sample(LinearSampler, In.UV);
+	float4 texel = BaseTexture.Sample(BaseTextureSampler, In.UV);
 	float3 tex_color = lerp(texel.rgb, Colorization * texel.rgb, texel.a);
 
 	return float4(tex_color * (Light_Ambient + diffuse), 1);
