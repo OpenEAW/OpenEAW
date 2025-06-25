@@ -22,6 +22,7 @@
 #include <Sampler.h>
 #include <SwapChain.h>
 #include <Texture.h>
+#include <iterator>
 #include <unordered_map>
 #include <utility>
 
@@ -143,6 +144,16 @@ void diligent_debug_message_callback(DEBUG_MESSAGE_SEVERITY severity, const char
     }
 }
 
+constexpr bool using_shader_conversion()
+{
+#ifdef _MSC_VER
+    return false;
+#else
+    // OpenGL uses shader conversion
+    return true;
+#endif
+}
+
 } // namespace
 
 class Renderer::Impl
@@ -186,7 +197,7 @@ class Renderer::Impl
     };
 
 public:
-    Impl(std::any window)
+    Impl(const std::any& window)
     {
         SetDebugMessageCallback(diligent_debug_message_callback);
         const auto native_window = get_native_window(window);
@@ -204,6 +215,7 @@ public:
         FullScreenModeDesc fullscreenmode_desc;
         factory->CreateSwapChainD3D11(m_device, m_context, swapchain_desc, fullscreenmode_desc,
                                       native_window, &m_swapchain);
+        static_assert(!using_shader_conversion());
 #else
         auto* factory = GetEngineFactoryOpenGL();
 
@@ -215,12 +227,10 @@ public:
         engine_ci.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
 
         engine_ci.Window = native_window;
-        SwapChainDesc swapchain_desc;
+        const SwapChainDesc swapchain_desc;
         factory->CreateDeviceAndSwapChainGL(engine_ci, &m_device, &m_context, swapchain_desc,
                                             &m_swapchain);
-
-        // OpenGL uses shader conversion
-        m_using_shader_conversion = true;
+        static_assert(using_shader_conversion());
 #endif
         if (m_device == nullptr || m_context == nullptr || m_swapchain == nullptr) {
             throw khepri::renderer::Error("Failed to create renderer");
@@ -249,8 +259,8 @@ public:
 
         // Create dynamic buffers for sprite rendering
         {
-            BufferData buffer_data{};
-            BufferDesc desc;
+            const BufferData buffer_data{};
+            BufferDesc       desc;
             desc.Size           = static_cast<Uint32>(SPRITE_BUFFER_COUNT * VERTICES_PER_SPRITE *
                                                       sizeof(SpriteVertex));
             desc.BindFlags      = BIND_VERTEX_BUFFER;
@@ -275,9 +285,9 @@ public:
                 indices[triangle1 + 2] = i + 2;
             }
 
-            BufferData bufdata{indices.data(),
-                               static_cast<Uint32>(indices.size() * sizeof(std::uint16_t))};
-            BufferDesc desc;
+            const BufferData bufdata{indices.data(),
+                                     static_cast<Uint32>(indices.size() * sizeof(std::uint16_t))};
+            BufferDesc       desc;
             desc.Size      = bufdata.DataSize;
             desc.BindFlags = BIND_INDEX_BUFFER;
             desc.Usage     = USAGE_IMMUTABLE;
@@ -297,86 +307,27 @@ public:
         m_swapchain->Resize(size.width, size.height);
     }
 
-    Size render_size() const noexcept
+    [[nodiscard]] Size render_size() const noexcept
     {
         const auto& desc = m_swapchain->GetDesc();
         return {desc.Width, desc.Height};
     }
 
-    std::unique_ptr<Shader> create_shader(const std::filesystem::path& path,
-                                          const ShaderLoader&          loader)
+    [[nodiscard]] std::unique_ptr<Shader> create_shader(const std::filesystem::path& path,
+                                                        const ShaderLoader&          loader)
     {
         RefCntAutoPtr<ShaderStreamFactory> factory(MakeNewRCObj<ShaderStreamFactory>()(loader));
 
-        const auto& create_shader_object = [&, this](const std::string& path,
-                                                     SHADER_TYPE        shader_type,
-                                                     const std::string& entrypoint) {
-            RefCntAutoPtr<IDataBlob>                  compiler_output;
-            RefCntAutoPtr<IHLSL2GLSLConversionStream> conversion_stream;
-
-            ShaderCreateInfo ci;
-            ci.Desc.Name                  = path.c_str();
-            ci.Desc.ShaderType            = shader_type;
-            ci.FilePath                   = path.c_str();
-            ci.pShaderSourceStreamFactory = factory;
-            ci.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-            ci.EntryPoint                 = entrypoint.c_str();
-            ci.ppCompilerOutput           = &compiler_output;
-            ci.ppConversionStream         = &conversion_stream;
-
-            // Note: to support OpenGL, we need to use combined texture samplers.
-            // This means HLSL shaders need to define a "Foo" texture and associated "FooSampler"
-            // sampler, which are treated as one by Diligent. This does increase the number of
-            // samplers.
-            ci.Desc.UseCombinedTextureSamplers = true;
-            ci.Desc.CombinedSamplerSuffix      = "Sampler";
-
-            RefCntAutoPtr<IShader> shader;
-            m_device->CreateShader(ci, &shader);
-            if (shader == nullptr) {
-                LOG.error("Failed to create shader from file: {}, error: {}", path,
-                          compiler_output
-                              ? static_cast<const char*>(compiler_output->GetConstDataPtr())
-                              : "<unknown>");
-                if (m_using_shader_conversion) {
-                    if (!conversion_stream) {
-                        // If we didn't get a conversion stream, try to create one ourselves
-                        RefCntAutoPtr<IHLSL2GLSLConverter> converter;
-                        Diligent::CreateHLSL2GLSLConverter(&converter);
-                        converter->CreateStream(path.c_str(), factory, nullptr, 0,
-                                                &conversion_stream);
-                    }
-
-                    RefCntAutoPtr<IDataBlob> glsl_source;
-                    if (conversion_stream) {
-                        conversion_stream->Convert(entrypoint.c_str(), shader_type, true, "Sampler",
-                                                   false, &glsl_source);
-                    }
-
-                    if (glsl_source) {
-                        const char* glsl = static_cast<const char*>(glsl_source->GetConstDataPtr());
-                        LOG.info("Converted GLSL source:");
-                        int line_number = 1;
-                        for (const auto& line : khepri::split(glsl, "\n", true)) {
-                            LOG.info("{}: {}", line_number++, line);
-                        }
-                        LOG.info("---End of GLSL source---");
-                    } else {
-                        LOG.info("Couldn't convert shader to GLSL for diagnostics.");
-                    }
-                }
-            }
-            return shader;
-        };
-
-        auto shader           = std::make_unique<Shader>();
-        shader->vertex_shader = create_shader_object(path.string(), SHADER_TYPE_VERTEX, "vs_main");
+        auto shader = std::make_unique<Shader>();
+        shader->vertex_shader =
+            create_shader_object(path.string(), *factory, SHADER_TYPE_VERTEX, "vs_main");
         if (!shader->vertex_shader) {
             throw khepri::renderer::Error("Failed to create vertex shader from file: " +
                                           path.string());
         }
 
-        shader->pixel_shader = create_shader_object(path.string(), SHADER_TYPE_PIXEL, "ps_main");
+        shader->pixel_shader =
+            create_shader_object(path.string(), *factory, SHADER_TYPE_PIXEL, "ps_main");
         if (!shader->pixel_shader) {
             throw khepri::renderer::Error("Failed to create pixel shader from file: " +
                                           path.string());
@@ -384,7 +335,8 @@ public:
         return shader;
     }
 
-    std::unique_ptr<Material> create_material(const khepri::renderer::MaterialDesc& material_desc)
+    [[nodiscard]] std::unique_ptr<Material>
+    create_material(const khepri::renderer::MaterialDesc& material_desc)
     {
         auto* const shader = dynamic_cast<Shader*>(material_desc.shader);
         if (shader == nullptr) {
@@ -516,7 +468,7 @@ public:
         return material;
     }
 
-    std::unique_ptr<Texture> create_texture(const TextureDesc& texture_desc)
+    [[nodiscard]] std::unique_ptr<Texture> create_texture(const TextureDesc& texture_desc)
     {
         Diligent::TextureDesc desc;
         desc.Type  = to_resource_dimension(texture_desc.dimension(), texture_desc.array_size() > 0);
@@ -578,15 +530,16 @@ public:
         return texture;
     }
 
-    std::unique_ptr<Mesh> create_mesh(const MeshDesc& mesh_desc)
+    [[nodiscard]] std::unique_ptr<Mesh> create_mesh(const MeshDesc& mesh_desc)
     {
         auto mesh         = std::make_unique<Mesh>();
         mesh->index_count = static_cast<Mesh::Index>(mesh_desc.indices.size());
 
         {
             using Vertex = khepri::renderer::MeshDesc::Vertex;
-            BufferData bufdata{mesh_desc.vertices.data(),
-                               static_cast<Uint32>(mesh_desc.vertices.size() * sizeof(Vertex))};
+            const BufferData bufdata{
+                mesh_desc.vertices.data(),
+                static_cast<Uint32>(mesh_desc.vertices.size() * sizeof(Vertex))};
             BufferDesc desc;
             desc.Size      = bufdata.DataSize;
             desc.BindFlags = BIND_VERTEX_BUFFER;
@@ -595,7 +548,7 @@ public:
         }
 
         {
-            BufferData bufdata{
+            const BufferData bufdata{
                 mesh_desc.indices.data(),
                 static_cast<Uint32>(mesh_desc.indices.size() * sizeof(MeshDesc::Index))};
             BufferDesc desc;
@@ -764,6 +717,77 @@ private:
 
     using SpriteVertex = MeshDesc::Vertex;
 
+    RefCntAutoPtr<IShader> create_shader_object(const std::string&   path,
+                                                ShaderStreamFactory& factory,
+                                                SHADER_TYPE          shader_type,
+                                                const std::string&   entrypoint)
+    {
+        RefCntAutoPtr<IDataBlob>                  compiler_output;
+        RefCntAutoPtr<IHLSL2GLSLConversionStream> conversion_stream;
+
+        ShaderCreateInfo ci;
+        ci.Desc.Name                  = path.c_str();
+        ci.Desc.ShaderType            = shader_type;
+        ci.FilePath                   = path.c_str();
+        ci.pShaderSourceStreamFactory = &factory;
+        ci.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+        ci.EntryPoint                 = entrypoint.c_str();
+        ci.ppCompilerOutput           = &compiler_output;
+        ci.ppConversionStream         = &conversion_stream;
+
+        // Note: to support OpenGL, we need to use combined texture samplers.
+        // This means HLSL shaders need to define a "Foo" texture and associated "FooSampler"
+        // sampler, which are treated as one by Diligent. This does increase the number of
+        // samplers.
+        ci.Desc.UseCombinedTextureSamplers = true;
+        ci.Desc.CombinedSamplerSuffix      = "Sampler";
+
+        RefCntAutoPtr<IShader> shader;
+        m_device->CreateShader(ci, &shader);
+        if (shader == nullptr) {
+            LOG.error("Failed to create shader from file: {}, error: {}", path,
+                      compiler_output != nullptr
+                          ? static_cast<const char*>(compiler_output->GetConstDataPtr())
+                          : "<unknown>");
+            if constexpr (using_shader_conversion()) {
+                print_converted_glsl_source(std::move(conversion_stream), path, factory,
+                                            shader_type, entrypoint);
+            }
+        }
+        return shader;
+    }
+
+    static void
+    print_converted_glsl_source(RefCntAutoPtr<IHLSL2GLSLConversionStream> conversion_stream,
+                                const std::string& path, ShaderStreamFactory& factory,
+                                SHADER_TYPE shader_type, const std::string& entrypoint)
+    {
+        if (conversion_stream == nullptr) {
+            // If we didn't get a conversion stream, try to create one ourselves
+            RefCntAutoPtr<IHLSL2GLSLConverter> converter;
+            Diligent::CreateHLSL2GLSLConverter(&converter);
+            converter->CreateStream(path.c_str(), &factory, nullptr, 0, &conversion_stream);
+        }
+
+        RefCntAutoPtr<IDataBlob> glsl_source;
+        if (conversion_stream != nullptr) {
+            conversion_stream->Convert(entrypoint.c_str(), shader_type, true, "Sampler", false,
+                                       &glsl_source);
+        }
+
+        if (glsl_source != nullptr) {
+            const char* glsl = static_cast<const char*>(glsl_source->GetConstDataPtr());
+            LOG.info("Converted GLSL source:");
+            int line_number = 1;
+            for (const auto& line : khepri::split(glsl, "\n", true)) {
+                LOG.info("{}: {}", line_number++, line);
+            }
+            LOG.info("---End of GLSL source---");
+        } else {
+            LOG.info("Couldn't convert shader to GLSL for diagnostics.");
+        }
+    }
+
     void apply_material_params(Material&                                          material,
                                gsl::span<const khepri::renderer::Material::Param> params)
     {
@@ -797,13 +821,13 @@ private:
                                   },
                                   [&](const auto& value) {
                                       if (map_helper) {
-                                          // NOLINTNEXTLINE - pointer arithmetic
+                                          // NOLINTBEGIN - pointer arithmetic and reinterpret_cast
                                           auto* param_data =
                                               static_cast<std::uint8_t*>(*map_helper) +
                                               param.buffer_offset;
-                                          // NOLINTNEXTLINE - reinterpret_cast
                                           *reinterpret_cast<std::decay_t<decltype(value)>*>(
                                               param_data) = value;
+                                          // NOLINTEND
                                       }
                                   }},
                        value);
@@ -829,7 +853,7 @@ private:
         // properties
         std::unordered_map<std::string, SHADER_RESOURCE_TYPE> shader_variables;
         for (const auto& shader : {shader.vertex_shader, shader.pixel_shader}) {
-            Uint32 count = shader->GetResourceCount();
+            const Uint32 count = shader->GetResourceCount();
             for (Uint32 i = 0; i < count; ++i) {
                 ShaderResourceDesc desc;
                 shader->GetResourceDesc(i, desc);
@@ -901,9 +925,9 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_sprite_index_buffer;
 };
 
-Renderer::Renderer(std::any window) : m_impl(std::make_unique<Impl>(std::move(window))) {}
+Renderer::Renderer(const std::any& window) : m_impl(std::make_unique<Impl>(window)) {}
 
-Renderer::~Renderer() {}
+Renderer::~Renderer() = default;
 
 void Renderer::render_size(const Size& size)
 {

@@ -45,7 +45,7 @@ inline unsigned int bitcount(std::uint64_t value)
 }
 
 /// Returns the first power of two equal to or greater than the value
-inline constexpr std::uint32_t ceil_power_of_two(std::uint32_t value)
+constexpr std::uint32_t ceil_power_of_two(std::uint32_t value)
 {
     // From Bit Twiddling Hacks:
     // "It works by copying the highest set bit to all of the lower bits, and then adding one,

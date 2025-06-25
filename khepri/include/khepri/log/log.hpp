@@ -15,7 +15,7 @@ namespace khepri::log {
 // messing up the log timestamps.
 using Clock = std::chrono::steady_clock;
 
-enum class Severity
+enum class Severity : std::uint8_t
 {
     debug,
     info,

@@ -1,5 +1,6 @@
 #include <khepri/io/exceptions.hpp>
 #include <khepri/io/file.hpp>
+#include <khepri/io/stream.hpp>
 
 #include <cassert>
 #include <cerrno>
@@ -44,7 +45,7 @@ long long File::seek(long long offset, SeekOrigin origin)
 
 File::File(const Path& path, OpenMode mode) : m_mode(mode)
 {
-    const char* modestr = "";
+    const char* modestr = nullptr;
     switch (mode) {
     default:
     case OpenMode::read:

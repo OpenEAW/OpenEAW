@@ -20,7 +20,7 @@ ChunkReader::ChunkReader(khepri::io::Stream& stream) : m_stream(stream)
 
 bool ChunkReader::has_chunk() const noexcept
 {
-    return !!m_current;
+    return m_current.has_value();
 }
 
 ChunkId ChunkReader::id() const
@@ -100,11 +100,11 @@ void ChunkReader::read_next()
         throw khepri::io::InvalidFormatError();
     }
 
-    auto id   = m_stream.read_uint32();
-    auto size = m_stream.read_uint32();
-    bool data = ((size & 0x80000000u) == 0);
+    auto       id   = m_stream.read_uint32();
+    auto       size = m_stream.read_uint32();
+    const bool data = ((size & 0x80000000U) == 0);
     pos += 8;
-    size = (size & 0x7fffffffu);
+    size = (size & 0x7fffffffU);
 
     if (pos + size > m_parents.top().end) {
         // The chunk itself doesn't fit
@@ -136,7 +136,7 @@ gsl::span<const std::uint8_t> MinichunkReader::read_data() const
 
 bool MinichunkReader::has_chunk() const noexcept
 {
-    return !!m_current;
+    return m_current.has_value();
 }
 
 void MinichunkReader::next()

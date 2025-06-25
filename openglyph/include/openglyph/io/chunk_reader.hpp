@@ -27,18 +27,24 @@ public:
      * \note The caller must ensure that @a stream is kept alive while this object is alive.
      */
     explicit ChunkReader(khepri::io::Stream& stream);
+    ~ChunkReader() = default;
+
+    ChunkReader(const ChunkReader&)                = delete;
+    ChunkReader(ChunkReader&&) noexcept            = delete;
+    ChunkReader& operator=(const ChunkReader&)     = delete;
+    ChunkReader& operator=(ChunkReader&&) noexcept = delete;
 
     /**
      * Returns the ID of the current chunk
      * \throws khepri::io::error if #has_chunks() is false
      */
-    ChunkId id() const;
+    [[nodiscard]] ChunkId id() const;
 
     /**
      * Does the current chunk contain data or chunks?
      * \throws khepri::io::error if #has_chunks() is false
      */
-    bool has_data() const;
+    [[nodiscard]] bool has_data() const;
 
     /**
      * Reads the current chunk's data.
@@ -51,7 +57,7 @@ public:
     /**
      * Has the end of the current level's chunks been reached?
      */
-    bool has_chunk() const noexcept;
+    [[nodiscard]] bool has_chunk() const noexcept;
 
     /**
      * Advances the reader to the next chunk.
@@ -109,7 +115,7 @@ public:
      * Returns the ID of the current mini-chunk
      * \throws khepri::io::error if #has_chunks() is true
      */
-    ChunkId id() const;
+    [[nodiscard]] ChunkId id() const;
 
     /**
      * Reads the current mini-chunk's data.
@@ -120,7 +126,7 @@ public:
     /**
      * Has the end of the mini-chunks been reached?
      */
-    bool has_chunk() const noexcept;
+    [[nodiscard]] bool has_chunk() const noexcept;
 
     /**
      * Advances the reader to the next mini-chunk.

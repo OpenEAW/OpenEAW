@@ -65,7 +65,7 @@ TEST(InterpolatorTest, Interpolator_SampledOutOfBounds_ClampsInput)
 
 TEST(InterpolatorTest, StepInterpolator_InterpolatesInSteps)
 {
-    StepInterpolator interpolator({{0, 5}, {1.5, 3}, {3, 10}});
+    const StepInterpolator interpolator({{0, 5}, {1.5, 3}, {3, 10}});
 
     // It must go through the points
     EXPECT_EQ(interpolator.interpolate(0), 5);
@@ -87,7 +87,7 @@ TEST(InterpolatorTest, LinearInterpolatorFromOnePoint_CreatesHorizontalLine)
 
 TEST(InterpolatorTest, LinearInterpolator_InterpolatesLinearly)
 {
-    LinearInterpolator interpolator({{0, 5}, {1.5, 3}, {3, 11}});
+    const LinearInterpolator interpolator({{0, 5}, {1.5, 3}, {3, 11}});
 
     // It must go through the points
     EXPECT_EQ(interpolator.interpolate(0), 5);
@@ -110,7 +110,7 @@ TEST(InterpolatorTest, CosineInterpolatorFromOnePoint_CreatesHorizontalLine)
 
 TEST(InterpolatorTest, CosineInterpolator_InterpolatesSmoothly)
 {
-    CosineInterpolator interpolator({{0, 5}, {1.5, 3}, {3, 11}});
+    const CosineInterpolator interpolator({{0, 5}, {1.5, 3}, {3, 11}});
 
     // It must go through the points
     EXPECT_EQ(interpolator.interpolate(0), 5);

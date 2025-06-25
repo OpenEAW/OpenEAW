@@ -44,7 +44,7 @@ public:
     /// Returns a copy of this ray, transformed by \a transform
     [[nodiscard]] Ray transform(const Matrix& transform) const noexcept
     {
-        return Ray(transform.transform_coord(m_start), normalize(m_direction * transform));
+        return {transform.transform_coord(m_start), normalize(m_direction * transform)};
     }
 
     /**
@@ -54,24 +54,24 @@ public:
      * Returns a negative number if there is no intersection or if the starting point is inside the
      * sphere.
      */
-    [[nodiscard]] float intersect_distance(const Sphere& sphere) const noexcept
+    [[nodiscard]] double intersect_distance(const Sphere& sphere) const noexcept
     {
         // vector from ray origin (O) to sphere center (C)
-        Vector3 OC = sphere.center() - m_start;
+        const Vector3 OC = sphere.center() - m_start;
 
         // Distance along ray of orthogonal projection (P) of sphere center (C)
-        float dist_P = dot(OC, m_direction);
+        const double dist_P = dot(OC, m_direction);
 
         // Sphere center must be in front of ray start, or no intersection
-        if (dist_P >= 0.0F) {
+        if (dist_P >= 0.0) {
             // Squared distance from sphere center (C) to ray (P)
-            float dist_to_ray_sq = OC.length_sq() - dist_P * dist_P;
+            const double dist_to_ray_sq = OC.length_sq() - dist_P * dist_P;
 
             // P must be inside of sphere, or no intersection
-            float radius_sq = sphere.radius_sq();
+            const double radius_sq = sphere.radius_sq();
             if (dist_to_ray_sq <= radius_sq) {
                 // Distance along ray of intersection with sphere
-                float d = dist_P - sqrt(radius_sq - dist_to_ray_sq);
+                const double d = dist_P - sqrt(radius_sq - dist_to_ray_sq);
 
                 // Intersection must be in front of ray, or no intersection
                 if (d >= 0.0) {

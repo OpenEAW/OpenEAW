@@ -5,6 +5,7 @@
 #include "vector3.hpp"
 
 #include <cassert>
+#include <cmath>
 
 namespace khepri {
 
@@ -41,21 +42,21 @@ public:
     /// Returns a copy of this plane, transformed by \a transform
     [[nodiscard]] Plane transform(const Matrix& transform) const noexcept
     {
-        return Plane(transform.transform_coord(m_position), normalize(m_normal * transform));
+        return {transform.transform_coord(m_position), normalize(m_normal * transform)};
     }
 
     //! Returns the orthogonal distance between the point and the plane,
     //! where positive is "above" the plane (same direction as normal vector),
     //! and negative is "below".
-    [[nodiscard]] float signed_distance(const Vector3& point) const noexcept
+    [[nodiscard]] double signed_distance(const Vector3& point) const noexcept
     {
         return dot(point - m_position, m_normal);
     }
 
     //! Returns the absolute, orthogonal distance between the point and the plane.
-    [[nodiscard]] float distance(const Vector3& point) const noexcept
+    [[nodiscard]] double distance(const Vector3& point) const noexcept
     {
-        return abs(signed_distance(point));
+        return std::abs(signed_distance(point));
     }
 
 private:

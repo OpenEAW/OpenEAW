@@ -5,23 +5,22 @@
 namespace openglyph {
 
 XmlParser::XmlParser(khepri::io::Stream& stream)
-    : m_size(static_cast<std::size_t>(stream.seek(0, khepri::io::SeekOrigin::end)) / sizeof(Char))
-    , m_data(std::make_unique<Char[]>(m_size + 1))
+    : m_data(static_cast<std::size_t>(stream.seek(0, khepri::io::SeekOrigin::end)) / sizeof(Char) +
+             1)
 {
-    auto* data = m_data.get();
     stream.seek(0, khepri::io::SeekOrigin::begin);
-    stream.read(data, m_size * sizeof(Char));
-    data[m_size] = '\0';
+    stream.read(m_data.data(), (m_data.size() - 1) * sizeof(Char));
+    m_data.back() = '\0';
     try {
         // This modifies and holds references to the input string.
         // parse_no_string_terminators saves some performance by not adding \0 by relying on a
         // passed size.
-        m_document.parse<rapidxml::parse_no_string_terminators>(data);
+        m_document.parse<rapidxml::parse_no_string_terminators>(m_data.data());
     } catch (const rapidxml::parse_error& e) {
-        std::size_t line  = 0;
-        auto        where = e.where<Char>();
-        if (where >= data && where <= data + m_size) {
-            line = std::count(data, where, '\n') + 1;
+        std::size_t       line  = 0;
+        const auto* const where = e.where<Char>();
+        if (where >= &m_data.front() && where <= &m_data.back()) {
+            line = std::count<const char*>(m_data.data(), where, '\n') + 1;
         }
         throw ParseError("XML parse error at line " + std::to_string(line) + ": " + e.what());
     }

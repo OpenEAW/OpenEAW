@@ -12,7 +12,7 @@ namespace khepri::renderer {
 /**
  * Dimensionality of a texture
  */
-enum class TextureDimension
+enum class TextureDimension : std::uint8_t
 {
     /**
      * One-dimensional texture.
@@ -42,7 +42,7 @@ enum class TextureDimension
 /**
  * The format of pixel data in a texture
  */
-enum class PixelFormat
+enum class PixelFormat : std::uint8_t
 {
     /**
      * Four-component unsigned-normalized-integer format with 8 bits for R, G, B and A. Color data

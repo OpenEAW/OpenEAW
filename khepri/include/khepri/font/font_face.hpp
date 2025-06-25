@@ -24,7 +24,12 @@ public:
      * Constructs the font face
      */
     FontFace(const FontFaceDesc& font_face_desc);
+    FontFace(const FontFace&) = default;
+    FontFace(FontFace&&)      = default;
     ~FontFace();
+
+    FontFace& operator=(const FontFace&) = default;
+    FontFace& operator=(FontFace&&)      = default;
 
     /**
      * Creates a font.

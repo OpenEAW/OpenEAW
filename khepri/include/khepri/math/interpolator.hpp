@@ -25,7 +25,7 @@ public:
      *
      * \note x is clamped to the input range for the interpolator.
      */
-    virtual double interpolate(double x) const noexcept = 0;
+    [[nodiscard]] virtual double interpolate(double x) const noexcept = 0;
 };
 
 /**
@@ -62,7 +62,7 @@ public:
     explicit StepInterpolator(gsl::span<const Point> points);
 
     /// \see Interpolator::interpolate
-    double interpolate(double x) const noexcept override;
+    [[nodiscard]] double interpolate(double x) const noexcept override;
 
 private:
     std::vector<Point> m_points;
@@ -102,7 +102,7 @@ public:
     explicit LinearInterpolator(gsl::span<const Point> points);
 
     /// \see Interpolator::interpolate
-    double interpolate(double x) const noexcept override;
+    [[nodiscard]] double interpolate(double x) const noexcept override;
 
 private:
     std::vector<Point> m_points;
@@ -144,7 +144,7 @@ public:
     explicit CosineInterpolator(gsl::span<const Point> points);
 
     /// \see Interpolator::interpolate
-    double interpolate(double x) const noexcept override;
+    [[nodiscard]] double interpolate(double x) const noexcept override;
 
 private:
     std::vector<Point> m_points;
@@ -186,7 +186,7 @@ public:
     explicit CubicInterpolator(gsl::span<const Point> points);
 
     /// \see Interpolator::interpolate
-    double interpolate(double x) const noexcept override;
+    [[nodiscard]] double interpolate(double x) const noexcept override;
 
 private:
     struct Segment
@@ -195,7 +195,7 @@ private:
         double          min_x;
     };
 
-    std::vector<Segment> create_segments(gsl::span<const Point> points);
+    static std::vector<Segment> create_segments(gsl::span<const Point> points);
 
     std::vector<Segment> m_segments;
 

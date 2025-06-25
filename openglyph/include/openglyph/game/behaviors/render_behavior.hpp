@@ -16,7 +16,7 @@ public:
 
     explicit RenderBehavior(const renderer::RenderModel& model) : m_model(model) {}
 
-    const auto& model() const noexcept
+    [[nodiscard]] const auto& model() const noexcept
     {
         return m_model;
     }

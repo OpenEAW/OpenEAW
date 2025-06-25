@@ -93,14 +93,14 @@ public:
 
     /// Returns a column of the matrix
     /// \throws std::out_of_range if \a col is not between 0 and 3, inclusive.
-    constexpr BasicVector4<ComponentType> col(std::size_t col) const noexcept
+    [[nodiscard]] constexpr BasicVector4<ComponentType> col(std::size_t col) const noexcept
     {
         return m_cols.at(col);
     }
 
     /// Returns a row of the matrix
     /// \throws std::out_of_range if \a row is not between 0 and 3, inclusive.
-    constexpr BasicVector4<ComponentType> row(std::size_t row) const noexcept
+    [[nodiscard]] constexpr BasicVector4<ComponentType> row(std::size_t row) const noexcept
     {
         return {m_cols[0][row], m_cols[1][row], m_cols[2][row], m_cols[3][row]};
     }
@@ -375,10 +375,11 @@ template <typename T>
 BasicMatrix<T> operator*(const BasicMatrix<T>& m1, const BasicMatrix<T>& m2) noexcept
 {
     BasicMatrix<T> m;
-    for (std::size_t i = 0; i < 4; ++i)
+    for (std::size_t i = 0; i < 4; ++i) {
         for (std::size_t j = 0; j < 4; ++j) {
             m(i, j) = dot(m1.row(i), m2.col(j));
         }
+    }
     return m;
 }
 

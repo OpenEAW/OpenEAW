@@ -2,6 +2,9 @@
 
 #include "stream.hpp"
 
+#include <cstddef>
+#include <cstdint>
+
 namespace khepri::io {
 
 /**
@@ -15,7 +18,7 @@ class ContainerStream final : public Stream
 {
 public:
     /// Mode to open files in
-    enum class OpenMode
+    enum class OpenMode : std::uint8_t
     {
         /// Open files in read-only mode
         read,

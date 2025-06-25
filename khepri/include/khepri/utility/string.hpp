@@ -52,7 +52,7 @@ public:
     /// Checks if the first string-like argument is lexicographically less-than the second
     /// string-like argument
     template <typename T, typename U>
-    bool operator()(T&& t, U&& u) const noexcept
+    bool operator()(const T& t, const U& u) const noexcept
     {
         // Do not allow T or U to be character strings or literals.
         // Character pointers do not have std::begin/std::end and character literals's length

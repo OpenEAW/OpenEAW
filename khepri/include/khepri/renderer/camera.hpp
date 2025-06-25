@@ -4,6 +4,7 @@
 #include <khepri/math/matrix.hpp>
 #include <khepri/math/vector3.hpp>
 
+#include <cstdint>
 #include <tuple>
 
 namespace khepri::renderer {
@@ -21,7 +22,7 @@ class Camera final
 {
 public:
     /// The type of camera
-    enum class Type
+    enum class Type : std::uint8_t
     {
         orthographic,
         perspective,
@@ -30,25 +31,25 @@ public:
     /// The camera properties
     struct Properties
     {
-        Type    type{};     ///< The type of the camera
-        Vector3 position{}; ///< The world-space position of the camera
-        Vector3 target{};   ///< The world-space vector of the target of the camera
-        Vector3 up{};       ///< The world-space vector corresponding to 'up' on the camera
-        double  fov{};      ///< Vertical field of view in radians (perspective cameras only)
-        double  width{};    ///< Width, in world units, of the camera (orthographic cameras only)
-        double  aspect{};   ///< Aspect ratio (Width / Height) of the render viewport
-        double  znear{};    ///< Distance, in camera-space units, of the near clip plane
-        double  zfar{};     ///< Distance, in camera-space units, of the far clip plane
+        Type    type{};   ///< The type of the camera
+        Vector3 position; ///< The world-space position of the camera
+        Vector3 target;   ///< The world-space vector of the target of the camera
+        Vector3 up;       ///< The world-space vector corresponding to 'up' on the camera
+        double  fov{};    ///< Vertical field of view in radians (perspective cameras only)
+        double  width{};  ///< Width, in world units, of the camera (orthographic cameras only)
+        double  aspect{}; ///< Aspect ratio (Width / Height) of the render viewport
+        double  znear{};  ///< Distance, in camera-space units, of the near clip plane
+        double  zfar{};   ///< Distance, in camera-space units, of the far clip plane
     };
 
     /// Collection of useful matrices derived from the camera properties
     struct Matrices
     {
-        Matrixf view{};          ///< World-to-Camera-space matrix
-        Matrixf view_inv{};      ///< inverse of m_view
-        Matrixf projection{};    ///< Camera-to-Screen-space matrix
-        Matrixf view_proj{};     ///< m_view * m_proj
-        Matrixf view_proj_inv{}; ///< inverse of m_view_proj
+        Matrixf view;          ///< World-to-Camera-space matrix
+        Matrixf view_inv;      ///< inverse of m_view
+        Matrixf projection;    ///< Camera-to-Screen-space matrix
+        Matrixf view_proj;     ///< m_view * m_proj
+        Matrixf view_proj_inv; ///< inverse of m_view_proj
     };
 
     /**

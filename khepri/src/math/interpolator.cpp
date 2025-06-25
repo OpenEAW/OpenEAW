@@ -25,7 +25,8 @@ void check_sorted(gsl::span<const Point> points)
 // Checks if two floating-point values are near enough to be considered equal
 bool is_near(double v1, double v2) noexcept
 {
-    return std::abs(v1 - v2) < 0.00000001;
+    static constexpr double MAX_DIFF = 0.00000001;
+    return std::abs(v1 - v2) < MAX_DIFF;
 }
 
 /// Returns the index of the last point that has an \a x member less than \a x.
@@ -35,18 +36,18 @@ std::size_t find_index(gsl::span<const Point> points, double x)
     assert(!points.empty());
     assert(x >= points.begin()->x && x <= points.rbegin()->x);
 
-    auto it = std::upper_bound(points.begin(), points.end(), x,
-                               [&](double value, auto& item) { return value < item.x; });
+    const auto* it = std::upper_bound(points.begin(), points.end(), x,
+                                      [&](double value, auto& item) { return value < item.x; });
     if (it == points.begin()) {
         // This shouldn't happen because x must be clamped to the points range, but perhaps
         // it's possible due to floating-point comparison weirdness. Anyway, we meant to
         // hit the next one.
-        ++it;
+        std::advance(it, 1);
     }
 
     // Return the index to the point on the _left_ of \a x such that
     // \a x is greater-than-or-equal to the returned point.
-    return std::distance(points.begin(), it - 1);
+    return std::distance(points.begin(), std::prev(it));
 }
 } // namespace
 

@@ -15,9 +15,9 @@ static constexpr double PI = 3.1415926535897932384626433832795;
  * extrapolation.
  */
 template <typename T>
-inline T lerp(const T& v0, const T& v1, float t) noexcept
+inline T lerp(const T& v0, const T& v1, double t) noexcept
 {
-    return T(v1 * t + v0 * (1.0f - t));
+    return T(v1 * t + v0 * (1.0 - t));
 }
 
 /**
@@ -36,7 +36,13 @@ inline T lerp(const T& v0, const T& v1, float t) noexcept
 template <typename T, typename U>
 constexpr T clamp(const T& val, const U& min, const U& max) noexcept
 {
-    return (val <= min) ? T{min} : (val >= max) ? T{max} : val;
+    if (val <= min) {
+        return T{min};
+    }
+    if (val >= max) {
+        return T{max};
+    }
+    return val;
 }
 
 /**
