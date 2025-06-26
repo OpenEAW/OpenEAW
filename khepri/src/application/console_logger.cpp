@@ -1,6 +1,8 @@
 #include <khepri/application/console_logger.hpp>
 #include <khepri/log/log.hpp>
 
+#include <fmt/format.h>
+
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
@@ -119,7 +121,7 @@ class ConsoleLogger::Impl final : private BaseLogger
 protected:
     void do_write(std::string_view data) noexcept override
     {
-        fwrite(data.data(), data.size(), 1, stderr);
+        static_cast<void>(fwrite(data.data(), data.size(), 1, stderr));
     }
 };
 #endif

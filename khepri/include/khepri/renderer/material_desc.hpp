@@ -31,7 +31,7 @@ namespace khepri::renderer {
 struct MaterialDesc
 {
     /// The type of face culling
-    enum class CullMode
+    enum class CullMode : std::uint8_t
     {
         none,
         back,
@@ -39,7 +39,7 @@ struct MaterialDesc
     };
 
     /// The type of alpha blending
-    enum class AlphaBlendMode
+    enum class AlphaBlendMode : std::uint8_t
     {
         /// Do not alpha blend.
         none,
@@ -52,7 +52,7 @@ struct MaterialDesc
     };
 
     /// Comparison function for depth or stencil buffer operations
-    enum class ComparisonFunc
+    enum class ComparisonFunc : std::uint8_t
     {
         never,
         less,

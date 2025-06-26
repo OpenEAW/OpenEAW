@@ -31,10 +31,11 @@ struct Rect
  * The rectangle's width and height are exclusive: the positions described by x + width or y +
  * height are considered to be outside of the rectangle.
  */
-inline constexpr bool inside(const Point& p, const Rect& r)
+constexpr bool inside(const Point& p, const Rect& r)
 {
-    return p.x >= r.x && p.y >= r.y && static_cast<unsigned long>(p.x - r.x) < r.width &&
-           static_cast<unsigned long>(p.y - r.y) < r.height;
+    return static_cast<long>(p.x) >= r.x && static_cast<long>(p.y) >= r.y &&
+           static_cast<unsigned long>(static_cast<long>(p.x) - r.x) < r.width &&
+           static_cast<unsigned long>(static_cast<long>(p.y) - r.y) < r.height;
 }
 
 } // namespace khepri

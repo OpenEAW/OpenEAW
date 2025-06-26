@@ -6,7 +6,7 @@
 
 namespace openglyph {
 namespace {
-enum class PropertyType
+enum class PropertyType : std::uint8_t
 {
     integer,
     floating,
@@ -166,7 +166,7 @@ std::vector<MaterialDesc> load_materials(khepri::io::Stream& xml_stream)
 {
     std::vector<MaterialDesc> materials;
 
-    openglyph::XmlParser xml(xml_stream);
+    const openglyph::XmlParser xml(xml_stream);
     if (const auto& root = xml.root()) {
         for (const auto& matnode : root->nodes()) {
             try {

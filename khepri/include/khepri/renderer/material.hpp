@@ -26,7 +26,7 @@ public:
         /// Name of the parameter
         std::string name;
         /// Value of the parameter
-        ParamValue value{};
+        ParamValue value;
     };
 
     Material()          = default;

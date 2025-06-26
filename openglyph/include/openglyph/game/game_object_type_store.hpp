@@ -18,7 +18,7 @@ namespace openglyph {
  *
  * The store owns the GameObjectType objects and returns non-owning references.
  */
-class GameObjectTypeStore
+class GameObjectTypeStore final
 {
 public:
     /**
@@ -32,7 +32,9 @@ public:
     GameObjectTypeStore(AssetLoader& asset_loader, std::string_view index_filename);
 
     GameObjectTypeStore(const GameObjectTypeStore&)            = delete;
+    GameObjectTypeStore(GameObjectTypeStore&&)                 = delete;
     GameObjectTypeStore& operator=(const GameObjectTypeStore&) = delete;
+    GameObjectTypeStore& operator=(GameObjectTypeStore&&)      = delete;
     ~GameObjectTypeStore();
 
     /**
@@ -42,7 +44,7 @@ public:
      *
      * @note the name lookup is case insensitive.
      */
-    const GameObjectType* get(std::string_view name) const noexcept
+    [[nodiscard]] const GameObjectType* get(std::string_view name) const noexcept
     {
         const auto it = m_game_object_types.find(name);
         return (it != m_game_object_types.end()) ? it->second : nullptr;
@@ -59,9 +61,9 @@ private:
     // Typically, there are thousands of GameObjectType instances, using a monotonic_buffer_resource
     // to store them significantly speeds up loading and unloading times.
     std::pmr::monotonic_buffer_resource m_memory_resource{std::pmr::get_default_resource()};
-    std::pmr::map<std::string_view, GameObjectType*, khepri::CaseInsensitiveLess>
+    std::pmr::map<std::string_view, const GameObjectType*, khepri::CaseInsensitiveLess>
         m_game_object_types{
-            std::pmr::polymorphic_allocator<std::pair<std::string_view, GameObjectType*>>(
+            std::pmr::polymorphic_allocator<std::pair<std::string_view, const GameObjectType*>>(
                 &m_memory_resource)};
 };
 

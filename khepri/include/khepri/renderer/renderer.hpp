@@ -36,7 +36,7 @@ class Renderer
 {
 public:
     /// Flags for #clear()
-    enum ClearFlags : int
+    enum ClearFlags : std::uint8_t
     {
         clear_rendertarget = 1,
         clear_depth        = 2,

@@ -5,6 +5,7 @@
 #include <khepri/math/vector2.hpp>
 
 #include <any>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
@@ -22,7 +23,7 @@ class Window final
 {
 public:
     /// Identifies a mouse button
-    enum class MouseButton
+    enum class MouseButton : std::uint8_t
     {
         /// The left mouse button
         left,
@@ -31,7 +32,7 @@ public:
     };
 
     /// Identifies a mouse button action
-    enum class MouseButtonAction
+    enum class MouseButtonAction : std::uint8_t
     {
         /// The mouse button was pressed
         pressed,
@@ -95,12 +96,12 @@ public:
      * In practice, this is true for OpenGL contexts. Otherwise, the renderer should be used to
      * present the rendered content.
      */
-    [[nodiscard]] bool use_swap_buffers() const;
+    [[nodiscard]] static bool use_swap_buffers();
 
     /**
      * Swaps the front and back buffers of the window.
      */
-    void swap_buffers() const;
+    void swap_buffers();
 
     /**
      * Adds a listener for "window size changed" events.

@@ -24,7 +24,7 @@ public:
 
     explicit RenderModel(std::vector<Mesh> meshes) : m_meshes(std::move(meshes)) {}
 
-    const auto& meshes() const noexcept
+    [[nodiscard]] const auto& meshes() const noexcept
     {
         return m_meshes;
     }

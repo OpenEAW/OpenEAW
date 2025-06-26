@@ -148,7 +148,7 @@ inline ColorRGBA operator*(const ColorRGBA& c1, const ColorRGBA& c2) noexcept
     return {c1.r * c2.r, c1.g * c2.g, c1.b * c2.b, c1.a * c2.a};
 }
 
-inline constexpr ColorRGB::ColorRGB(const ColorRGBA& c) noexcept : r(c.r), g(c.g), b(c.b) {}
+constexpr ColorRGB::ColorRGB(const ColorRGBA& c) noexcept : r(c.r), g(c.g), b(c.b) {}
 
 /**
  * \brief Clamps each component of a color between two extremes

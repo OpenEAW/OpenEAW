@@ -5,7 +5,7 @@
 
 namespace khepri::io {
 
-enum class SeekOrigin
+enum class SeekOrigin : std::uint8_t
 {
     begin,   ///< Seek from the beginning of the file.
     current, ///< Seek from the current position in the file.

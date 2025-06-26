@@ -12,8 +12,12 @@ namespace fs = std::filesystem;
 
 namespace openglyph {
 namespace {
-khepri::log::Logger LOG("assets");
-const fs::path      BASE_PATH = "Data";
+constexpr khepri::log::Logger LOG("assets");
+
+fs::path base_path()
+{
+    return "Data";
+}
 } // namespace
 
 AssetLoader::AssetLoader(std::vector<fs::path> data_paths) : m_data_paths(std::move(data_paths)) {}
@@ -21,31 +25,31 @@ AssetLoader::AssetLoader(std::vector<fs::path> data_paths) : m_data_paths(std::m
 std::unique_ptr<khepri::io::Stream> AssetLoader::open_config(std::string_view name)
 {
     const std::array<std::string_view, 1> extensions{"XML"};
-    return open_file(BASE_PATH / "XML", name, extensions);
+    return open_file(base_path() / "XML", name, extensions);
 }
 
 std::unique_ptr<khepri::io::Stream> AssetLoader::open_texture(std::string_view name)
 {
     const std::array<std::string_view, 2> extensions{"DDS", "TGA"};
-    return open_file(BASE_PATH / "Art" / "Textures", name, extensions);
+    return open_file(base_path() / "Art" / "Textures", name, extensions);
 }
 
 std::unique_ptr<khepri::io::Stream> AssetLoader::open_model(std::string_view name)
 {
     const std::array<std::string_view, 1> extensions{"ALO"};
-    return open_file(BASE_PATH / "Art" / "Models", name, extensions);
+    return open_file(base_path() / "Art" / "Models", name, extensions);
 }
 
 std::unique_ptr<khepri::io::Stream> AssetLoader::open_shader(std::string_view name)
 {
     const std::array<std::string_view, 1> extensions{"HLSL"};
-    return open_file(BASE_PATH / "Art" / "Shaders", name, extensions);
+    return open_file(base_path() / "Art" / "Shaders", name, extensions);
 }
 
 std::unique_ptr<khepri::io::Stream> AssetLoader::open_map(std::string_view name)
 {
     const std::array<std::string_view, 1> extensions{"TED"};
-    return open_file(BASE_PATH / "Art" / "Maps", name, extensions);
+    return open_file(base_path() / "Art" / "Maps", name, extensions);
 }
 
 std::unique_ptr<khepri::io::Stream>
@@ -60,11 +64,9 @@ AssetLoader::open_file(const fs::path& base_path, std::string_view name_,
 
     const auto& try_open_file = [this](const fs::path& path) -> std::unique_ptr<khepri::io::File> {
         for (const auto& data_path : m_data_paths) {
-            try {
-                auto file = std::make_unique<khepri::io::File>(data_path / path,
-                                                               khepri::io::OpenMode::read);
-                return file;
-            } catch (khepri::io::Error&) {
+            if (fs::exists(data_path / path)) {
+                return std::make_unique<khepri::io::File>(data_path / path,
+                                                          khepri::io::OpenMode::read);
             }
         }
         return {};

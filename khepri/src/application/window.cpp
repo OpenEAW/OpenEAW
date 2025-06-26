@@ -56,7 +56,6 @@ public:
 #elif __APPLE__
         LOG.info("Created window: {}; NSWindow: {}", (void*)m_window, glfwGetCocoaWindow(m_window);
 #else
-        m_use_swap_buffers = true;
         LOG.info("Created window: {}; X11 display; {}, X11 window: {:#x}", (void*)m_window,
                  static_cast<void*>(glfwGetX11Display()), glfwGetX11Window(m_window));
 #endif
@@ -74,7 +73,7 @@ public:
         glfwTerminate();
     }
 
-    std::any native_handle() const
+    [[nodiscard]] std::any native_handle() const
     {
 #ifdef _MSC_VER
         return glfwGetWin32Window(m_window);
@@ -85,7 +84,7 @@ public:
 #endif
     }
 
-    Size render_size() const
+    [[nodiscard]] Size render_size() const
     {
         int width  = 0;
         int height = 0;
@@ -93,17 +92,22 @@ public:
         return {static_cast<unsigned long>(width), static_cast<unsigned long>(height)};
     }
 
-    bool should_close() const
+    [[nodiscard]] bool should_close() const
     {
         return glfwWindowShouldClose(m_window) == GLFW_TRUE;
     }
 
-    bool use_swap_buffers() const
+    [[nodiscard]] static bool use_swap_buffers()
     {
-        return m_use_swap_buffers;
+#if defined(_MSC_VER) || __APPLE__
+        return false;
+#else
+        // For OpenGL, the window should be used to swap render buffers.
+        return true;
+#endif
     }
 
-    void swap_buffers() const
+    void swap_buffers()
     {
         glfwSwapBuffers(m_window);
     }
@@ -198,14 +202,13 @@ private:
     std::vector<CursorPositionListener> m_cursor_position_listeners;
     std::vector<MouseButtonListener>    m_mouse_button_listeners;
     std::vector<MouseScrollListener>    m_mouse_scroll_listeners;
-    bool                                m_use_swap_buffers{false};
 
     khepri::Pointi m_cursor_pos{0, 0};
 };
 
 Window::Window(const std::string& title) : m_impl(std::make_unique<Impl>(title)) {}
 
-Window::~Window() {}
+Window::~Window() = default;
 
 std::any Window::native_handle() const
 {
@@ -222,14 +225,14 @@ bool Window::should_close() const
     return m_impl->should_close();
 }
 
-bool Window::use_swap_buffers() const
+bool Window::use_swap_buffers()
 {
-    return m_impl->use_swap_buffers();
+    return Impl::use_swap_buffers();
 }
 
-void Window::swap_buffers() const
+void Window::swap_buffers()
 {
-    return m_impl->swap_buffers();
+    m_impl->swap_buffers();
 }
 
 void Window::add_size_listener(const SizeListener& listener)

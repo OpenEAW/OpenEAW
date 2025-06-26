@@ -30,12 +30,12 @@ public:
      */
     struct Vertex
     {
-        khepri::Vector3f  position; ///< Position (in object space)
-        khepri::Vector3f  normal;   ///< Normal vector (in tangent space)
-        khepri::Vector2f  uv[4];    ///< Texture coordinates (in tangent space)
-        khepri::Vector3f  tangent;  ///< Tangent vector (in tangent space)
-        khepri::Vector3f  binormal; ///< Binormal vector (in tangent space)
-        khepri::ColorRGBA color;    ///< Color (in linear color space)
+        khepri::Vector3f                position; ///< Position (in object space)
+        khepri::Vector3f                normal;   ///< Normal vector (in tangent space)
+        std::array<khepri::Vector2f, 4> uv;       ///< Texture coordinates (in tangent space)
+        khepri::Vector3f                tangent;  ///< Tangent vector (in tangent space)
+        khepri::Vector3f                binormal; ///< Binormal vector (in tangent space)
+        khepri::ColorRGBA               color;    ///< Color (in linear color space)
     };
 
     /**
@@ -89,7 +89,7 @@ public:
          * When rendering a model, a version of the mesh with lower detail can be rendered if the
          * model is further away from the camera, thus saving on data that needs to be processed.
          */
-        unsigned int lod;
+        unsigned int lod{0};
 
         /**
          * @brief The mesh's Alt (alternative) level.
@@ -98,7 +98,7 @@ public:
          * for instance, to store "broken" versions of a mesh when the object it belongs to is at
          * low health.
          */
-        unsigned int alt;
+        unsigned int alt{0};
 
         /**
          * @brief Initial visibility of the mesh
@@ -107,7 +107,7 @@ public:
          * default visibility of the mesh. Certain meshes are always invisible (like collision
          * boxes).
          */
-        bool visible;
+        bool visible{true};
 
         /**
          * @brief The materials of the mesh
