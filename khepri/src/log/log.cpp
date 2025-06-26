@@ -11,7 +11,7 @@ class SinkList
 public:
     void log(const RecordView& record) const
     {
-        std::lock_guard<std::mutex> lock(m_sink_mutex);
+        const std::lock_guard lock(m_sink_mutex);
         for (auto* sink : m_sinks) {
             sink->write(record);
         }
@@ -19,13 +19,13 @@ public:
 
     void add_sink(Sink* sink)
     {
-        std::lock_guard<std::mutex> lock(m_sink_mutex);
+        const std::lock_guard lock(m_sink_mutex);
         m_sinks.insert(sink);
     }
 
     void remove_sink(Sink* sink)
     {
-        std::lock_guard<std::mutex> lock(m_sink_mutex);
+        const std::lock_guard lock(m_sink_mutex);
         m_sinks.erase(sink);
     }
 

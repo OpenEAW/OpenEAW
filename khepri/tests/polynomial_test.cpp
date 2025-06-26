@@ -11,7 +11,7 @@ using khepri::QuadraticPolynomial;
 
 TEST(PolynomialTest, LinearPolynomial)
 {
-    LinearPolynomial p{1, 2};
+    const LinearPolynomial p{1, 2};
     EXPECT_EQ(p.sample(0), 1);
     EXPECT_EQ(p.sample(1), 3);
     EXPECT_EQ(p.sample(10), 21);
@@ -29,7 +29,7 @@ TEST(PolynomialTest, LinearPolynomial)
 
 TEST(PolynomialTest, QuadraticPolynomial)
 {
-    QuadraticPolynomial p{1, 2, 3};
+    const QuadraticPolynomial p{1, 2, 3};
     EXPECT_EQ(p.sample(0), 1);
     EXPECT_EQ(p.sample(1), 6);
     EXPECT_EQ(p.sample(10), 321);
@@ -52,7 +52,7 @@ TEST(PolynomialTest, QuadraticPolynomial)
 
 TEST(PolynomialTest, CubicPolynomial)
 {
-    CubicPolynomial p{1, 2, 3, 4};
+    const CubicPolynomial p{1, 2, 3, 4};
     EXPECT_EQ(p.sample(0), 1);
     EXPECT_EQ(p.sample(1), 10);
     EXPECT_EQ(p.sample(10), 4321);

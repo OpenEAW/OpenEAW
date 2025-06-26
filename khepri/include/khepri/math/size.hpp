@@ -14,12 +14,12 @@ struct Size
     unsigned long height;
 };
 
-inline constexpr bool operator==(const Size& s1, const Size& s2) noexcept
+constexpr bool operator==(const Size& s1, const Size& s2) noexcept
 {
     return s1.width == s2.width && s1.height == s2.height;
 }
 
-inline constexpr bool operator!=(const Size& s1, const Size& s2) noexcept
+constexpr bool operator!=(const Size& s1, const Size& s2) noexcept
 {
     return !(s1 == s2);
 }

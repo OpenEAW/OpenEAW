@@ -1,19 +1,20 @@
+#include <openglyph/parser/parsers.hpp>
+
 #include <cassert>
 #include <string_view>
 
 namespace openglyph::detail {
 
-bool split(std::string_view str, const char* separators, std::string_view* result,
-           std::size_t count) noexcept
+bool split(std::string_view str, const char* separators,
+           gsl::span<std::string_view> result) noexcept
 {
     assert(separators != nullptr);
-    assert(result != nullptr);
     const char* const space_chars = " \t\r\n\v\f";
 
-    std::size_t i;
+    std::size_t i     = 0;
     auto        start = str.find_first_not_of(space_chars, 0);
 
-    for (i = 0; (i < count) && (start != std::string_view::npos); ++i) {
+    for (; (i < result.size()) && (start != std::string_view::npos); ++i) {
         auto sep       = str.find_first_of(separators, start);
         auto end       = (sep == std::string_view::npos) ? str.size() - 1 : sep - 1;
         auto last_char = str.find_last_not_of(space_chars, end);
@@ -27,7 +28,7 @@ bool split(std::string_view str, const char* separators, std::string_view* resul
         start = (sep != std::string_view::npos) ? str.find_first_not_of(space_chars, sep + 1) : sep;
     }
 
-    return ((i == count) && (start == std::string_view::npos));
+    return ((i == result.size()) && (start == std::string_view::npos));
 }
 
 } // namespace openglyph::detail

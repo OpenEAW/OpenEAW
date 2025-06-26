@@ -236,7 +236,7 @@ public:
     /// Normalizes the vector
     void normalize() noexcept
     {
-        ComponentType inv_length = 1.0F / length();
+        const auto inv_length = 1.0F / length();
         x *= inv_length;
         y *= inv_length;
         z *= inv_length;

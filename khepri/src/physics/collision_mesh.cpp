@@ -12,8 +12,8 @@ namespace {
 double intersect_distance(const Ray& ray, const Vector3f& v0, const Vector3f& v1,
                           const Vector3f& v2)
 {
-    Vector3f e1 = v1 - v0;
-    Vector3f e2 = v2 - v0;
+    const Vector3f e1 = v1 - v0;
+    const Vector3f e2 = v2 - v0;
 
     // Calculate determinant
     auto h   = cross(ray.direction(), e2);
@@ -68,7 +68,7 @@ double CollisionMesh::intersect_distance(const Ray& ray) const
     bool   found        = false;
 
     for (std::size_t i = 0; i < m_indices.size(); i += 3) {
-        double distance =
+        const double distance =
             physics::intersect_distance(ray, m_vertices[m_indices[i + 0]],
                                         m_vertices[m_indices[i + 1]], m_vertices[m_indices[i + 2]]);
 

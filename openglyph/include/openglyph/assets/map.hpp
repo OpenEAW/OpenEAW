@@ -15,7 +15,7 @@ struct Map
     Header header;
 
     std::vector<Environment> environments;
-    std::uint32_t            active_environment;
+    std::uint32_t            active_environment{0};
 };
 
 } // namespace openglyph

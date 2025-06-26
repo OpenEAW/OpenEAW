@@ -9,6 +9,8 @@
 #include <khepri/math/vector4.hpp>
 #include <khepri/utility/string.hpp>
 
+#include <gsl/gsl-lite.hpp>
+
 #include <charconv>
 #include <cstdint>
 #include <optional>
@@ -17,15 +19,15 @@
 namespace openglyph {
 namespace detail {
 
-bool split(std::string_view str, const char* separators, std::string_view* result,
-           std::size_t count) noexcept;
+bool split(std::string_view str, const char* separators,
+           gsl::span<std::string_view> result) noexcept;
 
 } // namespace detail
 
 template <std::size_t N>
 struct SplitResult
 {
-    std::string_view parts[N];
+    std::array<std::string_view, N> parts;
 };
 
 /**
@@ -35,7 +37,7 @@ template <std::size_t N>
 std::optional<SplitResult<N>> split(std::string_view str, const char* separators) noexcept
 {
     SplitResult<N> result;
-    if (detail::split(str, separators, result.parts, N)) {
+    if (detail::split(str, separators, result.parts)) {
         return result;
     }
     return {};
@@ -72,7 +74,7 @@ struct Parser<T, typename std::enable_if_t<std::is_integral_v<T> || std::is_floa
         if constexpr (std::is_floating_point_v<T>) {
             // Remove any trailing 'f' suffix
             if (!str.empty() && (str.back() == 'f' || str.back() == 'F')) {
-                --end;
+                std::advance(end, -1);
             }
         }
 

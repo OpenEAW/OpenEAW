@@ -28,7 +28,7 @@ public:
      * - Linux:   a std::tuple<void*, std::uint32_t> is expected where the first element is
      *            the X11 display pointer and the second element is the X11 window ID.
      */
-    Renderer(std::any window);
+    Renderer(const std::any& window);
     ~Renderer() override;
 
     Renderer(const Renderer&)            = delete;

@@ -44,7 +44,7 @@ public:
      *
      * @note the returned span is valid until the spline is destroyed.
      */
-    gsl::span<const Vector3> points() const noexcept
+    [[nodiscard]] gsl::span<const Vector3> points() const noexcept
     {
         return m_points;
     }

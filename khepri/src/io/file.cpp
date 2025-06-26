@@ -1,5 +1,6 @@
 #include <khepri/io/exceptions.hpp>
 #include <khepri/io/file.hpp>
+#include <khepri/io/stream.hpp>
 
 #include <algorithm>
 #include <cassert>

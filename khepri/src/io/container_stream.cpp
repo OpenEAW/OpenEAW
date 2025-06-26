@@ -1,6 +1,7 @@
 #include <khepri/io/container_stream.hpp>
 #include <khepri/io/exceptions.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <limits>

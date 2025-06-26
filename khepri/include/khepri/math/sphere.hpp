@@ -13,7 +13,7 @@ class Sphere final
 {
 public:
     /// Constructs a sphere from a center and radius
-    Sphere(const Vector3& center, float radius) noexcept : m_center(center), m_radius(radius)
+    Sphere(const Vector3& center, double radius) noexcept : m_center(center), m_radius(radius)
     {
         assert(radius >= 0.0F);
     }
@@ -25,13 +25,13 @@ public:
     }
 
     /// Returns the radius of the sphere
-    [[nodiscard]] float radius() const noexcept
+    [[nodiscard]] double radius() const noexcept
     {
         return m_radius;
     }
 
     /// Returns squared radius of the sphere
-    [[nodiscard]] float radius_sq() const noexcept
+    [[nodiscard]] double radius_sq() const noexcept
     {
         return m_radius * m_radius;
     }
@@ -45,18 +45,18 @@ public:
     /// Translates (moves) the sphere by \a v
     [[nodiscard]] Sphere translate(const Vector3& v) const noexcept
     {
-        return Sphere(m_center + v, m_radius);
+        return {m_center + v, m_radius};
     }
 
     /// Scales the sphere by \a scale
-    [[nodiscard]] Sphere scale(float scale) const noexcept
+    [[nodiscard]] Sphere scale(double scale) const noexcept
     {
-        return Sphere(m_center, m_radius * scale);
+        return {m_center, m_radius * scale};
     }
 
 private:
     Vector3 m_center;
-    float   m_radius;
+    double  m_radius;
 };
 
 } // namespace khepri

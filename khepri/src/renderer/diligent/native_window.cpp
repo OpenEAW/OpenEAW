@@ -15,7 +15,7 @@
 
 namespace khepri::renderer::diligent {
 
-Diligent::NativeWindow get_native_window(std::any window)
+Diligent::NativeWindow get_native_window(const std::any& window)
 {
     try {
 #ifdef _MSC_VER
@@ -27,9 +27,8 @@ Diligent::NativeWindow get_native_window(std::any window)
         return Diligent::NativeWindow{std::get<1>(native_window), std::get<0>(native_window)};
 #endif
     } catch (const std::bad_any_cast&) {
-        // Fall-through
+        throw ArgumentError();
     }
-    throw ArgumentError();
 }
 
 } // namespace khepri::renderer::diligent

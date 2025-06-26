@@ -77,7 +77,7 @@ struct GradientDesc
     int color_top_y{};
 
     // Color of the top of the gradient.
-    khepri::ColorRGB color_top{};
+    khepri::ColorRGB color_top;
 
     // Bottom of the gradient, in pixels relative to the source bitmap
     int color_bottom_y{};
@@ -190,7 +190,7 @@ void blend_bitmap(gsl::span<const std::uint8_t> src, unsigned int width, unsigne
                 pixel = saturate(pixel * src_alpha + dst_color * (1 - src_alpha));
 
                 // Store as sRGB
-                ColorSRGB srgb(pixel);
+                const ColorSRGB srgb(pixel);
                 dest[d + 0] = srgb.r;
                 dest[d + 1] = srgb.g;
                 dest[d + 2] = srgb.b;
@@ -203,7 +203,7 @@ void blend_bitmap(gsl::span<const std::uint8_t> src, unsigned int width, unsigne
 }
 
 template <typename T, typename U>
-T freetype_downcast(U&& value)
+T freetype_downcast(const U& value)
 {
     // Have to use reinterpret_cast here, FreeType does not use inheritance
     // NOLINTNEXTLINE
@@ -280,7 +280,7 @@ class LibraryState
 public:
     FT_Library& acquire()
     {
-        std::lock_guard lock(m_lock);
+        const std::lock_guard lock(m_lock);
         if (m_refcount == 0) {
             if (auto error = FT_Init_FreeType(&m_handle)) {
                 LOG.error("unable to initialize FreeType: {}", error);
@@ -293,7 +293,7 @@ public:
 
     void release() noexcept
     {
-        std::lock_guard lock(m_lock);
+        const std::lock_guard lock(m_lock);
         if (--m_refcount == 0) {
             FT_Done_FreeType(m_handle);
         }
@@ -351,7 +351,7 @@ TextRender FontFaceState::render(std::u16string_view text, const FontOptions& op
     }
 
     // Setting the font size modifies the face, so we can only render one string at a time
-    std::lock_guard lock(m_mutex);
+    const std::lock_guard lock(m_mutex);
 
     if (auto error = FT_Set_Pixel_Sizes(m_face, font_width_px, font_height_px)) {
         LOG.error("cannot set character size: {}", error);
@@ -430,7 +430,7 @@ TextRender FontFaceState::render(std::u16string_view text, const FontOptions& op
                 if (dst_row[d + 3] != 0) {
                     const float alpha = static_cast<float>(dst_row[d + 3]) /
                                         std::numeric_limits<std::uint8_t>::max();
-                    ColorSRGB srgb(options.stroke_color * alpha);
+                    const ColorSRGB srgb(options.stroke_color * alpha);
                     dst_row[d + 0] = srgb.r;
                     dst_row[d + 1] = srgb.g;
                     dst_row[d + 2] = srgb.b;
@@ -459,9 +459,9 @@ TextRender FontFaceState::render(std::u16string_view text, const FontOptions& op
 
         GradientDesc gradient{};
         gradient.color_top      = options.color_top;
-        gradient.color_top_y    = y_color_top - y;
+        gradient.color_top_y    = static_cast<int>(y_color_top - y);
         gradient.color_bottom   = options.color_bottom;
-        gradient.color_bottom_y = y_color_bottom - y;
+        gradient.color_bottom_y = static_cast<int>(y_color_bottom - y);
 
         const auto src_buffer = gsl::span<const std::uint8_t>(
             bitmap.buffer, bitmap.rows * static_cast<size_t>(bitmap.pitch));

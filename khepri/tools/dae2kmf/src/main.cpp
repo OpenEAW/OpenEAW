@@ -44,7 +44,7 @@ void collect_scene_info(const aiScene& scene, const aiNode& node, SceneInfo& inf
     const auto meshes       = gsl::span<aiMesh*>(scene.mMeshes, scene.mNumMeshes);
     const auto mesh_indices = gsl::span<unsigned int>(node.mMeshes, node.mNumMeshes);
 
-    for (unsigned int mesh_index : mesh_indices) {
+    for (const unsigned int mesh_index : mesh_indices) {
         if (mesh_index < scene.mNumMeshes) {
             info.meshes.push_back({meshes[mesh_index], &node});
         }
@@ -116,15 +116,6 @@ khepri::renderer::ModelDesc create_model(const aiScene& scene)
 
     return {std::move(meshes)};
 }
-
-template <class Callable>
-void ignore_exceptions(const Callable& callable)
-{
-    try {
-        callable();
-    } catch (...) {
-    }
-}
 } // namespace
 
 int main(int argc, char* argv[])
@@ -173,10 +164,10 @@ int main(int argc, char* argv[])
         khepri::io::File output(output_path, khepri::io::OpenMode::read_write);
         khepri::renderer::io::write_kmf(model, output);
     } catch (const std::exception& e) {
-        ignore_exceptions([&] { std::cerr << "error: " << e.what() << '\n'; });
+        std::cerr << "error: " << e.what() << '\n';
         return 1;
     } catch (...) {
-        ignore_exceptions([&] { std::cerr << "unknown error\n"; });
+        std::cerr << "unknown error\n";
         return 1;
     }
     return 0;

@@ -1,23 +1,44 @@
 ---
-Checks: '
+# Note: we need to disable some checks that are not compatible with our codebase
+Checks: [
     -*,
     bugprone-*,
-    -bugprone-easily-swappable-parameters,
     cert-*,
     clang-analyzer-*,
     concurrency-*,
     cppcoreguidelines-*,
     misc-*,
-    -misc-no-recursion,
     modernize-*,
-    -modernize-use-trailing-return-type,
     performance-*,
     portability-*,
     readability-*,
-    -readability-identifier-length
-'
+
+    # This is overly strict and prevents common patterns dealing with width, length, x, y, and so on.
+    -bugprone-easily-swappable-parameters,
+
+    # Magic numbers aren't properly handled by clang-tidy, even though we could ignore a lot of them.
+    -cppcoreguidelines-avoid-magic-numbers,
+    -readability-magic-numbers,
+
+    # We have code that does dynamic indexing into arrays. It's easily provable that
+    # it doesn't go out of bounds, but clang-tidy doesn't understand that.
+    -cppcoreguidelines-pro-bounds-constant-array-index,
+
+    # The include cleaner is more trouble than it's worth.
+    -misc-include-cleaner,
+
+    # We use recursion. This isn't safety-critical code.
+    -misc-no-recursion,
+
+    # We don't care for the stylistic trailing return type pattern.
+    -modernize-use-trailing-return-type,
+
+    # We use names like x and y in places, so this check isn't useful.
+    -readability-identifier-length,
+]
 
 CheckOptions:
+    - { key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor, value: true }
     - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
     - { key: readability-identifier-naming.EnumCase, value: CamelCase }
     - { key: readability-identifier-naming.ClassCase, value: CamelCase }
@@ -28,5 +49,4 @@ CheckOptions:
     - { key: readability-identifier-naming.PrivateMemberPrefix, value: m_ }
     - { key: readability-identifier-naming.GlobalConstantCase, value: UPPER_CASE }
     - { key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic, value: true }
-    - { key: readability-magic-numbers.IgnoredIntegerValues, value: {0,1,2,3,4,8,16,24,32} }
 

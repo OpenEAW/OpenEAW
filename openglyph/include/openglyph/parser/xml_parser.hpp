@@ -3,10 +3,10 @@
 
 #include <khepri/io/stream.hpp>
 
-#include <memory>
 #include <optional>
 #include <rapidxml.hpp>
 #include <string_view>
+#include <vector>
 
 namespace openglyph {
 
@@ -30,13 +30,13 @@ public:
         explicit Attribute(const rapidxml::xml_attribute<Char>* attr) : m_attr(attr) {}
 
         /// The attribute's name
-        std::string_view name() const noexcept
+        [[nodiscard]] std::string_view name() const noexcept
         {
             return {m_attr->name(), m_attr->name_size()};
         }
 
         /// The attribute's value
-        std::string_view value() const noexcept
+        [[nodiscard]] std::string_view value() const noexcept
         {
             return {m_attr->value(), m_attr->value_size()};
         }
@@ -68,7 +68,7 @@ public:
                 return *this;
             }
 
-            Iterator operator++(int) noexcept
+            Iterator operator++(int) & noexcept
             {
                 Iterator retval = *this;
                 ++(*this);
@@ -99,17 +99,17 @@ public:
         {
         }
 
-        Iterator begin() const noexcept
+        [[nodiscard]] Iterator begin() const noexcept
         {
             return Iterator(m_first);
         }
 
-        Iterator end() const noexcept
+        [[nodiscard]] Iterator end() const noexcept
         {
             return Iterator(nullptr);
         }
 
-        bool empty() const noexcept
+        [[nodiscard]] bool empty() const noexcept
         {
             return m_first != nullptr;
         }
@@ -143,7 +143,7 @@ public:
                 return *this;
             }
 
-            Iterator operator++(int) noexcept
+            Iterator operator++(int) & noexcept
             {
                 Iterator retval = *this;
                 ++(*this);
@@ -171,17 +171,17 @@ public:
 
         explicit NodeRange(const rapidxml::xml_node<Char>* first) noexcept : m_first(first) {}
 
-        Iterator begin() const noexcept
+        [[nodiscard]] Iterator begin() const noexcept
         {
             return Iterator(m_first);
         }
 
-        Iterator end() const noexcept
+        [[nodiscard]] Iterator end() const noexcept
         {
             return Iterator(nullptr);
         }
 
-        bool empty() const noexcept
+        [[nodiscard]] bool empty() const noexcept
         {
             return m_first != nullptr;
         }
@@ -204,25 +204,25 @@ public:
         }
 
         /// The node's name
-        std::string_view name() const noexcept
+        [[nodiscard]] std::string_view name() const noexcept
         {
             return {m_node->name(), m_node->name_size()};
         }
 
         /// The node's text content
-        std::string_view value() const noexcept
+        [[nodiscard]] std::string_view value() const noexcept
         {
             return {m_node->value(), m_node->value_size()};
         }
 
         /// The node's attributes
-        AttributeRange attributes() const noexcept
+        [[nodiscard]] AttributeRange attributes() const noexcept
         {
             return AttributeRange(m_node->first_attribute());
         }
 
         /// The node's child nodes
-        NodeRange nodes() const noexcept
+        [[nodiscard]] NodeRange nodes() const noexcept
         {
             return NodeRange(m_node->first_node());
         }
@@ -235,7 +235,8 @@ public:
          *
          * @note the name lookup is case-insensitive.
          */
-        std::optional<std::string_view> attribute(std::string_view name) const noexcept
+        [[nodiscard]] std::optional<std::string_view>
+        attribute(std::string_view name) const noexcept
         {
             const auto* attr = m_node->first_attribute(name.data(), name.size(), false);
             if (attr != nullptr) {
@@ -252,7 +253,7 @@ public:
          *
          * @note the name lookup is case-insensitive.
          */
-        std::optional<Node> child(std::string_view name) const noexcept
+        [[nodiscard]] std::optional<Node> child(std::string_view name) const noexcept
         {
             const auto* xml_node = m_node->first_node(name.data(), name.size(), false);
             if (xml_node != nullptr) {
@@ -279,11 +280,10 @@ public:
     /**
      * @brief Returns the root node of the XML document, if any.
      */
-    std::optional<Node> root() const noexcept;
+    [[nodiscard]] std::optional<Node> root() const noexcept;
 
 private:
-    std::size_t             m_size;
-    std::unique_ptr<Char[]> m_data;
+    std::vector<Char> m_data;
 
     // Note: RapidXML holds a reference to the string contents
     rapidxml::xml_document<Char> m_document;

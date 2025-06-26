@@ -116,9 +116,9 @@ CubicSpline::Polynomials::calculate_polynomials(gsl::span<const double> points)
 
     superd.front() = result.front() = 0;
     for (std::size_t i = 1; i < superd.size(); ++i) {
-        double result_i = 3 * (points[i - 1] - 2 * points[i] + points[i + 1]);
-        superd[i]       = 1.0 / (4.0f - superd[i - 1]);
-        result[i]       = (result_i - result[i - 1]) * superd[i];
+        const double result_i = 3 * (points[i - 1] - 2 * points[i] + points[i + 1]);
+        superd[i]             = 1.0 / (4 - superd[i - 1]);
+        result[i]             = (result_i - result[i - 1]) * superd[i];
     }
 
     // Back-substitute to find the unknown vector with coefficient C for the polynomials
@@ -179,7 +179,7 @@ double CubicSpline::arc_length(const Polynomials& polynomials, std::size_t index
     assert(u_from <= u_to);
     assert(u_from >= 0.0 && u_to <= 1.0);
 
-    constexpr auto min_accuracy = 0.00001f;
+    constexpr auto min_accuracy = 0.00001;
 
     // Sample the cubic at the two end points
     const auto v_from = polynomials.sample(index, u_from);
@@ -217,9 +217,9 @@ double CubicSpline::arc_length(const Polynomials& polynomials, std::size_t index
 std::vector<double> CubicSpline::calculate_arc_offsets(const Polynomials& polynomials) noexcept
 {
     std::vector<double> arc_offsets(polynomials.size());
-    arc_offsets[0] = arc_length(polynomials, 0, 0.0f, 1.0f);
+    arc_offsets[0] = arc_length(polynomials, 0, 0.0, 1.0);
     for (std::size_t i = 1; i < arc_offsets.size(); ++i) {
-        arc_offsets[i] = arc_offsets[i - 1] + arc_length(polynomials, i, 0.0f, 1.0f);
+        arc_offsets[i] = arc_offsets[i - 1] + arc_length(polynomials, i, 0.0, 1.0);
     }
     return arc_offsets;
 }
@@ -228,7 +228,7 @@ std::vector<double> CubicSpline::calculate_arc_offsets(const Polynomials& polyno
 {
     assert(point_index <= m_arc_offsets.size());
     if (point_index == 0) {
-        return 0.0f;
+        return 0.0;
     }
     return m_arc_offsets[point_index - 1];
 }
@@ -245,19 +245,20 @@ Vector3 CubicSpline::sample(double t) const noexcept
                               std::upper_bound(m_arc_offsets.begin(), m_arc_offsets.end(), arc_offset)),
         m_arc_offsets.size() - 1);
 
-    auto arc_offset_segment = (index > 0 ? m_arc_offsets[index - 1] : 0.0f);
+    auto arc_offset_segment = (index > 0 ? m_arc_offsets[index - 1] : 0.0);
 
     // Now find the uniform parameter for that segment
-    auto u_start          = 0.0f;
+    auto u_start          = 0.0;
     auto arc_offset_start = arc_offset_segment;
-    auto u_end            = 1.0f;
+    auto u_end            = 1.0;
     auto arc_offset_end   = m_arc_offsets[index];
 
     // Bound the iterations so we don't end up in an infinite loop due to some floating point
     // rounding oddity.
-    constexpr int max_iterations = 100;
-    double        u              = u_start;
-    if (arc_offset_end - arc_offset_start > 0.0000001) {
+    constexpr double epsilon        = 0.0000001;
+    constexpr int    max_iterations = 100;
+    double           u              = u_start;
+    if (arc_offset_end - arc_offset_start > epsilon) {
         // Non-degenerate segment
         for (int i = 0; i < max_iterations; ++i) {
             // Don't use midway interpolation, but linear interpolation based on the desired arc
@@ -266,7 +267,7 @@ Vector3 CubicSpline::sample(double t) const noexcept
             const auto frac = (arc_offset - arc_offset_start) / (arc_offset_end - arc_offset_start);
             u               = lerp(u_start, u_end, frac);
             const auto length = arc_length(m_polynomials, index, 0.0, u) + arc_offset_segment;
-            if (std::abs(length - arc_offset) < 0.000001f) {
+            if (std::abs(length - arc_offset) < epsilon) {
                 // We're close enough to the desired arc offset
                 break;
             }

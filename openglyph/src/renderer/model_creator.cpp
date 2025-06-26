@@ -32,15 +32,15 @@ std::unique_ptr<RenderModel> ModelCreator::create_model(const Model& model)
             // Set up material parameters
             std::vector<RenderModel::Mesh::Param> params;
             for (const auto& param : material.params) {
-                if (auto val = std::get_if<std::int32_t>(&param.value)) {
+                if (const auto* const val = std::get_if<std::int32_t>(&param.value)) {
                     params.push_back({param.name, *val});
-                } else if (auto val = std::get_if<float>(&param.value)) {
+                } else if (const auto* const val = std::get_if<float>(&param.value)) {
                     params.push_back({param.name, *val});
-                } else if (auto val = std::get_if<khepri::Vector3f>(&param.value)) {
+                } else if (const auto* const val = std::get_if<khepri::Vector3f>(&param.value)) {
                     params.push_back({param.name, *val});
-                } else if (auto val = std::get_if<khepri::Vector4f>(&param.value)) {
+                } else if (const auto* const val = std::get_if<khepri::Vector4f>(&param.value)) {
                     params.push_back({param.name, *val});
-                } else if (auto val = std::get_if<std::string>(&param.value)) {
+                } else if (const auto* const val = std::get_if<std::string>(&param.value)) {
                     if (auto* texture = m_texture_loader(khepri::basename(*val))) {
                         params.push_back({param.name, texture});
                     }

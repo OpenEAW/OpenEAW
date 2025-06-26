@@ -18,7 +18,7 @@ TextureDesc load_texture(khepri::io::Stream& stream);
 /**
  * Possible texture formats for #save_texture
  */
-enum TextureFormat
+enum TextureFormat : std::uint8_t
 {
     /**
      * TrueVision TARGA.

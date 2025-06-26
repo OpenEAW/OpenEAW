@@ -21,7 +21,7 @@ struct GameObjectType final
     std::string_view space_model_name;
 
     /// The factor by which the model be scaled
-    double scale_factor;
+    double scale_factor{1.0};
 };
 
 } // namespace openglyph
