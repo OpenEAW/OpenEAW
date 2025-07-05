@@ -152,7 +152,6 @@ int main(int argc, const char* argv[])
         window.add_size_listener([&] { renderer.render_size(window.render_size()); });
         renderer.render_size(window.render_size());
 
-        openglyph::io::MegaFileSystem      mega_fs(data_paths);
         openglyph::AssetCache          asset_cache(asset_loader, renderer);
         openglyph::GameObjectTypeStore game_object_types(asset_loader, "GameObjectFiles.xml");
         openglyph::Environment         environment{};
