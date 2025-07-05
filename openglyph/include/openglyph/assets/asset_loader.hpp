@@ -1,7 +1,7 @@
 #pragma once
 
 #include <khepri/io/stream.hpp>
-
+#include <openglyph/io/mega_filesystem.hpp>
 #include <gsl/gsl-lite.hpp>
 
 #include <filesystem>
@@ -61,6 +61,7 @@ private:
                                                   gsl::span<const std::string_view> extensions);
 
     std::vector<std::filesystem::path> m_data_paths;
+    std::unique_ptr<io::MegaFileSystem> m_megafs;
 };
 
 } // namespace openglyph
