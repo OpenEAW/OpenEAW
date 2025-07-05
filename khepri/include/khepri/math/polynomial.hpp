@@ -27,7 +27,7 @@ struct Polynomial
     /**
      * @brief Samples the polynomial for given \a x.
      */
-    [[nodiscard]] double sample(double x) const noexcept
+    [[nodiscard]] constexpr double sample(double x) const noexcept
     {
         // Use Horner's rule for polynomial evaluation
         double y = coefficients[Degree];
@@ -44,13 +44,14 @@ struct Polynomial
      * except for a polynomial of degree 0: it's derivative is also a 0-degree polynomial (f(x) = 0
      * to be precise).
      */
-    Polynomial<std::max<std::size_t>(Degree, 1) - 1> derivative() const noexcept
+    [[nodiscard]] constexpr Polynomial<std::max<std::size_t>(Degree, 1) - 1>
+    derivative() const noexcept
     {
         if constexpr (Degree == 0) {
             // The derivative of a constant is 0.
             return {{0}};
         } else {
-            Polynomial<Degree - 1> p;
+            Polynomial<Degree - 1> p{};
             for (std::size_t i = 1; i <= Degree; ++i) {
                 p.coefficients[i - 1] = i * coefficients[i];
             }

@@ -149,8 +149,10 @@ public:
     {
     }
 
-    ScopedTerminateHandler(const ScopedTerminateHandler&)            = delete;
-    ScopedTerminateHandler& operator=(const ScopedTerminateHandler&) = delete;
+    ScopedTerminateHandler(const ScopedTerminateHandler&)                = delete;
+    ScopedTerminateHandler(ScopedTerminateHandler&&) noexcept            = delete;
+    ScopedTerminateHandler& operator=(const ScopedTerminateHandler&)     = delete;
+    ScopedTerminateHandler& operator=(ScopedTerminateHandler&&) noexcept = delete;
 
     ~ScopedTerminateHandler()
     {
@@ -163,12 +165,12 @@ private:
 
 } // namespace
 
-ExceptionHandler::ExceptionHandler(std::string context) : m_context(context) {}
+ExceptionHandler::ExceptionHandler(std::string context) : m_context(std::move(context)) {}
 
 bool ExceptionHandler::invoke_void(const std::function<void()>& callable)
 {
     // Set the terminate handler
-    ScopedTerminateHandler terminate_handler([] {
+    const ScopedTerminateHandler terminate_handler([] {
         LOG.critical("std::terminate was called");
         std::abort();
     });

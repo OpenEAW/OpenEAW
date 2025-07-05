@@ -16,7 +16,7 @@
 
 namespace openglyph::renderer {
 
-class MaterialStore
+class MaterialStore final
 {
 public:
     template <typename T>
@@ -24,16 +24,17 @@ public:
 
     MaterialStore(khepri::renderer::Renderer&       renderer,
                   Loader<khepri::renderer::Shader>  shader_loader,
-                  Loader<khepri::renderer::Texture> texture_loader)
-        : m_renderer(renderer)
-        , m_shader_loader(std::move(shader_loader))
-        , m_texture_loader(std::move(texture_loader))
-    {
-    }
+                  Loader<khepri::renderer::Texture> texture_loader);
+    ~MaterialStore() = default;
+
+    MaterialStore(const MaterialStore&)                = delete;
+    MaterialStore(MaterialStore&&) noexcept            = delete;
+    MaterialStore& operator=(const MaterialStore&)     = delete;
+    MaterialStore& operator=(MaterialStore&&) noexcept = delete;
 
     void register_materials(gsl::span<const MaterialDesc> material_descs);
 
-    khepri::renderer::Material* get(std::string_view name) const noexcept;
+    [[nodiscard]] khepri::renderer::Material* get(std::string_view name) const noexcept;
 
     auto as_loader()
     {

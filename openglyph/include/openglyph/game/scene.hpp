@@ -24,8 +24,10 @@ public:
     Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_types,
           Environment environment);
 
-    Scene(const Scene&)            = delete;
-    Scene& operator=(const Scene&) = delete;
+    Scene(const Scene&)                = delete;
+    Scene(Scene&&) noexcept            = delete;
+    Scene& operator=(const Scene&)     = delete;
+    Scene& operator=(Scene&&) noexcept = delete;
     ~Scene();
 
     /// Returns the objects in the scene

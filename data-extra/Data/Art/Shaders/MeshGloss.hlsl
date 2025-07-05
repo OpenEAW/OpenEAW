@@ -20,10 +20,7 @@ cbuffer Material
 };
 
 Texture2D BaseTexture;
-
-////////////////////////////////////////////////
-
-SamplerState LinearSampler;
+SamplerState BaseTextureSampler;
 
 ////////////////////////////////////////////////
 
@@ -87,7 +84,7 @@ struct VS_OUTPUT
 
 VS_OUTPUT vs_main(VS_INPUT_MESH In)
 {
-	VS_OUTPUT Out = (VS_OUTPUT)0;
+	VS_OUTPUT Out;
 
 	Out.Pos = mul(float4(In.Pos, 1), mul(World, ViewProj));
 	Out.UV = In.UV;
@@ -98,7 +95,7 @@ VS_OUTPUT vs_main(VS_INPUT_MESH In)
 
 float4 ps_main(VS_OUTPUT In) : SV_Target
 {
-	float4 texel = BaseTexture.Sample(LinearSampler, In.UV);
+	float4 texel = BaseTexture.Sample(BaseTextureSampler, In.UV);
 	float3 diffuse = texel.rgb * In.Diffuse.rgb * 2;
 	return float4(diffuse, 1);
 }

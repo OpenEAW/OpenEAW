@@ -87,7 +87,7 @@ std::optional<CmdlineArgs> parse_cmdline_arguments(int argc, const char* argv[])
         return args;
     } catch (const cxxopts::OptionException& e) {
         std::cerr << "error: " << e.what() << "\n"
-                  << "Use '--help' for help." << std::endl;
+                  << "Use '--help' for help.\n";
     }
     return {};
 }
@@ -99,11 +99,11 @@ auto create_camera(const khepri::Size& render_size)
         {100, 100, 150},
         {0, 0, 0},
         {0, 0, 1},
-        khepri::to_radians(90.0f),
+        khepri::to_radians(90.0F),
         0,
-        static_cast<float>(render_size.width) / render_size.height,
-        10.0f,
-        100000.0f};
+        static_cast<float>(render_size.width) / static_cast<float>(render_size.height),
+        10.0F,
+        100000.0F};
     return khepri::renderer::Camera{properties};
 }
 
@@ -113,7 +113,7 @@ int main(int argc, const char* argv[])
 {
 #ifndef NDEBUG
     // In debug mode we create a console to log
-    khepri::application::ConsoleLogger console_logger;
+    const khepri::application::ConsoleLogger console_logger;
 #endif
 
     khepri::application::ExceptionHandler exception_handler("main");
@@ -152,10 +152,10 @@ int main(int argc, const char* argv[])
         window.add_size_listener([&] { renderer.render_size(window.render_size()); });
         renderer.render_size(window.render_size());
 
-        openglyph::AssetCache          asset_cache(asset_loader, renderer);
-        openglyph::GameObjectTypeStore game_object_types(asset_loader, "GameObjectFiles.xml");
-        openglyph::Environment         environment{};
-        
+        openglyph::AssetCache                asset_cache(asset_loader, renderer);
+        const openglyph::GameObjectTypeStore game_object_types(asset_loader, "GameObjectFiles.xml");
+        openglyph::Environment               environment{};
+
         if (auto stream = asset_loader.open_map("_SPACE_PLANET_ALDERAAN_01")) {
             const auto map = openglyph::io::read_map(*stream);
             if (!map.environments.empty()) {
@@ -164,17 +164,24 @@ int main(int argc, const char* argv[])
             }
         }
 
-        openglyph::Scene         scene(asset_cache, game_object_types, environment);
+        const openglyph::Scene   scene(asset_cache, game_object_types, environment);
         openglyph::SceneRenderer scene_renderer(renderer);
 
         while (!window.should_close()) {
             khepri::application::Window::poll_events();
             renderer.clear(khepri::renderer::Renderer::clear_all);
 
-            khepri::renderer::Camera camera = create_camera(renderer.render_size());
+            const khepri::renderer::Camera camera = create_camera(renderer.render_size());
             scene_renderer.render_scene(scene, camera);
 
-            renderer.present();
+            // Presenting the rendered content has two different approaches, depending on the
+            // rendering system: For OpenGL, the window needs to swap the front and back
+            // buffers. For other systems, the renderer handles the presentation.
+            if (khepri::application::Window::use_swap_buffers()) {
+                window.swap_buffers();
+            } else {
+                renderer.present();
+            }
         }
 
         LOG.info("Shutting down");

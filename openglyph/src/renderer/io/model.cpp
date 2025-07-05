@@ -52,8 +52,8 @@ struct SerializeTraits<openglyph::io::VertexV1>
     {
         s.write(value.position);
         s.write(value.normal);
-        for (int i = 0; i < 4; ++i) {
-            s.write(value.uv[i]);
+        for (auto uv : value.uv) {
+            s.write(uv);
         }
         s.write(value.tangent);
         s.write(value.binormal);
@@ -62,7 +62,7 @@ struct SerializeTraits<openglyph::io::VertexV1>
             s.write(std::uint32_t{0});
         }
         for (int i = 0; i < 4; ++i) {
-            s.write(0.0f);
+            s.write(0.0F);
         }
     }
 
@@ -72,8 +72,8 @@ struct SerializeTraits<openglyph::io::VertexV1>
         openglyph::io::VertexV1 v;
         v.position = d.read<khepri::Vector3f>();
         v.normal   = d.read<khepri::Vector3f>();
-        for (int i = 0; i < 4; ++i) {
-            v.uv[i] = d.read<khepri::Vector2f>();
+        for (auto& uv : v.uv) {
+            uv = d.read<khepri::Vector2f>();
         }
         v.tangent  = d.read<khepri::Vector3f>();
         v.binormal = d.read<khepri::Vector3f>();
@@ -97,8 +97,8 @@ struct SerializeTraits<openglyph::io::VertexV2>
     {
         s.write(value.position);
         s.write(value.normal);
-        for (int i = 0; i < 4; ++i) {
-            s.write(value.uv[i]);
+        for (const auto& uv : value.uv) {
+            s.write(uv);
         }
         s.write(value.tangent);
         s.write(value.binormal);
@@ -108,7 +108,7 @@ struct SerializeTraits<openglyph::io::VertexV2>
             s.write(std::uint32_t{0});
         }
         for (int i = 0; i < 4; ++i) {
-            s.write(0.0f);
+            s.write(0.0F);
         }
     }
 
@@ -118,8 +118,8 @@ struct SerializeTraits<openglyph::io::VertexV2>
         openglyph::io::VertexV2 v;
         v.position = d.read<khepri::Vector3f>();
         v.normal   = d.read<khepri::Vector3f>();
-        for (int i = 0; i < 4; ++i) {
-            v.uv[i] = d.read<khepri::Vector2f>();
+        for (auto& uv : v.uv) {
+            uv = d.read<khepri::Vector2f>();
         }
         v.tangent  = d.read<khepri::Vector3f>();
         v.binormal = d.read<khepri::Vector3f>();
@@ -147,31 +147,32 @@ void verify(bool condition)
 
 std::string as_string(gsl::span<const uint8_t> data)
 {
-    auto end = std::find(data.begin(), data.end(), 0);
+    const auto* const end = std::find(data.begin(), data.end(), 0);
     return {data.begin(), end};
 }
 
 // Parses a mesh name into it's name, LOD and ALT levels
 auto parse_mesh_name(std::string_view name)
 {
-    int lod = 0, alt = 0;
+    int lod = 0;
+    int alt = 0;
 
-    auto alt_ofs = name.find("_ALT");
+    const auto alt_ofs = name.find("_ALT");
     if (alt_ofs != std::string_view::npos) {
-        int   value;
-        auto* end      = name.data() + name.size();
-        auto [ptr, ec] = std::from_chars(name.data() + alt_ofs + 4, end, value);
+        int         value{0};
+        const auto* end = name.data() + name.size();
+        auto [ptr, ec]  = std::from_chars(name.data() + alt_ofs + 4, end, value);
         if (ptr == end && ec == std::errc()) {
             name = name.substr(0, alt_ofs);
             alt  = value;
         }
     }
 
-    auto lod_ofs = name.find("_LOD");
+    const auto lod_ofs = name.find("_LOD");
     if (lod_ofs != std::string_view::npos) {
-        int   value;
-        auto* end      = name.data() + name.size();
-        auto [ptr, ec] = std::from_chars(name.data() + lod_ofs + 4, end, value);
+        int         value{0};
+        const auto* end = name.data() + name.size();
+        auto [ptr, ec]  = std::from_chars(name.data() + lod_ofs + 4, end, value);
         if (ptr == end && ec == std::errc()) {
             name = name.substr(0, lod_ofs);
             lod  = value;
@@ -193,7 +194,7 @@ auto read_submesh(ChunkReader& reader)
             const auto               data = reader.read_data();
             khepri::io::Deserializer d(data);
             vertices.resize(d.read<std::uint32_t>());
-            indices.resize(d.read<std::uint32_t>() * 3);
+            indices.resize(static_cast<std::size_t>(d.read<std::uint32_t>()) * 3);
             break;
         }
 
@@ -222,6 +223,9 @@ auto read_submesh(ChunkReader& reader)
             std::generate(indices.begin(), indices.end(), [&] { return d.read<Model::Index>(); });
             break;
         }
+
+        default:
+            break;
         }
     }
     return std::make_tuple(std::move(vertices), std::move(indices));
@@ -251,6 +255,8 @@ Model::Material::Param read_material_param(gsl::span<const std::uint8_t> data)
             break;
         case 2:
             param.value = read_material_param_value<T>(reader.read_data());
+            break;
+        default:
             break;
         }
     }
@@ -288,6 +294,8 @@ auto read_shader_info(ChunkReader& reader)
         case ModelChunkId::shader_param_texture:
             verify(reader.has_data());
             params.push_back(read_material_param<std::string>(reader.read_data()));
+            break;
+        default:
             break;
         }
     }
@@ -331,7 +339,7 @@ Model::Mesh read_mesh(ChunkReader& reader)
             break;
         }
 
-        case ModelChunkId::shader_info:
+        case ModelChunkId::shader_info: {
             verify(!reader.has_data());
             verify(shader_idx < mesh.materials.size());
             auto& mat = mesh.materials[shader_idx];
@@ -339,6 +347,10 @@ Model::Mesh read_mesh(ChunkReader& reader)
             std::tie(mat.name, mat.params) = read_shader_info(reader);
             reader.close();
             shader_idx++;
+            break;
+        }
+
+        default:
             break;
         }
     }
@@ -357,6 +369,9 @@ Model read_model(khepri::io::Stream& stream)
             reader.open();
             model.meshes.push_back(read_mesh(reader));
             reader.close();
+            break;
+
+        default:
             break;
         }
     }

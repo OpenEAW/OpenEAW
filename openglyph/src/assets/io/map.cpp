@@ -4,9 +4,11 @@
 #include <openglyph/assets/io/map.hpp>
 #include <openglyph/io/chunk_reader.hpp>
 
+#include <cstdint>
+
 namespace openglyph::io {
 namespace {
-enum MapChunkId
+enum MapChunkId : std::uint16_t
 {
     map_info = 0x00,
     map_data = 0x01,
@@ -29,7 +31,7 @@ void verify(bool condition)
 
 std::string as_string(gsl::span<const uint8_t> data)
 {
-    auto end = std::find(data.begin(), data.end(), 0);
+    const auto* const end = std::find(data.begin(), data.end(), 0);
     return {data.begin(), end};
 }
 
@@ -53,6 +55,8 @@ Map::Header read_map_header(gsl::span<const std::uint8_t> data)
         switch (reader.id()) {
         case 0:
             header.version = as_uint32(reader.read_data());
+            break;
+        default:
             break;
         }
     }
@@ -92,6 +96,8 @@ auto read_map_environment(gsl::span<const std::uint8_t> data)
         case 32:
             environment.skydomes[1].z_angle = khepri::to_radians(as_float(reader.read_data()));
             break;
+        default:
+            break;
         }
     }
     return environment;
@@ -106,6 +112,8 @@ auto read_active_environment(gsl::span<const std::uint8_t> data)
         case 37:
             active_environment = as_uint32(reader.read_data());
             break;
+        default:
+            break;
         }
     }
     return active_environment;
@@ -119,6 +127,8 @@ auto read_map_environments(ChunkReader& reader)
         case MapChunkId::map_data_environment:
             verify(reader.has_data());
             environments.push_back(read_map_environment(reader.read_data()));
+            break;
+        default:
             break;
         }
     }
@@ -139,6 +149,8 @@ auto read_map_environment_set(Map& map, ChunkReader& reader)
             verify(reader.has_data());
             map.active_environment = read_active_environment(reader.read_data());
             break;
+        default:
+            break;
         }
     }
 
@@ -156,6 +168,8 @@ void read_map_data(Map& map, ChunkReader& reader)
             reader.open();
             read_map_environment_set(map, reader);
             reader.close();
+            break;
+        default:
             break;
         }
     }
@@ -180,6 +194,9 @@ openglyph::Map read_map(khepri::io::Stream& stream)
             reader.open();
             read_map_data(map, reader);
             reader.close();
+            break;
+
+        default:
             break;
         }
     }

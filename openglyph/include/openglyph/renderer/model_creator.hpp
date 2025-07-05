@@ -18,6 +18,12 @@ public:
     ModelCreator(khepri::renderer::Renderer&        renderer,
                  Loader<khepri::renderer::Material> material_loader,
                  Loader<khepri::renderer::Texture>  texture_loader);
+    ~ModelCreator() = default;
+
+    ModelCreator(const ModelCreator&)                = delete;
+    ModelCreator(ModelCreator&&) noexcept            = delete;
+    ModelCreator& operator=(const ModelCreator&)     = delete;
+    ModelCreator& operator=(ModelCreator&&) noexcept = delete;
 
     std::unique_ptr<RenderModel> create_model(const Model& model);
 

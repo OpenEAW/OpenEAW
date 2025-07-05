@@ -10,7 +10,7 @@
 namespace khepri::renderer::io {
 namespace {
 
-enum
+enum : std::uint8_t
 {
     targa_image_none         = 0,
     targa_image_color_mapped = 1,
@@ -51,13 +51,13 @@ Header read_header(khepri::io::Stream& stream)
     hdr.image_id_length  = stream.read_uint8();
     hdr.color_map_type   = stream.read_uint8();
     hdr.image_type       = stream.read_uint8();
-    hdr.color_map_start  = stream.read_int16();
-    hdr.color_map_length = stream.read_int16();
+    hdr.color_map_start  = stream.read_uint16();
+    hdr.color_map_length = stream.read_uint16();
     hdr.color_map_bpp    = stream.read_uint8();
-    hdr.image_x          = stream.read_int16();
-    hdr.image_y          = stream.read_int16();
-    hdr.image_width      = stream.read_int16();
-    hdr.image_height     = stream.read_int16();
+    hdr.image_x          = stream.read_uint16();
+    hdr.image_y          = stream.read_uint16();
+    hdr.image_width      = stream.read_uint16();
+    hdr.image_height     = stream.read_uint16();
     hdr.image_bpp        = stream.read_uint8();
     hdr.image_descriptor = stream.read_uint8();
     return hdr;
@@ -68,13 +68,13 @@ void write_header(khepri::io::Stream& stream, const Header& hdr)
     stream.write_uint8(hdr.image_id_length);
     stream.write_uint8(hdr.color_map_type);
     stream.write_uint8(hdr.image_type);
-    stream.write_int16(hdr.color_map_start);
-    stream.write_int16(hdr.color_map_length);
+    stream.write_uint16(hdr.color_map_start);
+    stream.write_uint16(hdr.color_map_length);
     stream.write_uint8(hdr.color_map_bpp);
-    stream.write_int16(hdr.image_x);
-    stream.write_int16(hdr.image_y);
-    stream.write_int16(hdr.image_width);
-    stream.write_int16(hdr.image_height);
+    stream.write_uint16(hdr.image_x);
+    stream.write_uint16(hdr.image_y);
+    stream.write_uint16(hdr.image_width);
+    stream.write_uint16(hdr.image_height);
     stream.write_uint8(hdr.image_bpp);
     stream.write_uint8(hdr.image_descriptor);
 }
@@ -123,8 +123,8 @@ bool is_texture_tga(khepri::io::Stream& stream)
         auto header = read_header(stream);
         return is_valid_header(header);
     } catch (const khepri::io::Error&) {
+        return false;
     }
-    return false;
 }
 
 TextureDesc load_texture_tga(khepri::io::Stream& stream)

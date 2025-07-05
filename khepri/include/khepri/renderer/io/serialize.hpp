@@ -60,7 +60,7 @@ struct SerializeTraits<renderer::ModelDesc>
     static renderer::ModelDesc deserialize(Deserializer& d)
     {
         auto meshes = d.read<std::vector<renderer::MeshDesc>>();
-        return renderer::ModelDesc(std::move(meshes));
+        return {std::move(meshes)};
     }
 };
 

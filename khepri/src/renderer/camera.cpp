@@ -13,10 +13,12 @@ Camera::Matrices Camera::create_matrices(const Properties& properties) noexcept
         Vector3f{properties.position}, Vector3f{properties.target}, Vector3f{properties.up});
     matrices.projection =
         (properties.type == Type::orthographic)
-            ? Matrixf::create_orthographic_projection(properties.width, properties.aspect,
-                                                      properties.znear, properties.zfar)
-            : Matrixf::create_perspective_projection(properties.fov, properties.aspect,
-                                                     properties.znear, properties.zfar);
+            ? Matrixf::create_orthographic_projection(
+                  static_cast<float>(properties.width), static_cast<float>(properties.aspect),
+                  static_cast<float>(properties.znear), static_cast<float>(properties.zfar))
+            : Matrixf::create_perspective_projection(
+                  static_cast<float>(properties.fov), static_cast<float>(properties.aspect),
+                  static_cast<float>(properties.znear), static_cast<float>(properties.zfar));
     matrices.view_proj     = matrices.view * matrices.projection;
     matrices.view_inv      = inverse(matrices.view);
     matrices.view_proj_inv = inverse(matrices.view_proj);
@@ -35,9 +37,10 @@ Frustum Camera::frustum(const Vector2& p1, const Vector2& p2) const noexcept
     // Constructs a side plane from its coordinates on the near plane (-1 <= x,y <= 1)
     // The @orthogonal_view_dir lies in the plane, orthogonal to the view direction.
     const auto create_side_plane = [&](double x, double y, const Vector3& orthogonal_view_dir) {
-        Vector3 near_position = m_matrices.view_proj_inv.transform_coord(Vector3{x, y, 0.0});
-        Vector3 far_position  = m_matrices.view_proj_inv.transform_coord(Vector3{x, y, 1.0});
-        Vector3 inside_dir    = normalize(cross(far_position - near_position, orthogonal_view_dir));
+        const Vector3 near_position = m_matrices.view_proj_inv.transform_coord(Vector3{x, y, 0.0});
+        const Vector3 far_position  = m_matrices.view_proj_inv.transform_coord(Vector3{x, y, 1.0});
+        const Vector3 inside_dir =
+            normalize(cross(far_position - near_position, orthogonal_view_dir));
         return Plane(near_position, inside_dir);
     };
 

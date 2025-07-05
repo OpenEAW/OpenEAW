@@ -4,6 +4,7 @@
 
 #include <gsl/gsl-lite.hpp>
 
+#include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -12,7 +13,7 @@
 namespace khepri::io {
 
 /// Modes for dealing with files
-enum class OpenMode
+enum class OpenMode : std::uint8_t
 {
     read,       /// Opens an existing file for reading.
     read_write, /// Creates a new file for reading and writing.

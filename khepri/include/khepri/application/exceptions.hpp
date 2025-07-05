@@ -36,7 +36,7 @@ public:
      * of the callable.
      */
     template <typename Callable>
-    auto invoke(Callable&& callable)
+    auto invoke(const Callable& callable)
     {
         using ResultType = decltype(callable());
         if constexpr (std::is_same_v<ResultType, void>) {

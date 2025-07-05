@@ -56,9 +56,9 @@ public:
      */
     [[nodiscard]] Frustum transform(const Matrix& transform) const noexcept
     {
-        return Frustum(m_left.transform(transform), m_right.transform(transform),
-                       m_top.transform(transform), m_bottom.transform(transform),
-                       m_near.transform(transform), m_far.transform(transform));
+        return {m_left.transform(transform), m_right.transform(transform),
+                m_top.transform(transform),  m_bottom.transform(transform),
+                m_near.transform(transform), m_far.transform(transform)};
     }
 
     /**

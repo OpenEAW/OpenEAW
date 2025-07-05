@@ -5,6 +5,8 @@
 #include <khepri/log/log.hpp>
 #include <khepri/renderer/camera.hpp>
 #include <khepri/renderer/diligent/renderer.hpp>
+#include <khepri/renderer/exceptions.hpp>
+#include <khepri/utility/string.hpp>
 
 #ifdef _MSC_VER
 #include <EngineFactoryD3D11.h>
@@ -13,12 +15,14 @@
 #endif
 #include <DebugOutput.h>
 #include <DeviceContext.h>
+#include <HLSL2GLSLConverter.h>
 #include <MapHelper.hpp>
 #include <RefCntAutoPtr.hpp>
 #include <RenderDevice.h>
 #include <Sampler.h>
 #include <SwapChain.h>
 #include <Texture.h>
+#include <iterator>
 #include <unordered_map>
 #include <utility>
 
@@ -140,6 +144,16 @@ void diligent_debug_message_callback(DEBUG_MESSAGE_SEVERITY severity, const char
     }
 }
 
+constexpr bool using_shader_conversion()
+{
+#ifdef _MSC_VER
+    return false;
+#else
+    // OpenGL uses shader conversion
+    return true;
+#endif
+}
+
 } // namespace
 
 class Renderer::Impl
@@ -183,13 +197,12 @@ class Renderer::Impl
     };
 
 public:
-    Impl(std::any window)
+    Impl(const std::any& window)
     {
         SetDebugMessageCallback(diligent_debug_message_callback);
-
-#ifdef _MSC_VER
         const auto native_window = get_native_window(window);
 
+#ifdef _MSC_VER
         auto* factory = GetEngineFactoryD3D11();
 
         EngineD3D11CreateInfo engine_ci;
@@ -202,6 +215,7 @@ public:
         FullScreenModeDesc fullscreenmode_desc;
         factory->CreateSwapChainD3D11(m_device, m_context, swapchain_desc, fullscreenmode_desc,
                                       native_window, &m_swapchain);
+        static_assert(!using_shader_conversion());
 #else
         auto* factory = GetEngineFactoryOpenGL();
 
@@ -209,11 +223,18 @@ public:
 #ifndef NDEBUG
         engine_ci.SetValidationLevel(VALIDATION_LEVEL_2);
 #endif
-        engine_ci.Window = window;
-        SwapChainDesc swapchain_desc;
+        // Enable separate programs to support querying shader resources
+        engine_ci.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
+
+        engine_ci.Window = native_window;
+        const SwapChainDesc swapchain_desc;
         factory->CreateDeviceAndSwapChainGL(engine_ci, &m_device, &m_context, swapchain_desc,
                                             &m_swapchain);
+        static_assert(using_shader_conversion());
 #endif
+        if (m_device == nullptr || m_context == nullptr || m_swapchain == nullptr) {
+            throw khepri::renderer::Error("Failed to create renderer");
+        }
 
         // Create constants buffers for vertex shader
         {
@@ -236,32 +257,10 @@ public:
             m_device->CreateBuffer(desc, nullptr, &m_constants_view);
         }
 
-        {
-            SamplerDesc desc;
-            desc.Name      = "LinearSampler";
-            desc.MinFilter = FILTER_TYPE_LINEAR;
-            desc.MagFilter = FILTER_TYPE_LINEAR;
-            desc.MipFilter = FILTER_TYPE_LINEAR;
-            desc.AddressU  = TEXTURE_ADDRESS_WRAP;
-            desc.AddressV  = TEXTURE_ADDRESS_WRAP;
-            m_device->CreateSampler(desc, &m_linear_sampler);
-        }
-
-        {
-            SamplerDesc desc;
-            desc.Name      = "LinearClampSampler";
-            desc.MinFilter = FILTER_TYPE_LINEAR;
-            desc.MagFilter = FILTER_TYPE_LINEAR;
-            desc.MipFilter = FILTER_TYPE_LINEAR;
-            desc.AddressU  = TEXTURE_ADDRESS_CLAMP;
-            desc.AddressV  = TEXTURE_ADDRESS_CLAMP;
-            m_device->CreateSampler(desc, &m_linear_clamp_sampler);
-        }
-
         // Create dynamic buffers for sprite rendering
         {
-            BufferData buffer_data{};
-            BufferDesc desc;
+            const BufferData buffer_data{};
+            BufferDesc       desc;
             desc.Size           = static_cast<Uint32>(SPRITE_BUFFER_COUNT * VERTICES_PER_SPRITE *
                                                       sizeof(SpriteVertex));
             desc.BindFlags      = BIND_VERTEX_BUFFER;
@@ -286,9 +285,9 @@ public:
                 indices[triangle1 + 2] = i + 2;
             }
 
-            BufferData bufdata{indices.data(),
-                               static_cast<Uint32>(indices.size() * sizeof(std::uint16_t))};
-            BufferDesc desc;
+            const BufferData bufdata{indices.data(),
+                                     static_cast<Uint32>(indices.size() * sizeof(std::uint16_t))};
+            BufferDesc       desc;
             desc.Size      = bufdata.DataSize;
             desc.BindFlags = BIND_INDEX_BUFFER;
             desc.Usage     = USAGE_IMMUTABLE;
@@ -308,39 +307,36 @@ public:
         m_swapchain->Resize(size.width, size.height);
     }
 
-    Size render_size() const noexcept
+    [[nodiscard]] Size render_size() const noexcept
     {
         const auto& desc = m_swapchain->GetDesc();
         return {desc.Width, desc.Height};
     }
 
-    std::unique_ptr<Shader> create_shader(const std::filesystem::path& path,
-                                          const ShaderLoader&          loader)
+    [[nodiscard]] std::unique_ptr<Shader> create_shader(const std::filesystem::path& path,
+                                                        const ShaderLoader&          loader)
     {
         RefCntAutoPtr<ShaderStreamFactory> factory(MakeNewRCObj<ShaderStreamFactory>()(loader));
 
-        const auto& create_shader_object = [&, this](const std::string& path,
-                                                     SHADER_TYPE        shader_type,
-                                                     const std::string& entrypoint) {
-            ShaderCreateInfo ci;
-            ci.Desc.Name                  = path.c_str();
-            ci.Desc.ShaderType            = shader_type;
-            ci.FilePath                   = path.c_str();
-            ci.pShaderSourceStreamFactory = factory;
-            ci.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
-            ci.EntryPoint                 = entrypoint.c_str();
-            RefCntAutoPtr<IShader> shader;
-            m_device->CreateShader(ci, &shader);
-            return shader;
-        };
+        auto shader = std::make_unique<Shader>();
+        shader->vertex_shader =
+            create_shader_object(path.string(), *factory, SHADER_TYPE_VERTEX, "vs_main");
+        if (!shader->vertex_shader) {
+            throw khepri::renderer::Error("Failed to create vertex shader from file: " +
+                                          path.string());
+        }
 
-        auto shader           = std::make_unique<Shader>();
-        shader->vertex_shader = create_shader_object(path.string(), SHADER_TYPE_VERTEX, "vs_main");
-        shader->pixel_shader  = create_shader_object(path.string(), SHADER_TYPE_PIXEL, "ps_main");
+        shader->pixel_shader =
+            create_shader_object(path.string(), *factory, SHADER_TYPE_PIXEL, "ps_main");
+        if (!shader->pixel_shader) {
+            throw khepri::renderer::Error("Failed to create pixel shader from file: " +
+                                          path.string());
+        }
         return shader;
     }
 
-    std::unique_ptr<Material> create_material(const khepri::renderer::MaterialDesc& material_desc)
+    [[nodiscard]] std::unique_ptr<Material>
+    create_material(const khepri::renderer::MaterialDesc& material_desc)
     {
         auto* const shader = dynamic_cast<Shader*>(material_desc.shader);
         if (shader == nullptr) {
@@ -439,14 +435,6 @@ public:
                 material->pipeline->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ViewConstants")) {
             var->Set(m_constants_view);
         }
-        if (auto* var =
-                material->pipeline->GetStaticVariableByName(SHADER_TYPE_PIXEL, "LinearSampler")) {
-            var->Set(m_linear_sampler);
-        }
-        if (auto* var = material->pipeline->GetStaticVariableByName(SHADER_TYPE_PIXEL,
-                                                                    "LinearClampSampler")) {
-            var->Set(m_linear_clamp_sampler);
-        }
         material->pipeline->CreateShaderResourceBinding(&material->shader_resource_binding, true);
 
         const auto& property_size = [](const MaterialDesc::PropertyValue& value) -> Uint32 {
@@ -480,7 +468,7 @@ public:
         return material;
     }
 
-    std::unique_ptr<Texture> create_texture(const TextureDesc& texture_desc)
+    [[nodiscard]] std::unique_ptr<Texture> create_texture(const TextureDesc& texture_desc)
     {
         Diligent::TextureDesc desc;
         desc.Type  = to_resource_dimension(texture_desc.dimension(), texture_desc.array_size() > 0);
@@ -520,19 +508,38 @@ public:
 
         auto texture = std::make_unique<Texture>(Size{texture_desc.width(), texture_desc.height()});
         m_device->CreateTexture(desc, &texdata, &texture->texture);
+        if (!texture->texture) {
+            throw khepri::renderer::Error("Failed to create texture");
+        }
         texture->shader_view = texture->texture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+        // Create the associated sampler. We use combined samplers to simplify OpenGL development.
+        SamplerDesc sampler_desc;
+        sampler_desc.MinFilter = FILTER_TYPE_LINEAR;
+        sampler_desc.MagFilter = FILTER_TYPE_LINEAR;
+        sampler_desc.MipFilter = FILTER_TYPE_LINEAR;
+        sampler_desc.AddressU  = TEXTURE_ADDRESS_WRAP;
+        sampler_desc.AddressV  = TEXTURE_ADDRESS_WRAP;
+        Diligent::RefCntAutoPtr<Diligent::ISampler> sampler;
+        m_device->CreateSampler(sampler_desc, &sampler);
+        if (!sampler) {
+            throw khepri::renderer::Error("Failed to create texture sampler");
+        }
+        texture->shader_view->SetSampler(sampler);
+
         return texture;
     }
 
-    std::unique_ptr<Mesh> create_mesh(const MeshDesc& mesh_desc)
+    [[nodiscard]] std::unique_ptr<Mesh> create_mesh(const MeshDesc& mesh_desc)
     {
         auto mesh         = std::make_unique<Mesh>();
         mesh->index_count = static_cast<Mesh::Index>(mesh_desc.indices.size());
 
         {
             using Vertex = khepri::renderer::MeshDesc::Vertex;
-            BufferData bufdata{mesh_desc.vertices.data(),
-                               static_cast<Uint32>(mesh_desc.vertices.size() * sizeof(Vertex))};
+            const BufferData bufdata{
+                mesh_desc.vertices.data(),
+                static_cast<Uint32>(mesh_desc.vertices.size() * sizeof(Vertex))};
             BufferDesc desc;
             desc.Size      = bufdata.DataSize;
             desc.BindFlags = BIND_VERTEX_BUFFER;
@@ -541,7 +548,7 @@ public:
         }
 
         {
-            BufferData bufdata{
+            const BufferData bufdata{
                 mesh_desc.indices.data(),
                 static_cast<Uint32>(mesh_desc.indices.size() * sizeof(MeshDesc::Index))};
             BufferDesc desc;
@@ -710,6 +717,77 @@ private:
 
     using SpriteVertex = MeshDesc::Vertex;
 
+    RefCntAutoPtr<IShader> create_shader_object(const std::string&   path,
+                                                ShaderStreamFactory& factory,
+                                                SHADER_TYPE          shader_type,
+                                                const std::string&   entrypoint)
+    {
+        RefCntAutoPtr<IDataBlob>                  compiler_output;
+        RefCntAutoPtr<IHLSL2GLSLConversionStream> conversion_stream;
+
+        ShaderCreateInfo ci;
+        ci.Desc.Name                  = path.c_str();
+        ci.Desc.ShaderType            = shader_type;
+        ci.FilePath                   = path.c_str();
+        ci.pShaderSourceStreamFactory = &factory;
+        ci.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
+        ci.EntryPoint                 = entrypoint.c_str();
+        ci.ppCompilerOutput           = &compiler_output;
+        ci.ppConversionStream         = &conversion_stream;
+
+        // Note: to support OpenGL, we need to use combined texture samplers.
+        // This means HLSL shaders need to define a "Foo" texture and associated "FooSampler"
+        // sampler, which are treated as one by Diligent. This does increase the number of
+        // samplers.
+        ci.Desc.UseCombinedTextureSamplers = true;
+        ci.Desc.CombinedSamplerSuffix      = "Sampler";
+
+        RefCntAutoPtr<IShader> shader;
+        m_device->CreateShader(ci, &shader);
+        if (shader == nullptr) {
+            LOG.error("Failed to create shader from file: {}, error: {}", path,
+                      compiler_output != nullptr
+                          ? static_cast<const char*>(compiler_output->GetConstDataPtr())
+                          : "<unknown>");
+            if constexpr (using_shader_conversion()) {
+                print_converted_glsl_source(std::move(conversion_stream), path, factory,
+                                            shader_type, entrypoint);
+            }
+        }
+        return shader;
+    }
+
+    static void
+    print_converted_glsl_source(RefCntAutoPtr<IHLSL2GLSLConversionStream> conversion_stream,
+                                const std::string& path, ShaderStreamFactory& factory,
+                                SHADER_TYPE shader_type, const std::string& entrypoint)
+    {
+        if (conversion_stream == nullptr) {
+            // If we didn't get a conversion stream, try to create one ourselves
+            RefCntAutoPtr<IHLSL2GLSLConverter> converter;
+            Diligent::CreateHLSL2GLSLConverter(&converter);
+            converter->CreateStream(path.c_str(), &factory, nullptr, 0, &conversion_stream);
+        }
+
+        RefCntAutoPtr<IDataBlob> glsl_source;
+        if (conversion_stream != nullptr) {
+            conversion_stream->Convert(entrypoint.c_str(), shader_type, true, "Sampler", false,
+                                       &glsl_source);
+        }
+
+        if (glsl_source != nullptr) {
+            const char* glsl = static_cast<const char*>(glsl_source->GetConstDataPtr());
+            LOG.info("Converted GLSL source:");
+            int line_number = 1;
+            for (const auto& line : khepri::split(glsl, "\n", true)) {
+                LOG.info("{}: {}", line_number++, line);
+            }
+            LOG.info("---End of GLSL source---");
+        } else {
+            LOG.info("Couldn't convert shader to GLSL for diagnostics.");
+        }
+    }
+
     void apply_material_params(Material&                                          material,
                                gsl::span<const khepri::renderer::Material::Param> params)
     {
@@ -743,13 +821,13 @@ private:
                                   },
                                   [&](const auto& value) {
                                       if (map_helper) {
-                                          // NOLINTNEXTLINE - pointer arithmetic
+                                          // NOLINTBEGIN - pointer arithmetic and reinterpret_cast
                                           auto* param_data =
                                               static_cast<std::uint8_t*>(*map_helper) +
                                               param.buffer_offset;
-                                          // NOLINTNEXTLINE - reinterpret_cast
                                           *reinterpret_cast<std::decay_t<decltype(value)>*>(
                                               param_data) = value;
+                                          // NOLINTEND
                                       }
                                   }},
                        value);
@@ -768,8 +846,6 @@ private:
         const std::unordered_map<std::string, SHADER_RESOURCE_TYPE> predefined_variables{
             {"InstanceConstants", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
             {"ViewConstants", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
-            {"LinearSampler", SHADER_RESOURCE_TYPE_SAMPLER},
-            {"LinearClampSampler", SHADER_RESOURCE_TYPE_SAMPLER},
             {"Material", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
         };
 
@@ -777,10 +853,14 @@ private:
         // properties
         std::unordered_map<std::string, SHADER_RESOURCE_TYPE> shader_variables;
         for (const auto& shader : {shader.vertex_shader, shader.pixel_shader}) {
-            Uint32 count = shader->GetResourceCount();
+            const Uint32 count = shader->GetResourceCount();
             for (Uint32 i = 0; i < count; ++i) {
                 ShaderResourceDesc desc;
                 shader->GetResourceDesc(i, desc);
+                if (desc.Type == SHADER_RESOURCE_TYPE_SAMPLER) {
+                    // We're using combined samplers, so we don't need to track these
+                    continue;
+                }
 
                 const auto it = predefined_variables.find(desc.Name);
                 if (it == predefined_variables.end()) {
@@ -835,20 +915,19 @@ private:
         return dynamic_variables;
     }
 
+    bool                                              m_using_shader_conversion{false};
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice>  m_device;
     Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_context;
     Diligent::RefCntAutoPtr<Diligent::ISwapChain>     m_swapchain;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_constants_instance;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_constants_view;
-    Diligent::RefCntAutoPtr<Diligent::ISampler>       m_linear_sampler;
-    Diligent::RefCntAutoPtr<Diligent::ISampler>       m_linear_clamp_sampler;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_sprite_vertex_buffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_sprite_index_buffer;
 };
 
-Renderer::Renderer(std::any window) : m_impl(std::make_unique<Impl>(std::move(window))) {}
+Renderer::Renderer(const std::any& window) : m_impl(std::make_unique<Impl>(window)) {}
 
-Renderer::~Renderer() {}
+Renderer::~Renderer() = default;
 
 void Renderer::render_size(const Size& size)
 {

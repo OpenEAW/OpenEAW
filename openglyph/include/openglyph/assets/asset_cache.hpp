@@ -24,7 +24,9 @@ public:
     AssetCache(AssetLoader& asset_loader, khepri::renderer::Renderer& renderer);
 
     AssetCache(const AssetCache&)            = delete;
+    AssetCache(AssetCache&&)                 = delete;
     AssetCache& operator=(const AssetCache&) = delete;
+    AssetCache& operator=(AssetCache&&)      = delete;
     ~AssetCache();
 
     khepri::renderer::Material* get_material(std::string_view name);

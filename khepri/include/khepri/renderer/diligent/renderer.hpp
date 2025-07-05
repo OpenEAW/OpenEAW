@@ -20,12 +20,15 @@ public:
      *
      * \param[in] window the native window to create the renderer in
      *
-     * \throws ArgumentError if \a window does not contain the expected type
+     * \throws khepri::ArgumentError if \a window does not contain the expected type
+     * \throws khepri::renderer::Error if the renderer could not be created
      *
      * The expected type in \a window depends on the target platform:
-     * - Windows: a HWND is expected
+     * - Windows: a HWND is expected.
+     * - Linux:   a std::tuple<void*, std::uint32_t> is expected where the first element is
+     *            the X11 display pointer and the second element is the X11 window ID.
      */
-    Renderer(std::any window);
+    Renderer(const std::any& window);
     ~Renderer() override;
 
     Renderer(const Renderer&)            = delete;

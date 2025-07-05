@@ -43,13 +43,13 @@ using Pointf = BasicPoint<float>;
 using Pointi = BasicPoint<long>;
 
 template <typename T, typename U>
-inline constexpr bool operator==(const BasicPoint<T>& p1, const BasicPoint<U>& p2) noexcept
+constexpr bool operator==(const BasicPoint<T>& p1, const BasicPoint<U>& p2) noexcept
 {
     return p1.x == p2.x && p1.y == p2.y;
 }
 
 template <typename T, typename U>
-inline constexpr bool operator!=(const BasicPoint<T>& p1, const BasicPoint<U>& p2) noexcept
+constexpr bool operator!=(const BasicPoint<T>& p1, const BasicPoint<U>& p2) noexcept
 {
     return !(p1 == p2);
 }

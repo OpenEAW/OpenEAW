@@ -11,6 +11,12 @@ class SceneRenderer
 {
 public:
     explicit SceneRenderer(khepri::renderer::Renderer& renderer) : m_renderer(renderer) {}
+    ~SceneRenderer() = default;
+
+    SceneRenderer(const SceneRenderer&)                = delete;
+    SceneRenderer(SceneRenderer&&) noexcept            = delete;
+    SceneRenderer& operator=(const SceneRenderer&)     = delete;
+    SceneRenderer& operator=(SceneRenderer&&) noexcept = delete;
 
     void render_scene(const openglyph::Scene& scene, const khepri::renderer::Camera& camera);
 

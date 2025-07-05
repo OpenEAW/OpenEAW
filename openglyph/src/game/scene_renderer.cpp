@@ -38,9 +38,10 @@ void SceneRenderer::render_scene(const openglyph::Scene&         scene,
     for (const auto& object : scene.objects()) {
         if (const auto* render = object->behavior<RenderBehavior>()) {
             auto* state = object->user_data<RenderState>();
-            if (!state) {
-                object->user_data(
-                    RenderState{render->model(), khepri::Matrixf::create_scaling(render->scale())});
+            if (state == nullptr) {
+                object->user_data(RenderState{
+                    render->model(),
+                    khepri::Matrixf::create_scaling(static_cast<float>(render->scale()))});
                 state = object->user_data<RenderState>();
             }
 

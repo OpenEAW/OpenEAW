@@ -100,7 +100,7 @@ public:
 };
 #pragma pack(pop)
 
-inline constexpr ColorRGB::ColorRGB(const ColorSRGB& c) noexcept
+constexpr ColorRGB::ColorRGB(const ColorSRGB& c) noexcept
     : r(ColorSRGB::srgb_to_linear(static_cast<float>(c.r) /
                                   std::numeric_limits<ColorSRGB::ComponentType>::max()))
     , g(ColorSRGB::srgb_to_linear(static_cast<float>(c.g) /

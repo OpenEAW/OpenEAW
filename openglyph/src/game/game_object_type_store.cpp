@@ -1,3 +1,4 @@
+#include <gsl/gsl-lite.hpp>
 #include <openglyph/game/game_object_type_store.hpp>
 #include <openglyph/parser/parsers.hpp>
 
@@ -25,7 +26,7 @@ GameObjectType* GameObjectTypeStore::read_game_object_type(const XmlParser::Node
     // Because the memory resource is a monotonic_buffer_resource, tracking the lifetime of the
     // allocated object is not necessary.
     std::pmr::polymorphic_allocator<GameObjectType> allocator(&m_memory_resource);
-    auto type = new (allocator.allocate(1)) GameObjectType();
+    auto* type = gsl::owner<GameObjectType*>(new (allocator.allocate(1)) GameObjectType());
 
     type->name             = copy_string(require_attribute(node, "Name"));
     type->space_model_name = copy_string(optional_child(node, "Space_Model_Name", ""sv));
@@ -43,10 +44,10 @@ std::string_view GameObjectTypeStore::copy_string(std::string_view str)
 
 void GameObjectTypeStore::read_game_object_types(khepri::io::Stream& stream)
 {
-    XmlParser parser(stream);
+    const XmlParser parser(stream);
     if (const auto& root = parser.root()) {
         for (const auto& node : root->nodes()) {
-            auto type = read_game_object_type(node);
+            const auto* type = read_game_object_type(node);
             m_game_object_types.emplace(type->name, type);
         }
     }
@@ -55,7 +56,7 @@ void GameObjectTypeStore::read_game_object_types(khepri::io::Stream& stream)
 GameObjectTypeStore::GameObjectTypeStore(AssetLoader& asset_loader, std::string_view index_filename)
 {
     if (auto index_stream = asset_loader.open_config(index_filename)) {
-        XmlParser parser(*index_stream);
+        const XmlParser parser(*index_stream);
         if (const auto& root = parser.root()) {
             for (const auto& file : root->nodes()) {
                 if (auto config_stream = asset_loader.open_config(file.value())) {

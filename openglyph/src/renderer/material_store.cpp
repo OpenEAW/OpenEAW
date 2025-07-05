@@ -12,6 +12,15 @@ template <class... Ts>
 Overloaded(Ts...) -> Overloaded<Ts...>;
 } // namespace
 
+MaterialStore::MaterialStore(khepri::renderer::Renderer&       renderer,
+                             Loader<khepri::renderer::Shader>  shader_loader,
+                             Loader<khepri::renderer::Texture> texture_loader)
+    : m_renderer(renderer)
+    , m_shader_loader(std::move(shader_loader))
+    , m_texture_loader(std::move(texture_loader))
+{
+}
+
 void MaterialStore::register_materials(
     gsl::span<const openglyph::renderer::MaterialDesc> material_descs)
 {
