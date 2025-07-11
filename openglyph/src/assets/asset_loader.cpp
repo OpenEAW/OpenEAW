@@ -20,7 +20,8 @@ fs::path base_path()
 }
 } // namespace
 
-AssetLoader::AssetLoader(std::vector<fs::path> data_paths) : m_data_paths(std::move(data_paths)) {
+AssetLoader::AssetLoader(std::vector<fs::path> data_paths) : m_data_paths(std::move(data_paths))
+{
     m_megafs = std::make_unique<io::MegaFileSystem>(m_data_paths);
 }
 

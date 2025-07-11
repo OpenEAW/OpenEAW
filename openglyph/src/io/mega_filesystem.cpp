@@ -4,7 +4,7 @@
 #include <openglyph/io/mega_filesystem.hpp>
 #include <openglyph/parser/xml_parser.hpp>
 namespace openglyph::io {
-khepri::log::Logger LOG("megafs");
+const khepri::log::Logger LOG("megafs");
 
 MegaFileSystem::MegaFileSystem(std::vector<std::filesystem::path> data_paths)
     : m_data_paths(std::move(data_paths))
@@ -76,7 +76,6 @@ std::unique_ptr<SubFile> MegaFile::open_file(std::filesystem::path& path)
     auto        it   = std::find(file_hashes.begin(), file_hashes.end(), hash);
 
     if (it != file_hashes.end()) {
-        
         std::size_t index = static_cast<std::size_t>(std::distance(file_hashes.begin(), it));
         return std::make_unique<SubFile>(fileinfo[index], &m_megaFile);
     }
@@ -126,17 +125,17 @@ size_t SubFile::write(const void* buffer, size_t count)
 long long SubFile::seek(long long offset, khepri::io::SeekOrigin origin)
 {
     switch (origin) {
-        case khepri::io::SeekOrigin::begin:
-            local_read_offset = offset;
-            break;
-        case khepri::io::SeekOrigin::current:
-            local_read_offset += offset;
-            break;
-        case khepri::io::SeekOrigin::end:
-            local_read_offset = info.file_size + offset;
-            break;
-        default:
-            break;
+    case khepri::io::SeekOrigin::begin:
+        local_read_offset = offset;
+        break;
+    case khepri::io::SeekOrigin::current:
+        local_read_offset += offset;
+        break;
+    case khepri::io::SeekOrigin::end:
+        local_read_offset = info.file_size + offset;
+        break;
+    default:
+        break;
     }
     return local_read_offset;
 }
