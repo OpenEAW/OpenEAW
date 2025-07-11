@@ -64,6 +64,7 @@ MegaFile::MegaFile(const std::filesystem::path& mega_file_path)
 
     // calculate hashes for this session
     for (const SubFileInfo& info : fileinfo) {
+        LOG.info(filenames[info.file_name_index]);
         std::size_t hash = std::hash<std::string>{}(filenames[info.file_name_index]);
         file_hashes.push_back(hash);
     }
@@ -75,6 +76,7 @@ std::unique_ptr<SubFile> MegaFile::open_file(std::filesystem::path& path)
     auto        it   = std::find(file_hashes.begin(), file_hashes.end(), hash);
 
     if (it != file_hashes.end()) {
+        
         std::size_t index = static_cast<std::size_t>(std::distance(file_hashes.begin(), it));
         return std::make_unique<SubFile>(fileinfo[index], &m_megaFile);
     }
@@ -105,47 +107,38 @@ SubFile::SubFile(const SubFileInfo info, khepri::io::File* p_file) : info(info),
 
 size_t SubFile::read(void* buffer, size_t count)
 {
-    try {
-        // Another file could have read from the current file, so update the read head.
-        p_megaFile->seek(info.file_offset + local_offset, khepri::io::SeekOrigin::begin);
+    // Another file could have read from the current file, so update the read head.
+    p_megaFile->seek(info.file_offset + local_read_offset, khepri::io::SeekOrigin::begin);
 
-        // Count could be larger then the file, prevent reading past the edge of the sub file
-        if (local_offset + count > info.file_size) {
-            count = info.file_size - local_offset;
-        }
-
-        return p_megaFile->read(buffer, count);
-    } catch (Error) {
+    // Count could be larger then the file, prevent reading past the edge of the sub file
+    if (local_read_offset + count > info.file_size) {
+        count = info.file_size - local_read_offset;
     }
-    return 0;
+    local_read_offset += count;
+    return p_megaFile->read(buffer, count);
 }
 
-size_t SubFile::write(const void* buffer, size_t count) 
+size_t SubFile::write(const void* buffer, size_t count)
 {
     throw khepri::io::Error("writing is not supported");
 }
 
 long long SubFile::seek(long long offset, khepri::io::SeekOrigin origin)
 {
-    switch (origin)
-    {
-    case khepri::io::SeekOrigin::begin:
-        p_megaFile->seek(info.file_offset + offset, khepri::io::SeekOrigin::begin);
-        /* code */
-        break;
-    case khepri::io::SeekOrigin::current:
-        p_megaFile->seek(info.file_offset + local_offset + offset, khepri::io::SeekOrigin::begin);
-
-        /* code */
-        break;
-    case khepri::io::SeekOrigin::end:
-        p_megaFile->seek(info.file_offset + info.file_size - offset, khepri::io::SeekOrigin::begin);
-        break;
-    
-    default:
-        break;
+    switch (origin) {
+        case khepri::io::SeekOrigin::begin:
+            local_read_offset = offset;
+            break;
+        case khepri::io::SeekOrigin::current:
+            local_read_offset += offset;
+            break;
+        case khepri::io::SeekOrigin::end:
+            local_read_offset = info.file_size + offset;
+            break;
+        default:
+            break;
     }
-    return 0;
+    return local_read_offset;
 }
 
 } // namespace openglyph::io
