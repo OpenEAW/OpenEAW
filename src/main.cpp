@@ -152,10 +152,10 @@ int main(int argc, const char* argv[])
         window.add_size_listener([&] { renderer.render_size(window.render_size()); });
         renderer.render_size(window.render_size());
 
-        openglyph::AssetCache          asset_cache(asset_loader, renderer);
-        openglyph::GameObjectTypeStore game_object_types(asset_loader, "GameObjectFiles.xml");
-        openglyph::Environment         environment{};
-        
+        openglyph::AssetCache                asset_cache(asset_loader, renderer);
+        const openglyph::GameObjectTypeStore game_object_types(asset_loader, "GameObjectFiles.xml");
+        openglyph::Environment               environment{};
+
         if (auto stream = asset_loader.open_map("_SPACE_PLANET_ALDERAAN_01")) {
             const auto map = openglyph::io::read_map(*stream);
             if (!map.environments.empty()) {
