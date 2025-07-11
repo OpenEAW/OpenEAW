@@ -122,6 +122,6 @@ public:
 private:
     const SubFileInfo info;
     khepri::io::File* p_megaFile;
-    std::uint64_t     local_offset;
+    std::uint64_t     local_read_offset;
 };
 } // namespace openglyph::io
