@@ -23,6 +23,11 @@ std::string basename(std::string_view str);
 std::string uppercase(std::string_view str);
 
 /**
+ * Returns the lowercase version of a string.
+ */
+std::string lowercase(std::string_view str);
+
+/**
  * Returns the trimmed view of a string.
  *
  * Trimmed strings have spaces at the start and end removed.

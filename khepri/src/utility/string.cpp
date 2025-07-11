@@ -20,6 +20,14 @@ std::string uppercase(std::string_view str)
     return result;
 }
 
+std::string lowercase(std::string_view str)
+{
+    std::string result(str.size(), '\0');
+    std::transform(str.begin(), str.end(), result.begin(),
+                   [](unsigned char ch) { return tolower(ch); });
+    return result;
+}
+
 std::string_view trim(std::string_view str)
 {
     static constexpr auto spaces = "\t\n\v\f\r ";
