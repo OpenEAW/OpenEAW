@@ -64,7 +64,6 @@ MegaFile::MegaFile(const std::filesystem::path& mega_file_path)
 
     // calculate hashes for this session
     for (const SubFileInfo& info : fileinfo) {
-        LOG.info(filenames[info.file_name_index]);
         std::size_t hash = std::hash<std::string>{}(filenames[info.file_name_index]);
         file_hashes.push_back(hash);
     }
