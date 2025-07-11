@@ -15,6 +15,7 @@
 #include <khepri/scene/scene_object.hpp>
 #include <khepri/utility/cache.hpp>
 #include <khepri/utility/string.hpp>
+#include <openglyph/io/mega_filesystem.hpp>
 #include <openglyph/assets/asset_cache.hpp>
 #include <openglyph/assets/asset_loader.hpp>
 #include <openglyph/assets/io/map.hpp>
@@ -189,7 +190,7 @@ int main(int argc, const char* argv[])
             LOG.info(" - {}", data_path);
         }
 
-        openglyph::AssetLoader asset_loader(std::move(data_paths));
+        openglyph::AssetLoader asset_loader(data_paths);
 
         khepri::application::Window          window(APPLICATION_NAME);
         khepri::renderer::diligent::Renderer renderer(window.native_handle());
