@@ -11,7 +11,7 @@
         "spirv-tools/1.3.224.0",
         "spirv-headers/1.3.224.0",
         "spirv-cross/1.3.224.0",
-        "robin-hood-hashing/3.11.5",
+        "robin-hood-hashing/3.11.5#6287c40b3396bea819b4751ef6bf8737",
         "rapidxml/1.13",
         "rapidjson/cci.20230929",
         "pugixml/1.14",
