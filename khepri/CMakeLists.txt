@@ -16,6 +16,7 @@ add_library(${PROJECT_NAME}
     src/application/console_logger.cpp
     src/application/current_directory.cpp
     src/application/exceptions.cpp
+    src/application/platform.cpp
     src/application/window.cpp
     src/font/io/font_face.cpp
     src/font/font_cache.cpp

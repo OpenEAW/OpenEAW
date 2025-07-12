@@ -29,6 +29,7 @@
 #include <openglyph/renderer/io/model.hpp>
 #include <openglyph/renderer/material_store.hpp>
 #include <openglyph/renderer/model_creator.hpp>
+#include <openglyph/steam/steam.hpp>
 #include <openglyph/ui/input.hpp>
 
 #include <cstdlib>
@@ -184,6 +185,7 @@ int main(int argc, const char* argv[])
     const khepri::application::ConsoleLogger console_logger;
 #endif
 
+    openglyph::steam::Steam::get_steam_app_location(32470);
     khepri::application::ExceptionHandler exception_handler("main");
 
     auto result = exception_handler.invoke([&]() {

@@ -28,6 +28,7 @@ add_library(${PROJECT_NAME}
     src/parser/parsers.cpp
     src/parser/xml_parser.cpp
     src/ui/input.cpp
+    src/steam/steam.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
