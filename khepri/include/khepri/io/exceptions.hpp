@@ -18,4 +18,9 @@ public:
     InvalidFormatError() : khepri::io::Error("invalid format") {}
 };
 
+class FileNotFoundError : public khepri::io::Error
+{
+public:
+    FileNotFoundError() : khepri::io::Error("File not found") {}
+};
 } // namespace khepri::io

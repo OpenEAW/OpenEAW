@@ -17,6 +17,7 @@ add_library(${PROJECT_NAME}
     src/game/tactical_camera_store.cpp
     src/io/chunk_reader.cpp
     src/io/mega_filesystem.cpp
+    src/io/mega_file.cpp
     src/renderer/io/material.cpp
     src/renderer/io/model.cpp
     src/renderer/material_store.cpp

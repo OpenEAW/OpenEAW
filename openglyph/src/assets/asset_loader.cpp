@@ -65,8 +65,7 @@ AssetLoader::open_file(const fs::path& base_path, std::string_view name_,
 
     auto path = base_path / name_;
 
-    const auto& try_open_sub_file =
-        [this](fs::path& path) -> std::unique_ptr<openglyph::io::SubFile> {
+    const auto& try_open_sub_file = [this](fs::path& path) -> std::unique_ptr<khepri::io::Stream> {
         for (const auto& data_path : m_data_paths) {
             try {
                 return m_megafs->open_file(path);

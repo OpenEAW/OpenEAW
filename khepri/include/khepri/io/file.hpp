@@ -29,9 +29,10 @@ public:
     ~File() override;
 
     File(const File&)            = delete;
-    File(File&&)                 = delete;
     File& operator=(const File&) = delete;
-    File& operator=(File&&)      = delete;
+
+    File(File&& other) noexcept;
+    File& operator=(File&& other) noexcept;
 
     /// \see stream::readable
     [[nodiscard]] bool readable() const noexcept override
