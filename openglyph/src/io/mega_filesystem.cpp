@@ -4,6 +4,7 @@
 #include <openglyph/io/mega_file.hpp>
 #include <openglyph/io/mega_filesystem.hpp>
 #include <openglyph/parser/xml_parser.hpp>
+
 namespace openglyph::io {
 const khepri::log::Logger LOG("megafs");
 
@@ -23,12 +24,12 @@ MegaFileSystem::MegaFileSystem(std::vector<std::filesystem::path> data_paths)
 std::unique_ptr<khepri::io::Stream> MegaFileSystem::open_file(std::filesystem::path& path)
 {
     for (auto& mega_file : m_mega_files) {
-        try {
-            return mega_file->open_file(path);
-        } catch (khepri::io::Error&) {
+        std::unique_ptr<khepri::io::Stream> stream = mega_file->open_file(path);
+        if(stream) {
+            return stream;
         }
     }
-    throw khepri::io::Error("subfile not found");
+    return nullptr;
 }
 
 void MegaFileSystem::parse_index_file(khepri::io::Stream& stream)

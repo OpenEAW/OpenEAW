@@ -4,6 +4,9 @@
 #include <khepri/io/file.hpp>
 #include <khepri/io/stream.hpp>
 
+#include <string>
+#include <vector>
+
 namespace openglyph::io {
 struct SubFileInfo
 {
@@ -18,6 +21,7 @@ class MegaFile final
 {
 public:
     explicit MegaFile(const std::filesystem::path& mega_file_path);
+    ~MegaFile() = default;
 
     MegaFile(const MegaFile&)                = delete;
     MegaFile& operator=(const MegaFile&)     = delete;

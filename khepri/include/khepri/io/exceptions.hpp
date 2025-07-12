@@ -18,9 +18,9 @@ public:
     InvalidFormatError() : khepri::io::Error("invalid format") {}
 };
 
-class FileNotFoundError : public khepri::io::Error
+class NotSupportedError : public khepri::io::Error
 {
 public:
-    FileNotFoundError() : khepri::io::Error("File not found") {}
+    NotSupportedError() : khepri::io::Error("operation is not supported") {}
 };
 } // namespace khepri::io
