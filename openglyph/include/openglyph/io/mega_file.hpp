@@ -32,7 +32,7 @@ private:
     void extract_metadata(std::vector<std::string>&                filenames,
                           std::vector<openglyph::io::SubFileInfo>& fileinfo);
 
-    std::unique_ptr<khepri::io::File>m_megaFile;
+    std::unique_ptr<khepri::io::File> m_megaFile;
 
     std::vector<std::string> filenames;
     std::vector<SubFileInfo> fileinfo;
