@@ -89,7 +89,7 @@ std::unique_ptr<khepri::io::Stream> MegaFile::open_file(std::filesystem::path& p
         std::size_t index = static_cast<std::size_t>(std::distance(file_hashes.begin(), it));
         return std::make_unique<SubFile>(fileinfo[index], m_megaFile.get());
     }
-    throw khepri::io::FileNotFoundError();
+    return nullptr;
 }
 void MegaFile::extract_metadata(std::vector<std::string>&                filenames,
                                 std::vector<openglyph::io::SubFileInfo>& fileinfo)
@@ -130,7 +130,7 @@ size_t MegaFile::SubFile::read(void* buffer, size_t count)
 
 size_t MegaFile::SubFile::write(const void* buffer, size_t count)
 {
-    throw khepri::io::Error("writing is not supported");
+    throw khepri::io::NotSupportedError();
 }
 
 long long MegaFile::SubFile::seek(long long offset, khepri::io::SeekOrigin origin)

@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cerrno>
 #include <cstring>
+
 namespace khepri::io {
 
 size_t File::read(void* buffer, size_t count)
