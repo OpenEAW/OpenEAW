@@ -65,16 +65,6 @@ AssetLoader::open_file(const fs::path& base_path, std::string_view name_,
 
     auto path = base_path / name_;
 
-    const auto& try_open_sub_file = [this](fs::path& path) -> std::unique_ptr<khepri::io::Stream> {
-        for (const auto& data_path : m_data_paths) {
-            try {
-                return m_megafs->open_file(path);
-            } catch (khepri::io::Error&) {
-            }
-        }
-        return {};
-    };
-
     const auto& try_open_file = [this](const fs::path& path) -> std::unique_ptr<khepri::io::File> {
         for (const auto& data_path : m_data_paths) {
             if (fs::exists(data_path / path)) {
@@ -85,11 +75,21 @@ AssetLoader::open_file(const fs::path& base_path, std::string_view name_,
         return {};
     };
 
+    const auto& try_open_sub_file = [this](fs::path& path) -> std::unique_ptr<khepri::io::Stream> {
+        for (const auto& data_path : m_data_paths) {
+            try {
+                return m_megafs->open_file(path);
+            } catch (khepri::io::Error&) {
+            }
+        }
+        return {};
+    };
+
     // Try as-is
-    if (auto file = try_open_sub_file(path)) {
+    if (auto file = try_open_file(path)) {
         LOG.info("Opened file \"{}\"", path.string());
         return file;
-    } else if (auto file = try_open_file(path)) {
+    } else if (auto file = try_open_sub_file(path)) {
         LOG.info("Opened file \"{}\"", path.string());
         return file;
     }
@@ -97,10 +97,10 @@ AssetLoader::open_file(const fs::path& base_path, std::string_view name_,
     // Try with the various extensions
     for (const auto& extension : extensions) {
         path.replace_extension(extension);
-        if (auto file = try_open_sub_file(path)) {
+        if (auto file = try_open_file(path)) {
             LOG.info("Opened file \"{}\"", path.string());
             return file;
-        } else if (auto file = try_open_file(path)) {
+        } else if (auto file = try_open_sub_file(path)) {
             LOG.info("Opened file \"{}\"", path.string());
             return file;
         }
