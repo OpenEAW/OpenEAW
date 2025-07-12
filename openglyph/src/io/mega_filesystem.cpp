@@ -12,11 +12,10 @@ MegaFileSystem::MegaFileSystem(std::vector<std::filesystem::path> data_paths)
     : m_data_paths(std::move(data_paths))
 {
     for (const auto& data_path : m_data_paths) {
-        try {
-            auto file =
-                khepri::io::File(data_path / "Data/megafiles.xml", khepri::io::OpenMode::read);
+        const std::filesystem::path index_file = data_path / "Data/megafiles.xml";
+        if (std::filesystem::exists(index_file)) {
+            khepri::io::File file(index_file, khepri::io::OpenMode::read);
             parse_index_file(file);
-        } catch (khepri::io::Error&) {
         }
     }
 }
@@ -25,7 +24,7 @@ std::unique_ptr<khepri::io::Stream> MegaFileSystem::open_file(std::filesystem::p
 {
     for (auto& mega_file : m_mega_files) {
         std::unique_ptr<khepri::io::Stream> stream = mega_file->open_file(path);
-        if(stream) {
+        if (stream) {
             return stream;
         }
     }
