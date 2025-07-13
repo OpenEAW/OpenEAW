@@ -36,23 +36,32 @@ void MegaFileSystem::parse_index_file(khepri::io::Stream& stream)
     XmlParser parser(stream);
     if (const auto& root = parser.root()) {
         for (const auto& node : root->nodes()) {
+            bool file_found = false;
+
+            std::string_view sub_path = node.value();
+
             for (const auto& data_path : m_data_paths) {
-                try {
-                    std::string_view sub_path = node.value();
+                // TODO update to support DVD version
+                //  the megafiles.xml sub_path is encapsulated by spaces, trim the sub_path
 
-                    // the megafiles.xml is encapsulated by spaces
-                    sub_path.remove_prefix(1);
-                    sub_path.remove_suffix(1);
+                // the filenames are all lowercase for steam.
+                std::filesystem::path full_path = data_path / khepri::trim(sub_path);
 
-                    // the filenames are all lowercase.
-                    std::filesystem::path full_path = data_path / sub_path;
-
-                    std::string filename = khepri::lowercase(full_path.filename().string());
-
-                    full_path.replace_filename(filename);
-                    m_mega_files.emplace_back(std::make_unique<MegaFile>(full_path));
-                } catch (khepri::io::Error&) {
+                if (!std::filesystem::exists(full_path)) {
+                    continue;
                 }
+
+                std::string filename = khepri::lowercase(full_path.filename().string());
+
+                full_path.replace_filename(filename);
+                m_mega_files.emplace_back(std::make_unique<MegaFile>(full_path));
+
+                file_found = true;
+                break;
+            }
+
+            if (!file_found) {
+                LOG.error("unable to open file \"{}\"", sub_path);
             }
         }
     }
