@@ -5,7 +5,9 @@
 #include <khepri/io/stream.hpp>
 
 #include <string>
+#include <tuple>
 #include <vector>
+#include <cstdint>
 
 namespace openglyph::io {
 struct SubFileInfo
@@ -33,17 +35,17 @@ public:
 private:
     class SubFile;
 
-    void extract_metadata(std::vector<std::string>&                filenames,
-                          std::vector<openglyph::io::SubFileInfo>& fileinfo);
+    std::tuple<std::vector<std::string>, std::vector<openglyph::io::SubFileInfo>>
+    extract_metadata();
 
     std::unique_ptr<khepri::io::File> m_megaFile;
 
-    std::vector<std::string> filenames;
-    std::vector<SubFileInfo> fileinfo;
+    std::vector<std::string> m_filenames;
+    std::vector<SubFileInfo> m_fileinfo;
 
-    std::vector<std::size_t> file_hashes; // used for lookup.
+    std::vector<std::uint32_t> m_file_crcs; // used for lookup.
 
-    std::uint32_t file_name_count = 0;
-    std::uint32_t file_info_count = 0;
+    std::uint32_t m_file_name_count = 0;
+    std::uint32_t m_file_info_count = 0;
 };
 } // namespace openglyph::io
