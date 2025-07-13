@@ -4,10 +4,10 @@
 #include <khepri/io/file.hpp>
 #include <khepri/io/stream.hpp>
 
+#include <cstdint>
 #include <string>
 #include <tuple>
 #include <vector>
-#include <cstdint>
 
 namespace openglyph::io {
 struct SubFileInfo
@@ -38,7 +38,7 @@ private:
     std::tuple<std::vector<std::string>, std::vector<openglyph::io::SubFileInfo>>
     extract_metadata();
 
-    std::unique_ptr<khepri::io::File> m_megaFile;
+    std::unique_ptr<khepri::io::File> m_file;
 
     std::vector<std::string> m_filenames;
     std::vector<SubFileInfo> m_fileinfo;

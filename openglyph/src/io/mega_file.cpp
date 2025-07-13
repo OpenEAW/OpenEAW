@@ -1,13 +1,13 @@
+#include <khepri/utility/crc32.hpp>
 #include <khepri/utility/string.hpp>
 
 #include <openglyph/io/mega_file.hpp>
-#include <khepri/utility/crc32.hpp>
 namespace openglyph::io {
 
 class MegaFile::SubFile : public khepri::io::Stream
 {
 public:
-    SubFile(const SubFileInfo info, khepri::io::File* p_file);
+    SubFile(const SubFileInfo info, khepri::io::File* file);
 
     SubFile(const SubFile&)            = delete;
     SubFile(SubFile&&)                 = delete;
@@ -64,12 +64,12 @@ public:
 
 private:
     const SubFileInfo info;
-    khepri::io::File* p_megaFile;
+    khepri::io::File* mega_file;
     std::uint64_t     local_read_offset;
 };
 
 MegaFile::MegaFile(const std::filesystem::path& mega_file_path)
-    : m_megaFile(std::make_unique<khepri::io::File>(mega_file_path, khepri::io::OpenMode::read))
+    : m_file(std::make_unique<khepri::io::File>(mega_file_path, khepri::io::OpenMode::read))
 {
     std::tie(m_filenames, m_fileinfo) = extract_metadata();
 
@@ -87,7 +87,7 @@ std::unique_ptr<khepri::io::Stream> MegaFile::open_file(std::filesystem::path& p
 
     if (it != m_file_crcs.end() && *it == crc) {
         std::size_t index = static_cast<std::size_t>(std::distance(m_file_crcs.begin(), it));
-        return std::make_unique<SubFile>(m_fileinfo[index], m_megaFile.get());
+        return std::make_unique<SubFile>(m_fileinfo[index], m_file.get());
     }
 
     return nullptr;
@@ -95,45 +95,44 @@ std::unique_ptr<khepri::io::Stream> MegaFile::open_file(std::filesystem::path& p
 std::tuple<std::vector<std::string>, std::vector<openglyph::io::SubFileInfo>>
 MegaFile::extract_metadata()
 {
-    uint32_t file_name_count = m_megaFile->read_uint32();
-    uint32_t file_info_count = m_megaFile->read_uint32();
+    uint32_t file_name_count = m_file->read_uint32();
+    uint32_t file_info_count = m_file->read_uint32();
 
     std::vector<std::string> filenames;
     filenames.reserve(file_name_count);
 
     for (size_t i = 0; i < file_name_count; ++i) {
-        filenames.emplace_back(m_megaFile->read_string());
+        filenames.emplace_back(m_file->read_string());
     }
 
     std::vector<openglyph::io::SubFileInfo> fileinfo;
     fileinfo.reserve(file_info_count);
 
     for (size_t i = 0; i < file_info_count; ++i) {
-        openglyph::io::SubFileInfo info = {m_megaFile->read_uint32(), m_megaFile->read_uint32(),
-                                           m_megaFile->read_uint32(), m_megaFile->read_uint32(),
-                                           m_megaFile->read_uint32()};
+        openglyph::io::SubFileInfo info = {m_file->read_uint32(), m_file->read_uint32(),
+                                           m_file->read_uint32(), m_file->read_uint32(),
+                                           m_file->read_uint32()};
         fileinfo.emplace_back(info);
     }
 
     return {std::move(filenames), std::move(fileinfo)};
 }
 
-MegaFile::SubFile::SubFile(const SubFileInfo info, khepri::io::File* p_file)
-    : info(info), p_megaFile(p_file)
+MegaFile::SubFile::SubFile(const SubFileInfo info, khepri::io::File* file)
+    : info(info), mega_file(file)
 {
 }
 
 size_t MegaFile::SubFile::read(void* buffer, size_t count)
 {
     // Another file could have read from the current file, so update the read head.
-    p_megaFile->seek(info.file_offset + local_read_offset, khepri::io::SeekOrigin::begin);
+    mega_file->seek(info.file_offset + local_read_offset, khepri::io::SeekOrigin::begin);
 
     // Count could be larger then the file, prevent reading past the edge of the sub file
-    if (local_read_offset + count > info.file_size) {
-        count = info.file_size - local_read_offset;
-    }
+    count = std::min(count, info.file_size - local_read_offset);
+
     local_read_offset += count;
-    return p_megaFile->read(buffer, count);
+    return mega_file->read(buffer, count);
 }
 
 size_t MegaFile::SubFile::write(const void* buffer, size_t count)
