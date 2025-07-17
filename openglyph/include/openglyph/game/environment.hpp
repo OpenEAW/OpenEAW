@@ -31,6 +31,8 @@ struct Skydome
  */
 struct Environment
 {
+    static constexpr auto NUM_SKYDOMES = 2;
+
     /**
      * @brief The environment's name.
      */
@@ -43,7 +45,7 @@ struct Environment
      * of some environment. The skydomes should be rendered on top of each other, in the order they
      * are stored. This allows all but the first skydome to be translucent for complex combinations.
      */
-    std::array<Skydome, 2> skydomes;
+    std::array<Skydome, NUM_SKYDOMES> skydomes;
 };
 
 } // namespace openglyph

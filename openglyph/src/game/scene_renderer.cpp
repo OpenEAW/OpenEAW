@@ -33,6 +33,28 @@ public:
 void SceneRenderer::render_scene(const openglyph::Scene&         scene,
                                  const khepri::renderer::Camera& camera)
 {
+    // Create a copy of the camera for rendering skydome scenes. The skydome camera has a larger
+    // znear and zfar to ensure that the skydome is visible from all distances.
+    khepri::renderer::Camera skydome_camera = camera;
+    skydome_camera.znear(10.0f);
+    skydome_camera.zfar(100000.0f);
+
+    for (const auto& skydome_scene : scene.skydome_scenes()) {
+        render_scene(skydome_scene, skydome_camera);
+
+        // Clear the depth and stencil buffers after rendering each skydome scenes so that they can
+        // properly layer without Z-fighting.
+        m_renderer.clear(khepri::renderer::Renderer::clear_depth |
+                         khepri::renderer::Renderer::clear_stencil);
+    }
+
+    // Use the normal, provided camera to render the main scene.
+    render_scene(scene.main_scene(), camera);
+}
+
+void SceneRenderer::render_scene(const khepri::scene::Scene&     scene,
+                                 const khepri::renderer::Camera& camera)
+{
     std::vector<khepri::renderer::MeshInstance> meshes;
 
     for (const auto& object : scene.objects()) {

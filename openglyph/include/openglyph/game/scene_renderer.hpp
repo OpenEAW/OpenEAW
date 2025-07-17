@@ -21,6 +21,8 @@ public:
     void render_scene(const openglyph::Scene& scene, const khepri::renderer::Camera& camera);
 
 private:
+    void render_scene(const khepri::scene::Scene& scene, const khepri::renderer::Camera& camera);
+
     khepri::renderer::Renderer& m_renderer;
 };
 
