@@ -2,9 +2,6 @@
 
 #include "polynomial.hpp"
 
-#include <gsl/gsl-lite.hpp>
-
-#include <initializer_list>
 #include <vector>
 
 namespace khepri {
@@ -41,25 +38,13 @@ class StepInterpolator final : public Interpolator
 {
 public:
     /**
-     * \brief Constructs a new StepInterpolator from an \a initializer_list.
-     *
-     * \throw khepri::ArgumentError if \a points is empty.
-     * \throw khepri::ArgumentError if \a points is not sorted on \a x.
-     * \throw khepri::ArgumentError if \a points contains duplicate \a x.
-     */
-    explicit StepInterpolator(std::initializer_list<Point> points)
-        : StepInterpolator({points.begin(), points.end()})
-    {
-    }
-
-    /**
      * \brief Constructs a new StepInterpolator from a sequence of points.
      *
      * \throw khepri::ArgumentError if \a points is empty.
      * \throw khepri::ArgumentError if \a points is not sorted on \a x.
      * \throw khepri::ArgumentError if \a points contains duplicate \a x.
      */
-    explicit StepInterpolator(gsl::span<const Point> points);
+    explicit StepInterpolator(std::vector<Point> points);
 
     /// \see Interpolator::interpolate
     [[nodiscard]] double interpolate(double x) const noexcept override;
@@ -81,25 +66,13 @@ class LinearInterpolator final : public Interpolator
 {
 public:
     /**
-     * \brief Constructs a new LinearInterpolator from an \a initializer_list.
-     *
-     * \throw khepri::ArgumentError if \a points is empty.
-     * \throw khepri::ArgumentError if \a points is not sorted on \a x.
-     * \throw khepri::ArgumentError if \a points contains duplicate \a x.
-     */
-    explicit LinearInterpolator(std::initializer_list<Point> points)
-        : LinearInterpolator({points.begin(), points.end()})
-    {
-    }
-
-    /**
      * \brief Constructs a new LinearInterpolator from a sequence of points.
      *
      * \throw khepri::ArgumentError if \a points is empty.
      * \throw khepri::ArgumentError if \a points is not sorted on \a x.
      * \throw khepri::ArgumentError if \a points contains duplicate \a x.
      */
-    explicit LinearInterpolator(gsl::span<const Point> points);
+    explicit LinearInterpolator(std::vector<Point> points);
 
     /// \see Interpolator::interpolate
     [[nodiscard]] double interpolate(double x) const noexcept override;
@@ -123,25 +96,13 @@ class CosineInterpolator final : public Interpolator
 {
 public:
     /**
-     * \brief Constructs a new CosineInterpolator from an \a initializer_list.
-     *
-     * \throw khepri::ArgumentError if \a points is empty.
-     * \throw khepri::ArgumentError if \a points is not sorted on \a x.
-     * \throw khepri::ArgumentError if \a points contains duplicate \a x.
-     */
-    explicit CosineInterpolator(std::initializer_list<Point> points)
-        : CosineInterpolator({points.begin(), points.end()})
-    {
-    }
-
-    /**
      * \brief Constructs a new CosineInterpolator from a sequence of points.
      *
      * \throw khepri::ArgumentError if \a points is empty.
      * \throw khepri::ArgumentError if \a points is not sorted on \a x.
      * \throw khepri::ArgumentError if \a points contains duplicate \a x.
      */
-    explicit CosineInterpolator(gsl::span<const Point> points);
+    explicit CosineInterpolator(std::vector<Point> points);
 
     /// \see Interpolator::interpolate
     [[nodiscard]] double interpolate(double x) const noexcept override;
@@ -165,28 +126,22 @@ class CubicInterpolator final : public Interpolator
 {
 public:
     /**
-     * \brief Constructs a new CubicInterpolator from an \a initializer_list.
-     *
-     * \throw khepri::ArgumentError if \a points is empty.
-     * \throw khepri::ArgumentError if \a points is not sorted on \a x.
-     * \throw khepri::ArgumentError if \a points contains duplicate \a x.
-     */
-    explicit CubicInterpolator(std::initializer_list<Point> points)
-        : CubicInterpolator({points.begin(), points.end()})
-    {
-    }
-
-    /**
      * \brief Constructs a new CubicInterpolator from a sequence of points.
      *
      * \throw khepri::ArgumentError if \a points is empty.
      * \throw khepri::ArgumentError if \a points is not sorted on \a x.
      * \throw khepri::ArgumentError if \a points contains duplicate \a x.
      */
-    explicit CubicInterpolator(gsl::span<const Point> points);
+    explicit CubicInterpolator(std::vector<Point> points);
 
     /// \see Interpolator::interpolate
     [[nodiscard]] double interpolate(double x) const noexcept override;
+
+    /// Returns the points used to construct this interpolator
+    [[nodiscard]] gsl::span<const Point> points() const noexcept
+    {
+        return m_points;
+    }
 
 private:
     struct Segment
@@ -195,7 +150,7 @@ private:
         double          min_x;
     };
 
-    static std::vector<Segment> create_segments(gsl::span<const Point> points);
+    static std::vector<Segment> create_segments(const std::vector<Point>& points);
 
     std::vector<Segment> m_segments;
 

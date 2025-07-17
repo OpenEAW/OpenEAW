@@ -3,6 +3,7 @@
 #include <khepri/math/point.hpp>
 #include <khepri/math/size.hpp>
 #include <khepri/math/vector2.hpp>
+#include <khepri/utility/enum.hpp>
 
 #include <any>
 #include <cstdint>
@@ -28,7 +29,9 @@ public:
         /// The left mouse button
         left,
         /// The right mouse button
-        right
+        right,
+        /// The middle mouse button
+        middle,
     };
 
     /// Identifies a mouse button action
@@ -40,6 +43,20 @@ public:
         released
     };
 
+    /// This is a bitmask of modifiers that can be pressed (potentially simultaneously) while a
+    /// mouse button or key is pressed.
+    enum class KeyModifiers : std::uint8_t
+    {
+        /// No modifier keys are pressed
+        none = 0,
+        /// The Control key
+        ctrl = 1,
+        /// The Alt key
+        alt = 2,
+        /// The Shift key
+        shift = 4,
+    };
+
     /// Callback for "window size changed" events
     using SizeListener = std::function<void()>;
 
@@ -47,10 +64,12 @@ public:
     using CursorPositionListener = std::function<void(const khepri::Pointi& pos)>;
 
     /// Callback for "mouse button" events
-    using MouseButtonListener =
-        std::function<void(const khepri::Pointi& pos, MouseButton, MouseButtonAction)>;
+    using MouseButtonListener = std::function<void(const khepri::Pointi& pos, MouseButton,
+                                                   MouseButtonAction, KeyModifiers)>;
 
     /// Callback for "mouse scroll" events
+    /// The scroll offset's X indicates right (positive) or left (negative) scroll, Y indicates up
+    /// (positive) or down (negative) scroll.
     using MouseScrollListener =
         std::function<void(const khepri::Pointi& pos, const khepri::Vector2& scroll_offset)>;
 
@@ -125,9 +144,23 @@ public:
     /**
      * Adds a listener for "mouse scroll" events.
      * The cursor's position relative to the window's render area and the amount of horizontal and
-s     * vertical scroll is passed along.
+     * vertical scroll is passed along.
      */
     void add_mouse_scroll_listener(const MouseScrollListener& listener);
+
+    /**
+     * Sets the mouse cursor position.
+     * The cursor's position is relative to the window's render area.
+     */
+    void set_cursor_position(const Pointi& position);
+
+    /**
+     * Enables or disables "infinite cursor" mode.
+     *
+     * In infinite cursor mode, the cursor is locked to the window and can move indefinitely without
+     * leaving the window.
+     */
+    void set_infinite_cursor(bool infinite);
 
     /**
      * \brief observer and handle new events on the process's event queue.

@@ -132,6 +132,17 @@ public:
         m_mouse_scroll_listeners.push_back(listener);
     }
 
+    void set_cursor_position(const Pointi& position)
+    {
+        glfwSetCursorPos(m_window, position.x, position.y);
+    }
+
+    void set_infinite_cursor(bool infinite)
+    {
+        glfwSetInputMode(m_window, GLFW_CURSOR,
+                         infinite ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    }
+
 private:
     static Impl* get_window(GLFWwindow* glfw_window)
     {
@@ -160,7 +171,7 @@ private:
         }
     }
 
-    static void mouse_button_callback(GLFWwindow* w, int button, int action, int /*mods*/)
+    static void mouse_button_callback(GLFWwindow* w, int button, int action, int mods)
     {
         auto* window = get_window(w);
         if (window != nullptr) {
@@ -172,6 +183,9 @@ private:
             case GLFW_MOUSE_BUTTON_RIGHT:
                 mb = MouseButton::right;
                 break;
+            case GLFW_MOUSE_BUTTON_MIDDLE:
+                mb = MouseButton::middle;
+                break;
             default:
                 // We don't care about this button
                 return;
@@ -179,9 +193,10 @@ private:
 
             const auto mba =
                 (action == GLFW_PRESS) ? MouseButtonAction::pressed : MouseButtonAction::released;
+            const auto mbm = convert_mods(mods);
 
             for (const auto& listener : window->m_mouse_button_listeners) {
-                listener(window->m_cursor_pos, mb, mba);
+                listener(window->m_cursor_pos, mb, mba, mbm);
             }
         }
     }
@@ -195,6 +210,21 @@ private:
                          {static_cast<float>(xoffset), static_cast<float>(yoffset)});
             }
         }
+    }
+
+    static KeyModifiers convert_mods(int mods)
+    {
+        KeyModifiers result = KeyModifiers::none;
+        if (mods & GLFW_MOD_ALT) {
+            result |= KeyModifiers::alt;
+        }
+        if (mods & GLFW_MOD_SHIFT) {
+            result |= KeyModifiers::shift;
+        }
+        if (mods & GLFW_MOD_CONTROL) {
+            result |= KeyModifiers::ctrl;
+        }
+        return result;
     }
 
     GLFWwindow*                         m_window;
@@ -243,6 +273,16 @@ void Window::add_size_listener(const SizeListener& listener)
 void Window::add_cursor_position_listener(const CursorPositionListener& listener)
 {
     m_impl->add_cursor_position_listener(listener);
+}
+
+void Window::set_cursor_position(const Pointi& position)
+{
+    m_impl->set_cursor_position(position);
+}
+
+void Window::set_infinite_cursor(bool infinite)
+{
+    m_impl->set_infinite_cursor(infinite);
 }
 
 void Window::add_mouse_button_listener(const MouseButtonListener& listener)

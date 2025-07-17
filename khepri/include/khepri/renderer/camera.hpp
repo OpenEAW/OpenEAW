@@ -5,6 +5,7 @@
 #include <khepri/math/vector3.hpp>
 
 #include <cstdint>
+#include <optional>
 #include <tuple>
 
 namespace khepri::renderer {
@@ -65,10 +66,7 @@ public:
     }
 
     /// Returns the matrices derived from the camera properties
-    [[nodiscard]] const auto& matrices() const noexcept
-    {
-        return m_matrices;
-    }
+    [[nodiscard]] const Matrices& matrices() const noexcept;
 
     /// Returns the type of the camera
     [[nodiscard]] auto type() const noexcept
@@ -76,11 +74,17 @@ public:
         return m_properties.type;
     }
 
+    /// Changes the type of the camera
+    void type(Type type) noexcept;
+
     /// Returns the position of the camera
     [[nodiscard]] const Vector3& position() const noexcept
     {
         return m_properties.position;
     }
+
+    /// Changes the position of the camera
+    void position(const Vector3& position) noexcept;
 
     /// Returns the target of the camera
     [[nodiscard]] const Vector3& target() const noexcept
@@ -88,11 +92,17 @@ public:
         return m_properties.target;
     }
 
+    /// Changes the target of the camera
+    void target(const Vector3& target) noexcept;
+
     /// Returns the up vector of the camera
     [[nodiscard]] const Vector3& up() const noexcept
     {
         return m_properties.up;
     }
+
+    /// Changes the up vector of the camera
+    void up(const Vector3& up) noexcept;
 
     /// Returns the field-of-view angle of the camera (radians)
     [[nodiscard]] double fov() const noexcept
@@ -100,11 +110,17 @@ public:
         return m_properties.fov;
     }
 
+    /// Changes the field-of-view of the camera (radians)
+    void fov(double fov) noexcept;
+
     /// Returns the width of the camera surface (in world units)
     [[nodiscard]] double width() const noexcept
     {
         return m_properties.width;
     }
+
+    /// Changes the width of the camera surface (in world units)
+    void width(double width) noexcept;
 
     /// Returns the aspect ratio of the camera surface (height / width)
     [[nodiscard]] double aspect() const noexcept
@@ -112,11 +128,17 @@ public:
         return m_properties.aspect;
     }
 
+    /// Changes the aspect ratio of the camera surface (height / width)
+    void aspect(double aspect) noexcept;
+
     /// Returns the distance from the camera position to the near plane (in world units)
     [[nodiscard]] double znear() const noexcept
     {
         return m_properties.znear;
     }
+
+    /// Changes the distance from the camera position to the near plane (in world units)
+    void znear(double znear) noexcept;
 
     /// Returns the distance from the camera position to the far plane (in world units)
     [[nodiscard]] double zfar() const noexcept
@@ -124,11 +146,14 @@ public:
         return m_properties.zfar;
     }
 
+    /// Changes the distance from the camera position to the far plane (in world units)
+    void zfar(double zfar) noexcept;
+
     /**
-     * \brief Sets the new properties for the camera
+     * \brief Changes all properties for the camera
      * \param[in] properties the new properties
      *
-     * This method updates all properties of the camera and recalculates the matrices.
+     * This method updates all properties of the camera.
      */
     void properties(const Properties& properties) noexcept;
 
@@ -154,10 +179,7 @@ public:
     /**
      * Returns the view frustum for the entire camera
      */
-    [[nodiscard]] const auto& frustum() const noexcept
-    {
-        return m_frustum;
-    }
+    [[nodiscard]] const Frustum& frustum() const noexcept;
 
     /**
      * \brief Returns the view frustum for a subsection of the camera
@@ -174,11 +196,13 @@ public:
     [[nodiscard]] Frustum frustum(const Vector2& p1, const Vector2& p2) const noexcept;
 
 private:
+    void clear_cache();
+
     static Matrices create_matrices(const Properties& properties) noexcept;
 
-    Properties m_properties;
-    Matrices   m_matrices;
-    Frustum    m_frustum;
+    Properties                      m_properties;
+    mutable std::optional<Matrices> m_matrices;
+    mutable std::optional<Frustum>  m_frustum;
 };
 
 } // namespace khepri::renderer

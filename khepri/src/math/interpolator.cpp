@@ -9,7 +9,7 @@
 
 namespace khepri {
 namespace {
-void check_sorted(gsl::span<const Point> points)
+void check_sorted(const std::vector<Point>& points)
 {
     if (points.empty()) {
         throw ArgumentError();
@@ -30,14 +30,14 @@ bool is_near(double v1, double v2) noexcept
 }
 
 /// Returns the index of the last point that has an \a x member less than \a x.
-std::size_t find_index(gsl::span<const Point> points, double x)
+std::size_t find_index(const std::vector<Point>& points, double x)
 {
     // x must be in the range of the points
     assert(!points.empty());
     assert(x >= points.begin()->x && x <= points.rbegin()->x);
 
-    const auto* it = std::upper_bound(points.begin(), points.end(), x,
-                                      [&](double value, auto& item) { return value < item.x; });
+    auto it = std::upper_bound(points.begin(), points.end(), x,
+                               [&](double value, auto& item) { return value < item.x; });
     if (it == points.begin()) {
         // This shouldn't happen because x must be clamped to the points range, but perhaps
         // it's possible due to floating-point comparison weirdness. Anyway, we meant to
@@ -51,10 +51,9 @@ std::size_t find_index(gsl::span<const Point> points, double x)
 }
 } // namespace
 
-StepInterpolator::StepInterpolator(gsl::span<const Point> points)
+StepInterpolator::StepInterpolator(std::vector<Point> points) : m_points(std::move(points))
 {
-    check_sorted(points);
-    m_points = {points.begin(), points.end()};
+    check_sorted(m_points);
 }
 
 double StepInterpolator::interpolate(double x) const noexcept
@@ -65,10 +64,9 @@ double StepInterpolator::interpolate(double x) const noexcept
     return m_points[index].y;
 }
 
-LinearInterpolator::LinearInterpolator(gsl::span<const Point> points)
+LinearInterpolator::LinearInterpolator(std::vector<Point> points) : m_points(std::move(points))
 {
-    check_sorted(points);
-    m_points = {points.begin(), points.end()};
+    check_sorted(m_points);
 }
 
 double LinearInterpolator::interpolate(double x) const noexcept
@@ -92,10 +90,9 @@ double LinearInterpolator::interpolate(double x) const noexcept
     return m_points[index].y + dy * x;
 }
 
-CosineInterpolator::CosineInterpolator(gsl::span<const Point> points)
+CosineInterpolator::CosineInterpolator(std::vector<Point> points) : m_points(std::move(points))
 {
-    check_sorted(points);
-    m_points = {points.begin(), points.end()};
+    check_sorted(m_points);
 }
 
 double CosineInterpolator::interpolate(double x) const noexcept
@@ -118,15 +115,14 @@ double CosineInterpolator::interpolate(double x) const noexcept
     return m_points[index].y + dy * x;
 }
 
-CubicInterpolator::CubicInterpolator(gsl::span<const Point> points)
+CubicInterpolator::CubicInterpolator(std::vector<Point> points) : m_points(std::move(points))
 {
-    check_sorted(points);
-    m_segments = create_segments(points);
-    m_points   = {points.begin(), points.end()};
+    check_sorted(m_points);
+    m_segments = create_segments(m_points);
 }
 
 std::vector<CubicInterpolator::Segment>
-CubicInterpolator::create_segments(gsl::span<const Point> points)
+CubicInterpolator::create_segments(const std::vector<Point>& points)
 {
     assert(!points.empty());
 

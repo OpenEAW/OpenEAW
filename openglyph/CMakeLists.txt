@@ -14,6 +14,7 @@ add_library(${PROJECT_NAME}
     src/game/game_object_type_store.cpp
     src/game/scene_renderer.cpp
     src/game/scene.cpp
+    src/game/tactical_camera_store.cpp
     src/io/chunk_reader.cpp
     src/renderer/io/material.cpp
     src/renderer/io/model.cpp
@@ -21,6 +22,7 @@ add_library(${PROJECT_NAME}
     src/renderer/model_creator.cpp
     src/parser/parsers.cpp
     src/parser/xml_parser.cpp
+    src/ui/input.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

@@ -1,10 +1,12 @@
 #include "version.hpp"
 
 #include <fmt/format.h>
+#include <khepri/adapters/window_input.hpp>
 #include <khepri/application/console_logger.hpp>
 #include <khepri/application/current_directory.hpp>
 #include <khepri/application/exceptions.hpp>
 #include <khepri/application/window.hpp>
+#include <khepri/game/rts_camera.hpp>
 #include <khepri/log/log.hpp>
 #include <khepri/renderer/camera.hpp>
 #include <khepri/renderer/diligent/renderer.hpp>
@@ -20,10 +22,12 @@
 #include <openglyph/game/game_object_type_store.hpp>
 #include <openglyph/game/scene.hpp>
 #include <openglyph/game/scene_renderer.hpp>
+#include <openglyph/game/tactical_camera_store.hpp>
 #include <openglyph/renderer/io/material.hpp>
 #include <openglyph/renderer/io/model.hpp>
 #include <openglyph/renderer/material_store.hpp>
 #include <openglyph/renderer/model_creator.hpp>
+#include <openglyph/ui/input.hpp>
 
 #include <cstdlib>
 #include <cxxopts.hpp>
@@ -31,6 +35,9 @@
 namespace {
 constexpr auto APPLICATION_NAME = "OpenEAW";
 constexpr auto PROGRAM_NAME     = "OpenEAW";
+
+// Time, in seconds, between each 'game logic' update step.
+constexpr auto UPDATE_STEP_TIME = 1.0 / 60;
 
 constexpr khepri::log::Logger LOG("openeaw");
 
@@ -148,11 +155,18 @@ int main(int argc, const char* argv[])
 
         khepri::application::Window          window(APPLICATION_NAME);
         khepri::renderer::diligent::Renderer renderer(window.native_handle());
-        window.add_size_listener([&] { renderer.render_size(window.render_size()); });
+        khepri::renderer::Camera             camera = create_camera(window.render_size());
+        window.add_size_listener([&] {
+            const auto render_size = window.render_size();
+            renderer.render_size(render_size);
+            camera.aspect(static_cast<float>(render_size.width) / render_size.height);
+        });
         renderer.render_size(window.render_size());
 
         openglyph::AssetCache                asset_cache(asset_loader, renderer);
         const openglyph::GameObjectTypeStore game_object_types(asset_loader, "GameObjectFiles.xml");
+        const openglyph::TacticalCameraStore tactical_camera_store(asset_loader,
+                                                                   "TacticalCameras.xml");
         openglyph::Environment               environment{};
 
         if (auto stream = asset_loader.open_map("_SPACE_PLANET_ALDERAAN_01")) {
@@ -163,14 +177,41 @@ int main(int argc, const char* argv[])
             }
         }
 
+        khepri::game::RtsCameraController rts_camera = [&] {
+            if (auto rts_camera = tactical_camera_store.create("Space_Mode", camera)) {
+                return std::move(*rts_camera);
+            }
+            return khepri::game::RtsCameraController(camera, {0, 0});
+        }();
+
+        khepri::WindowInputEventGenerator       input_event_generator(window);
+        openglyph::ui::TacticalModeInputHandler tactical_mode_input_handler(rts_camera, window);
+        input_event_generator.AddEventHandler(&tactical_mode_input_handler);
+
         const openglyph::Scene   scene(asset_cache, game_object_types, environment);
         openglyph::SceneRenderer scene_renderer(renderer);
 
+        std::chrono::steady_clock::time_point last_update_time = std::chrono::steady_clock::now();
+        double                                unhandled_update_time = 0.0;
+
         while (!window.should_close()) {
             khepri::application::Window::poll_events();
-            renderer.clear(khepri::renderer::Renderer::clear_all);
 
-            const khepri::renderer::Camera camera = create_camera(renderer.render_size());
+            const auto current_time      = std::chrono::steady_clock::now();
+            const auto delta_update_time = std::chrono::duration_cast<std::chrono::microseconds>(
+                                               current_time - last_update_time)
+                                               .count() /
+                                           1000000.0;
+            if (delta_update_time >= UPDATE_STEP_TIME) {
+                unhandled_update_time += delta_update_time;
+                while (unhandled_update_time >= UPDATE_STEP_TIME) {
+                    rts_camera.update(UPDATE_STEP_TIME);
+                    unhandled_update_time -= UPDATE_STEP_TIME;
+                }
+                last_update_time = current_time;
+            }
+
+            renderer.clear(khepri::renderer::Renderer::clear_all);
             scene_renderer.render_scene(scene, camera);
 
             // Presenting the rendered content has two different approaches, depending on the

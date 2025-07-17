@@ -3,6 +3,7 @@
 #include "exceptions.hpp"
 
 #include <khepri/math/color_srgb.hpp>
+#include <khepri/math/interpolator.hpp>
 #include <khepri/math/matrix.hpp>
 #include <khepri/math/vector2.hpp>
 #include <khepri/math/vector3.hpp>
@@ -15,6 +16,7 @@
 #include <cstdint>
 #include <optional>
 #include <string_view>
+#include <type_traits>
 
 namespace openglyph {
 namespace detail {
@@ -50,9 +52,15 @@ struct Parser
 };
 
 template <typename T>
+std::optional<T> try_parse(std::string_view str)
+{
+    return Parser<T>::parse(khepri::trim(str));
+}
+
+template <typename T>
 T parse(std::string_view str)
 {
-    std::optional<T> val = Parser<T>::parse(khepri::trim(str));
+    auto val = try_parse<T>(str);
     if (!val) {
         throw ParseError("\"" + std::string(str) + "\" is not a valid value");
     }
@@ -93,10 +101,12 @@ struct Parser<bool>
     {
         using namespace std::literals;
 
-        if (khepri::case_insensitive_equals(str, "true"sv)) {
+        if (khepri::case_insensitive_equals(str, "true"sv) ||
+            khepri::case_insensitive_equals(str, "yes"sv)) {
             return true;
         }
-        if (khepri::case_insensitive_equals(str, "false"sv)) {
+        if (khepri::case_insensitive_equals(str, "false"sv) ||
+            khepri::case_insensitive_equals(str, "no"sv)) {
             return false;
         }
         return {};
@@ -194,6 +204,28 @@ struct Parser<khepri::BasicMatrix<T>>
                 openglyph::parse<T>(res->parts[14]), openglyph::parse<T>(res->parts[15])};
         }
         return {};
+    }
+};
+
+// Specialization for interpolators - classes that inherit from khepri::Interpolator and are
+// constructed from a sequence of points
+template <typename InterpolatorT>
+struct Parser<InterpolatorT, typename std::enable_if_t<
+                                 std::is_convertible_v<InterpolatorT*, khepri::Interpolator*>>>
+{
+    static std::optional<InterpolatorT> parse(std::string_view str) noexcept
+    {
+        const auto parts = khepri::split(str, ", \t");
+        if (parts.empty() || (parts.size() % 2) != 0) {
+            return {};
+        }
+        std::vector<khepri::Point> points(parts.size() / 2);
+        for (std::size_t i = 0; i < parts.size(); i += 2) {
+            const auto x  = openglyph::parse<double>(parts[i]);
+            const auto y  = openglyph::parse<double>(parts[i + 1]);
+            points[i / 2] = {x, y};
+        }
+        return InterpolatorT(std::move(points));
     }
 };
 
