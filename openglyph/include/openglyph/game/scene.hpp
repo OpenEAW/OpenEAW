@@ -30,10 +30,16 @@ public:
     Scene& operator=(Scene&&) noexcept = delete;
     ~Scene();
 
-    /// Returns the objects in the scene
-    [[nodiscard]] const auto& objects() const noexcept
+    /// Returns the skydome scenes
+    [[nodiscard]] const auto& skydome_scenes() const noexcept
     {
-        return m_scene.objects();
+        return m_skydome_scenes;
+    }
+
+    /// Returns the main scene
+    [[nodiscard]] const auto& main_scene() const noexcept
+    {
+        return m_main_scene;
     }
 
     /**
@@ -43,7 +49,7 @@ public:
      */
     void add_object(const std::shared_ptr<khepri::scene::SceneObject>& object)
     {
-        m_scene.add_object(object);
+        m_main_scene.add_object(object);
     }
 
     /**
@@ -53,13 +59,18 @@ public:
      */
     void remove_object(const std::shared_ptr<khepri::scene::SceneObject>& object)
     {
-        m_scene.remove_object(object);
+        m_main_scene.remove_object(object);
     }
 
 private:
     const GameObjectTypeStore& m_game_object_types;
 
-    khepri::scene::Scene m_scene;
+    // The skydome scenes, these are rendererd behind all other objects and are not impacted by
+    // z-near/far limitations of the camera.
+    std::array<khepri::scene::Scene, Environment::NUM_SKYDOMES> m_skydome_scenes;
+
+    // The main scene where all the action happens.
+    khepri::scene::Scene m_main_scene;
 
     Environment m_environment;
 };

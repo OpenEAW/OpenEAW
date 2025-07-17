@@ -8,7 +8,8 @@ Scene::Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_typ
              Environment environment)
     : m_game_object_types(game_object_types), m_environment(std::move(environment))
 {
-    for (const auto& skydome : m_environment.skydomes) {
+    for (auto i = 0; i < Environment::NUM_SKYDOMES; ++i) {
+        const auto& skydome = m_environment.skydomes[i];
         if (const auto* type = m_game_object_types.get(skydome.name)) {
             auto object = std::make_shared<khepri::scene::SceneObject>();
             if (const auto* render_model = asset_cache.get_render_model(type->space_model_name)) {
@@ -17,7 +18,7 @@ Scene::Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_typ
             }
             object->scale({skydome.scale, skydome.scale, skydome.scale});
             object->rotation(khepri::Quaternion::from_euler(skydome.tilt, 0, skydome.z_angle));
-            add_object(object);
+            m_skydome_scenes[i].add_object(object);
         }
     }
 }
