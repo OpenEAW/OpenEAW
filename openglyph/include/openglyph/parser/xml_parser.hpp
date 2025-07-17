@@ -325,4 +325,46 @@ inline std::string_view optional_attribute(const openglyph::XmlParser::Node& nod
     return default_value;
 }
 
+/**
+ * Returns the contents of a required child node.
+ *
+ * Returns the contents of the node's child that has the specified name. If multiple
+ * children match, returns the first.
+ *
+ * @note the name lookup is case-insensitive.
+ *
+ * @throws openglyph::ParseError if the node has no such child, or if the child has children of its
+ *                               own.
+ */
+inline std::string_view require_child(const openglyph::XmlParser::Node& node, std::string_view name,
+                                      std::string_view default_value)
+{
+    if (auto child = node.child(name)) {
+        if (child->nodes().empty()) {
+            return child->value();
+        }
+    }
+    throw ParseError("missing child node \"" + std::string(name) + "\" with text content");
+}
+
+/**
+ * Returns the contents of an optional child node with default.
+ *
+ * Returns the contents of the node's child that has the specified name. If multiple
+ * children match, returns the first. If no children match, or if the child has children of its own,
+ * returns @a default_value.
+ *
+ * @note the name lookup is case-insensitive.
+ */
+inline std::string_view optional_child(const openglyph::XmlParser::Node& node,
+                                       std::string_view name, std::string_view default_value)
+{
+    if (auto child = node.child(name)) {
+        if (child->nodes().empty()) {
+            return child->value();
+        }
+    }
+    return default_value;
+}
+
 } // namespace openglyph

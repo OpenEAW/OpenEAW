@@ -1,6 +1,9 @@
 #pragma once
 
+#include "vector2.hpp"
+
 #include <cmath>
+#include <type_traits>
 
 namespace khepri {
 
@@ -31,6 +34,13 @@ public:
 
     /// Constructs the point \a x and \a y.
     BasicPoint(ComponentType x, ComponentType y) noexcept : x(x), y(y) {}
+
+    constexpr BasicPoint& operator+=(const BasicVector2<ComponentType>& v) noexcept
+    {
+        x += v.x;
+        y += v.y;
+        return *this;
+    }
 };
 
 /// Point of doubles
@@ -52,6 +62,18 @@ template <typename T, typename U>
 constexpr bool operator!=(const BasicPoint<T>& p1, const BasicPoint<U>& p2) noexcept
 {
     return !(p1 == p2);
+}
+
+template <typename T, typename U>
+inline auto operator-(const BasicPoint<T>& p1, const BasicPoint<U>& p2) noexcept
+{
+    return BasicVector2<long>(p1.x - p2.x, p1.y - p2.y);
+}
+
+template <typename T, typename U>
+inline auto operator+(const BasicPoint<T>& p, const BasicVector2<U>& v) noexcept
+{
+    return BasicPoint<std::common_type_t<T, U>>{p.x + v.x, p.y + v.y};
 }
 
 } // namespace khepri

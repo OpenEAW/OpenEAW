@@ -12,6 +12,7 @@ find_package(glfw3 REQUIRED)
 find_package(gsl-lite REQUIRED)
 
 add_library(${PROJECT_NAME}
+    src/adapters/window_input.cpp
     src/application/console_logger.cpp
     src/application/current_directory.cpp
     src/application/exceptions.cpp
@@ -21,6 +22,7 @@ add_library(${PROJECT_NAME}
     src/font/font_face_state.cpp
     src/font/font_face.cpp
     src/font/font.cpp
+    src/game/rts_camera.cpp
     src/io/container_stream.cpp
     src/io/file.cpp
     src/io/stream.cpp

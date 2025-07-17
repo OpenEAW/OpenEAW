@@ -337,7 +337,7 @@ auto normalize(const BasicVector2<T>& v) noexcept
 /**
  * \brief Rotates the vector around the origin.
  *
- * A positive angle rotates +x towards -y.
+ * A positive angle rotates +x towards +y.
  *
  * \param v     the vector to rotate.
  * \param angle the angle to rotate by, in radians.
