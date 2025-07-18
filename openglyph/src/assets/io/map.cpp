@@ -1,5 +1,6 @@
 #include <khepri/io/exceptions.hpp>
 #include <khepri/io/serialize.hpp>
+#include <khepri/math/serialize.hpp>
 
 #include <openglyph/assets/io/map.hpp>
 #include <openglyph/io/chunk_reader.hpp>
@@ -29,22 +30,28 @@ void verify(bool condition)
     }
 }
 
-std::string as_string(gsl::span<const uint8_t> data)
+auto as_string(gsl::span<const uint8_t> data)
 {
     const auto* const end = std::find(data.begin(), data.end(), 0);
-    return {data.begin(), end};
+    return std::string{data.begin(), end};
 }
 
-float as_float(gsl::span<const uint8_t> data)
+auto as_float(gsl::span<const uint8_t> data)
 {
     verify(data.size() == sizeof(float));
     return khepri::io::Deserializer(data).read<float>();
 }
 
-std::uint32_t as_uint32(gsl::span<const uint8_t> data)
+auto as_uint32(gsl::span<const uint8_t> data)
 {
     verify(data.size() == sizeof(std::uint32_t));
     return khepri::io::Deserializer(data).read<std::uint32_t>();
+}
+
+auto as_rgb_color(gsl::span<const uint8_t> data)
+{
+    verify(data.size() == sizeof(khepri::ColorRGB));
+    return khepri::io::Deserializer(data).read<khepri::ColorRGB>();
 }
 
 Map::Header read_map_header(gsl::span<const std::uint8_t> data)
@@ -67,8 +74,59 @@ auto read_map_environment(gsl::span<const std::uint8_t> data)
 {
     Environment     environment;
     MinichunkReader reader(data);
+
+    // Angles for the lights, in radians
+    // By default: point to +Y, thus lighting the 'front' (-Y) of objects.
+    std::array<float, 3> light_zangles = {khepri::PI / 4, khepri::PI / 4, khepri::PI / 4};
+    std::array<float, 3> light_tilts   = {0, 0, 0};
+    // Wind angle, in degrees
+    float wind_zangle = 0;
+
     for (; reader.has_chunk(); reader.next()) {
         switch (reader.id()) {
+        case 0:
+            environment.lights[0].color = as_rgb_color(reader.read_data());
+            break;
+        case 1:
+            environment.lights[1].color = as_rgb_color(reader.read_data());
+            break;
+        case 2:
+            environment.lights[2].color = as_rgb_color(reader.read_data());
+            break;
+        case 3:
+            environment.lights[0].specular_color = as_rgb_color(reader.read_data());
+            break;
+        case 4:
+            environment.ambient_color = as_rgb_color(reader.read_data());
+            break;
+        case 5:
+            environment.lights[0].intensity = as_float(reader.read_data());
+            break;
+        case 6:
+            environment.lights[1].intensity = as_float(reader.read_data());
+            break;
+        case 7:
+            environment.lights[2].intensity = as_float(reader.read_data());
+            break;
+        case 8:
+            // Lighting angles are stored in radians
+            light_zangles[0] = as_float(reader.read_data());
+            break;
+        case 9:
+            light_zangles[1] = as_float(reader.read_data());
+            break;
+        case 10:
+            light_zangles[2] = as_float(reader.read_data());
+            break;
+        case 11:
+            light_tilts[0] = as_float(reader.read_data());
+            break;
+        case 12:
+            light_tilts[1] = as_float(reader.read_data());
+            break;
+        case 13:
+            light_tilts[2] = as_float(reader.read_data());
+            break;
         case 20:
             environment.name = as_string(reader.read_data());
             break;
@@ -85,6 +143,7 @@ auto read_map_environment(gsl::span<const std::uint8_t> data)
             environment.skydomes[1].scale = as_float(reader.read_data());
             break;
         case 29:
+            // Skydome angles are stored in degrees
             environment.skydomes[0].tilt = khepri::to_radians(as_float(reader.read_data()));
             break;
         case 30:
@@ -96,10 +155,24 @@ auto read_map_environment(gsl::span<const std::uint8_t> data)
         case 32:
             environment.skydomes[1].z_angle = khepri::to_radians(as_float(reader.read_data()));
             break;
+        case 43:
+            // Wind angle is stored in degrees
+            wind_zangle = as_float(reader.read_data());
+        case 44:
+            environment.wind.speed = as_float(reader.read_data());
+            break;
         default:
             break;
         }
     }
+
+    // Convert some stored representations into more-easily used versions (e.g. angles into vectors)
+    for (int i = 0; i < Environment::NUM_LIGHTS; ++i) {
+        environment.lights[i].from_direction =
+            khepri::Vector3f::from_angles(light_tilts[i], light_zangles[i]);
+    }
+    environment.wind.to_direction = khepri::Vector2f::from_angle(khepri::to_radians(wind_zangle));
+
     return environment;
 }
 

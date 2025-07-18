@@ -78,6 +78,29 @@ struct SerializeTraits<BasicVector4<T>>
     }
 };
 
+/// Specialization of #khepri::io::SerializeTraits for #khepri::ColorRGB
+template <>
+struct SerializeTraits<ColorRGB>
+{
+    /// \see #khepri::io::SerializeTraits::serialize
+    static void serialize(Serializer& s, const ColorRGB& value)
+    {
+        s.write(value.r);
+        s.write(value.g);
+        s.write(value.b);
+    }
+
+    /// \see #khepri::io::SerializeTraits::deserialize
+    static ColorRGB deserialize(Deserializer& d)
+    {
+        ColorRGB c;
+        c.r = d.read<ColorRGBA::ComponentType>();
+        c.g = d.read<ColorRGBA::ComponentType>();
+        c.b = d.read<ColorRGBA::ComponentType>();
+        return c;
+    }
+};
+
 /// Specialization of #khepri::io::SerializeTraits for #khepri::ColorRGBA
 template <>
 struct SerializeTraits<ColorRGBA>

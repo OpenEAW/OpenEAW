@@ -224,7 +224,7 @@ public:
         return abs(1.0F - length()) < max_normalized_length;
     }
 
-    /// Constructs a unit vector from an angle with the positive X-axis
+    /// Constructs a unit vector from an angle (in radians) with the positive X-axis
     static BasicVector2 from_angle(ComponentType phi) noexcept
     {
         return BasicVector2(cos(phi), sin(phi));

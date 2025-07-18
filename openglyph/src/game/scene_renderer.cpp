@@ -28,6 +28,142 @@ public:
     std::vector<Mesh> meshes;
     khepri::Matrixf   transform;
 };
+
+/**
+ * Overwrites \a transform's rotational aspects so that it aligns the -Y axis (typically "front" in
+ * object space) with the \a front argument, and the +Z axis (typically "up" in object space) with
+ * the \a up argument.
+ */
+void apply_billboard_transform(khepri::Matrixf& transform, khepri::Vector3f front,
+                               khepri::Vector3f up)
+{
+    auto right = cross(up, front);
+    up         = cross(front, right);
+
+    front.normalize();
+    right.normalize();
+    up.normalize();
+
+    // We want the +Y axis to align with `-front` vector so the -Y axis aligns with `front`.
+    // The +Z axis is made to point in the same direction as the `up` vector.
+    // Align the +X axis with the `right` vector, orthognal to `front` and `up`.
+    // Also preserve the scale aspect of the transformation.
+    const auto scale = transform.get_scale();
+    transform.basis(right, -front, up);
+    transform.pre_scale(scale);
+}
+
+/**
+ * Overwrites \a transform's rotational aspect so that it aligns the -Y axis (typically "front" in
+ * object space) with the \a front argument, but keeps the +Z axis (typically "up" in object space)
+ * the same. In essence, this is a rotation around the +Z axis to align -Y with \a front when
+ * projected onto the XY plane.
+ */
+void apply_z_billboard_transform(khepri::Matrixf& transform, khepri::Vector3f front)
+{
+    // Use the Z axis from the current transformation as "up"
+    auto up = khepri::Vector3f(transform.col(2));
+
+    // Create an orthogonal right
+    auto right = cross(up, front);
+    // Re-calculate front to be orthogonal to up and right, this will keep it in the local XY plane.
+    // Afterwards, front will point away from the camera in the XY plane, so we can align +Y with
+    // it.
+    front = cross(up, right);
+
+    front.normalize();
+    right.normalize();
+    up.normalize();
+
+    // Also preserve the scale aspect of the transformation.
+    const auto scale = transform.get_scale();
+    transform.basis(right, front, up);
+    transform.pre_scale(scale);
+}
+
+/**
+ * Overwrites \a transform's rotational aspect so that it aligns the -Y axis (typically "front" in
+ * object space) to face the camera, and the +Z axis (typically "up" in object space) with
+ * the \a up argument.
+ */
+void apply_face_billboard_transform(khepri::Matrixf&                transform,
+                                    const khepri::renderer::Camera& camera)
+{
+    const auto view_up = camera.matrices().view_inv.basis()[1];
+    const auto obj_to_camera =
+        khepri::Vector3f(normalize(camera.position() - transform.get_translation()));
+    apply_billboard_transform(transform, obj_to_camera, view_up);
+}
+
+/**
+ * Modifies the transformation matrix to apply the specified billboard mode.
+ * This will overwrite the scale/rotation components of the transformation, and in some cases its
+ * position too.
+ */
+void apply_billboard(khepri::Matrixf& transform, const renderer::RenderModel::Mesh& mesh,
+                     const Environment& environment, const khepri::renderer::Camera& camera)
+{
+    // Note about billboarding:
+    // The basis vectors of the inverse view matrix are the view space's X,Y,Z axes expressed in
+    // world space. Note that because it's a right-handed view matrix, +Z points 'out of the
+    // screen', towards the user, so it's the opposite of the view direction.
+    switch (mesh.billboard_mode) {
+    case renderer::BillboardMode::parallel: {
+        const auto [_, view_up, view_neg_dir] = camera.matrices().view_inv.basis();
+        // Turn the object's "front" to the camera's +Z, and its "up" to +Y.
+        apply_billboard_transform(transform, view_neg_dir, view_up);
+        break;
+    }
+
+    case renderer::BillboardMode::face:
+        apply_face_billboard_transform(transform, camera);
+        break;
+
+    case renderer::BillboardMode::z_view: {
+        // Rotate the object's front around local Z so it points parallel with the view direction.
+        const auto view_neg_dir = camera.matrices().view_inv.basis()[2];
+        apply_z_billboard_transform(transform, view_neg_dir);
+        break;
+    }
+
+    case renderer::BillboardMode::z_wind:
+        // Rotate the object's front around local Z so it points parallel with the wind.
+        apply_z_billboard_transform(transform, khepri::Vector3f(environment.wind.to_direction, 0));
+        break;
+
+    case renderer::BillboardMode::z_light:
+        // Rotate the object's front around local Z so it points parallel with the main light.
+        apply_z_billboard_transform(transform, -environment.lights[0].from_direction);
+        break;
+
+    case renderer::BillboardMode::sun: {
+        // Position the object fixed w.r.t the camera, towards the main light
+        const auto distance = mesh.parent_transform.get_translation().length();
+        transform.set_translation(khepri::Vector3f(camera.position()) +
+                                  environment.lights[0].from_direction * distance);
+        // Also make it face the camera
+        apply_face_billboard_transform(transform, camera);
+        break;
+    }
+
+    case renderer::BillboardMode::sun_glow: {
+        // Get offset from the parent bone (maintain scaling of final transformation)
+        const auto offset_from_parent =
+            mesh.parent_transform.get_translation() * transform.get_scale();
+        const auto distance = offset_from_parent.length();
+        // Rotate the object around its parent towards the main light
+        transform.set_translation(transform.get_translation() - offset_from_parent +
+                                  environment.lights[0].from_direction * distance);
+        // Also make it face the camera
+        apply_face_billboard_transform(transform, camera);
+        break;
+    }
+
+    case renderer::BillboardMode::none:
+    default:
+        break;
+    }
+}
 } // namespace
 
 void SceneRenderer::render_scene(const openglyph::Scene&         scene,
@@ -40,7 +176,7 @@ void SceneRenderer::render_scene(const openglyph::Scene&         scene,
     skydome_camera.zfar(100000.0f);
 
     for (const auto& skydome_scene : scene.skydome_scenes()) {
-        render_scene(skydome_scene, skydome_camera);
+        render_scene(skydome_scene, scene.environment(), skydome_camera);
 
         // Clear the depth and stencil buffers after rendering each skydome scenes so that they can
         // properly layer without Z-fighting.
@@ -49,10 +185,11 @@ void SceneRenderer::render_scene(const openglyph::Scene&         scene,
     }
 
     // Use the normal, provided camera to render the main scene.
-    render_scene(scene.main_scene(), camera);
+    render_scene(scene.main_scene(), scene.environment(), camera);
 }
 
 void SceneRenderer::render_scene(const khepri::scene::Scene&     scene,
+                                 const openglyph::Environment&   environment,
                                  const khepri::renderer::Camera& camera)
 {
     std::vector<khepri::renderer::MeshInstance> meshes;
@@ -67,15 +204,24 @@ void SceneRenderer::render_scene(const khepri::scene::Scene&     scene,
                 state = object->user_data<RenderState>();
             }
 
-            const auto& transform    = object->transform();
-            const auto& model_meshes = render->model().meshes();
+            const auto& scene_transform = object->transform();
+            const auto& model_meshes    = render->model().meshes();
 
             assert(model_meshes.size() == state->meshes.size());
             for (std::size_t i = 0; i < state->meshes.size(); ++i) {
                 if (model_meshes[i].visible) {
-                    meshes.push_back({model_meshes[i].render_mesh.get(),
-                                      transform * state->transform, model_meshes[i].material,
-                                      state->meshes[i].material_params});
+                    // Create the mesh's transformation.
+                    khepri::Matrixf transform =
+                        model_meshes[i].root_transform * scene_transform * state->transform;
+
+                    if (model_meshes[i].billboard_mode != renderer::BillboardMode::none) {
+                        //  Then apply billboarding. This will overwrite the scale/rotation
+                        //  components of the transformation, and in some cases its position too.
+                        apply_billboard(transform, model_meshes[i], environment, camera);
+                    }
+
+                    meshes.push_back({model_meshes[i].render_mesh.get(), transform,
+                                      model_meshes[i].material, state->meshes[i].material_params});
                 }
             }
         }

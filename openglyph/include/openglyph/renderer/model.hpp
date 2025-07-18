@@ -1,5 +1,6 @@
 #pragma once
 
+#include "billboard.hpp"
 #include "material_desc.hpp"
 
 #include <khepri/math/color_rgba.hpp>
@@ -21,6 +22,15 @@ class Model
 public:
     /// Type of vertex indices
     using Index = std::uint16_t;
+
+    struct Bone
+    {
+        std::string                  name;
+        std::optional<std::uint32_t> parent_bone_index;
+        bool                         visible;
+        BillboardMode                billboard_mode;
+        khepri::Matrixf              parent_transform; // Relative to the parent bone
+    };
 
     /**
      * The master vertex type.
@@ -81,6 +91,11 @@ public:
         std::string name;
 
         /**
+         * @brief The index of the bone this mesh is attached to, if any.
+         */
+        std::optional<int> bone_index;
+
+        /**
          * @brief The mesh's LoD (level-of-detail) level.
          *
          * Multiple variants of a mesh with more or fewer vertices can be stored in a model. Each
@@ -116,6 +131,11 @@ public:
          */
         std::vector<Material> materials;
     };
+
+    /**
+     * The skeleton of the model.
+     */
+    std::vector<Bone> bones;
 
     /**
      * The meshes in the model
