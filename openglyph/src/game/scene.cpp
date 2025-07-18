@@ -18,7 +18,7 @@ Scene::Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_typ
             }
             object->scale({skydome.scale, skydome.scale, skydome.scale});
             object->rotation(khepri::Quaternion::from_euler(skydome.tilt, 0, skydome.z_angle));
-            m_skydome_scenes[i].add_object(object);
+            m_skydome_scenes[i].add_object(std::move(object));
         }
     }
 }

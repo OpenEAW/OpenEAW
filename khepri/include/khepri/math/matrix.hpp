@@ -55,6 +55,28 @@ public:
         m_cols[3] = v4;
     }
 
+    /// Implicitly constructs the matrix from another vector with a non-narrowing-convertible
+    /// component
+    template <typename U,
+              typename std::enable_if_t<std::is_convertible_v<U, ComponentType> &&
+                                            !is_narrowing_conversion_v<U, ComponentType>,
+                                        void*> = nullptr>
+    constexpr BasicMatrix(const BasicMatrix<U>& m)
+        : m_cols({BasicVector4<ComponentType>{m.col(0)}, BasicVector4<ComponentType>{m.col(1)},
+                  BasicVector4<ComponentType>{m.col(2)}, BasicVector4<ComponentType>{m.col(3)}})
+    {
+    }
+
+    /// Explicitly constructs the matrix from another vector with a narrowing-convertible component
+    /// type
+    template <typename U, typename std::enable_if_t<std::is_convertible_v<U, ComponentType> &&
+                                                        is_narrowing_conversion_v<U, ComponentType>,
+                                                    void*> = nullptr>
+    explicit constexpr BasicMatrix(const BasicMatrix<U>& m)
+        : m_cols({m.col(0), m.col(1), m.col(2), m.col(3)})
+    {
+    }
+
     /// Post-multiplies the matrix with \a mat
     BasicMatrix& operator*=(const BasicMatrix& mat) noexcept
     {
@@ -89,6 +111,26 @@ public:
     constexpr auto& operator()(std::size_t row, std::size_t col)
     {
         return m_cols.at(col)[row];
+    }
+
+    /// Returns the basis vectors of the matrix, assuming it's an orthogonal rotation matrix.
+    [[nodiscard]] std::array<BasicVector3<ComponentType>, 3> basis() const noexcept
+    {
+        return {{{m_cols[0].x, m_cols[1].x, m_cols[2].x},
+                 {m_cols[0].y, m_cols[1].y, m_cols[2].y},
+                 {m_cols[0].z, m_cols[1].z, m_cols[2].z}}};
+    }
+
+    /// Sets the basis vectors of the matrix.
+    /// This effectively replaces the scale & rotational aspect of the transformation matrix with a
+    /// new scale & rotation based on the basis vectors of the new coordinate system. The matrix's
+    /// translation component is kept.
+    void basis(const BasicVector3<ComponentType>& b1, const BasicVector3<ComponentType>& b2,
+               const BasicVector3<ComponentType>& b3) noexcept
+    {
+        m_cols[0] = {b1.x, b2.x, b3.x, m_cols[0].w};
+        m_cols[1] = {b1.y, b2.y, b3.y, m_cols[1].w};
+        m_cols[2] = {b1.z, b2.z, b3.z, m_cols[2].w};
     }
 
     /// Returns a column of the matrix
@@ -205,6 +247,15 @@ public:
         return dst / det;
     }
 
+    /// Returns the scale vector (length of each column of the rotation-scale submatrix) of the
+    /// matrix
+    [[nodiscard]] BasicVector3<ComponentType> get_scale() const noexcept
+    {
+        return {BasicVector3<ComponentType>(m_cols[0]).length(),
+                BasicVector3<ComponentType>(m_cols[1]).length(),
+                BasicVector3<ComponentType>(m_cols[2]).length()};
+    }
+
     /// Returns the translation part (4th row) of the matrix
     [[nodiscard]] auto get_translation() const noexcept
     {
@@ -219,26 +270,54 @@ public:
         m_cols[2].w = v.z;
     }
 
+    /// Scales the rotation-scale submatrix by the scale vector. This is effectively a
+    /// pre-multiplication transformation with a scale matrix derived from \a scale.
+    /// This does not affect the translation component.
+    void pre_scale(const BasicVector3<ComponentType>& scale) noexcept
+    {
+        assert(scale.x > 0);
+        assert(scale.y > 0);
+        assert(scale.z > 0);
+
+        for (int i = 0; i < 3; ++i) {
+            m_cols[i].x *= scale.x;
+            m_cols[i].y *= scale.y;
+            m_cols[i].z *= scale.z;
+        }
+    }
+
     /// Returns the rotation and scale matrix (the top-left 3x3 submatrix)
-    [[nodiscard]] BasicMatrix get_rotation_scale() const noexcept;
+    [[nodiscard]] BasicMatrix get_rotation_scale() const noexcept
+    {
+        return {m_cols[0].x, m_cols[1].x, m_cols[2].x, 0, m_cols[0].y, m_cols[1].y, m_cols[2].y, 0,
+                m_cols[0].z, m_cols[1].z, m_cols[2].z, 0, 0,           0,           0,           1};
+    }
 
     /// Constructs a matrix from Scale, Rotation and Translation
     static BasicMatrix create_srt(const BasicVector3<ComponentType>&    scale,
                                   const BasicQuaternion<ComponentType>& rotation,
                                   const BasicVector3<ComponentType>&    translation) noexcept
     {
-        assert(scale.x > 0);
-        assert(scale.y > 0);
-        assert(scale.z > 0);
-
         auto m = BasicMatrix::create_rotation(rotation);
         m.set_translation(translation);
-        for (std::size_t i = 0; i < 3; ++i) {
-            m(i, 0) *= scale[i];
-            m(i, 1) *= scale[i];
-            m(i, 2) *= scale[i];
-        }
+        m.pre_scale(scale);
         return m;
+    }
+
+    /// Constructs a rotation transformation based on the basis vectors of the new coordinate
+    /// system. The basis vectors must be orthonormal.
+    static BasicMatrix create_rotation(const BasicVector3<ComponentType>& b1,
+                                       const BasicVector3<ComponentType>& b2,
+                                       const BasicVector3<ComponentType>& b3) noexcept
+    {
+        assert(b1.normalized());
+        assert(b2.normalized());
+        assert(b3.normalized());
+
+        return {{b1[0], b2[0], b3[0], 0},
+                {b1[1], b2[1], b3[1], 0},
+                {b1[2], b2[2], b3[2], 0},
+                {0, 0, 0, 1}};
     }
 
     /// Constructs a rotation transformation from the specified quaternion
@@ -281,7 +360,10 @@ public:
     }
 
     /**
-     * \brief Creates a right-handed camera-style transformation matrix
+     * \brief Creates a right-handed camera-style transformation matrix.
+     *
+     * After transformation with this matrix, +X and +Y point right and up on the screen. -Z points
+     * into the screen.
      *
      * \param[in] eye the world-space position of the camera
      * \param[in] at  the world-space target position the camera is looking at
@@ -301,7 +383,10 @@ public:
     }
 
     /**
-     * \brief Creates a right-handed perspective projection matrix
+     * \brief Creates a right-handed perspective projection matrix.
+     *
+     * This transformation assumes that +X and +Y point right and up on the screen, and -Z points
+     * into the screen.
      *
      * \param[in] fovy   the vertical Field-of-View angle, in radians
      * \param[in] aspect the aspect ration (width / height) of the viewport
@@ -370,7 +455,12 @@ BasicVector3<T> operator*(const BasicVector3<T>& v, const BasicMatrix<T>& m) noe
             v.x * m(0, 2) + v.y * m(1, 2) + v.z * m(2, 2)};
 }
 
-/// Post-multiplies two matrices
+/**
+ * Post-multiplies two matrices.
+ *
+ * In terms of transformations, this is equivalent to applying the transformation of \a m2
+ * after the transformation of \a m1.
+ */
 template <typename T>
 BasicMatrix<T> operator*(const BasicMatrix<T>& m1, const BasicMatrix<T>& m2) noexcept
 {
@@ -418,14 +508,7 @@ auto inverse(const BasicMatrix<T>& m) noexcept
 template <typename T>
 BasicMatrix<T> transpose(const BasicMatrix<T>& m) noexcept
 {
-    Matrix x;
-    for (std::size_t i = 1; i < 4; i++) {
-        for (std::size_t j = 0; j < i; j++) {
-            x(i, j) = m(j, i);
-            x(j, i) = m(i, j);
-        }
-    }
-    return x;
+    return {m.row(0), m.row(1), m.row(2), m.row(3)};
 }
 
 } // namespace khepri

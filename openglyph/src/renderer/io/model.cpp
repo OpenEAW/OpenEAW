@@ -9,14 +9,23 @@
 
 #include <algorithm>
 #include <charconv>
+#include <limits>
 #include <tuple>
 
-using Model = openglyph::renderer::Model;
+using Model         = openglyph::renderer::Model;
+using BillboardMode = openglyph::renderer::BillboardMode;
 
 namespace openglyph::io {
 namespace {
 enum ModelChunkId : std::uint32_t
 {
+    skeleton              = 0x200,
+    skeleton_bone_count   = 0x201,
+    skeleton_bone         = 0x202,
+    skeleton_bone_name    = 0x203,
+    skeleton_bone_data_v1 = 0x205,
+    skeleton_bone_data_v2 = 0x206,
+
     mesh                 = 0x400,
     mesh_name            = 0x401,
     mesh_info            = 0x402,
@@ -32,6 +41,13 @@ enum ModelChunkId : std::uint32_t
     shader_param_float3  = 0x10104,
     shader_param_texture = 0x10105,
     shader_param_float4  = 0x10106,
+
+    light = 0x1300,
+
+    connections        = 0x600,
+    connections_count  = 0x601,
+    connections_object = 0x602,
+    connections_proxy  = 0x603,
 };
 
 struct VertexV1 : Model::Vertex
@@ -149,6 +165,14 @@ std::string as_string(gsl::span<const uint8_t> data)
 {
     const auto* const end = std::find(data.begin(), data.end(), 0);
     return {data.begin(), end};
+}
+
+khepri::Matrixf read_bone_transform(khepri::io::Deserializer& d)
+{
+    const auto col0 = d.read<khepri::Vector4f>();
+    const auto col1 = d.read<khepri::Vector4f>();
+    const auto col2 = d.read<khepri::Vector4f>();
+    return {col0, col1, col2, {0.0f, 0.0f, 0.0f, 1.0f}};
 }
 
 // Parses a mesh name into it's name, LOD and ALT levels
@@ -356,18 +380,149 @@ Model::Mesh read_mesh(ChunkReader& reader)
     }
     return mesh;
 }
+
+Model::Bone read_skeleton_bone(ChunkReader& reader)
+{
+    Model::Bone bone;
+    for (; reader.has_chunk(); reader.next()) {
+        switch (reader.id()) {
+        case ModelChunkId::skeleton_bone_name:
+            verify(reader.has_data());
+            bone.name = as_string(reader.read_data());
+            break;
+
+        case ModelChunkId::skeleton_bone_data_v1: {
+            verify(reader.has_data());
+            const auto               data = reader.read_data();
+            khepri::io::Deserializer d(data);
+            bone.parent_bone_index = d.read<std::int32_t>();
+            bone.visible           = d.read<std::uint32_t>() != 0;
+            bone.billboard_mode    = BillboardMode::none;
+            bone.parent_transform  = read_bone_transform(d);
+            break;
+        }
+
+        case ModelChunkId::skeleton_bone_data_v2: {
+            verify(reader.has_data());
+            const auto               data = reader.read_data();
+            khepri::io::Deserializer d(data);
+            bone.parent_bone_index = d.read<std::int32_t>();
+            bone.visible           = d.read<std::uint32_t>() != 0;
+            bone.billboard_mode    = static_cast<BillboardMode>(d.read<std::uint32_t>());
+            bone.parent_transform  = read_bone_transform(d);
+            break;
+        }
+
+        default:
+            break;
+        }
+    }
+
+    if (bone.parent_bone_index == std::numeric_limits<std::uint32_t>::max()) {
+        bone.parent_bone_index = std::nullopt; // No parent
+    }
+    return bone;
+}
+
+std::vector<Model::Bone> read_skeleton(ChunkReader& reader)
+{
+    std::vector<Model::Bone> bones;
+    for (; reader.has_chunk(); reader.next()) {
+        switch (reader.id()) {
+        case ModelChunkId::skeleton_bone_count:
+            verify(reader.has_data());
+            bones.reserve(khepri::io::Deserializer(reader.read_data()).read<std::uint32_t>());
+            break;
+
+        case ModelChunkId::skeleton_bone: {
+            verify(!reader.has_data());
+            reader.open();
+            const auto bone = read_skeleton_bone(reader);
+            // Only the first bone can have no parent
+            verify(bone.parent_bone_index.has_value() != bones.empty());
+            // Parent bone index (if it exists) must be less than then this bone's index
+            verify(!bone.parent_bone_index || bone.parent_bone_index < bones.size());
+            bones.push_back(std::move(bone));
+            reader.close();
+            break;
+        }
+
+        default:
+            break;
+        }
+    }
+    return bones;
+}
 } // namespace
 
 Model read_model(khepri::io::Stream& stream)
 {
     Model       model;
     ChunkReader reader(stream);
+
+    std::vector<std::optional<std::size_t>> mesh_indices;
+
     for (; reader.has_chunk(); reader.next()) {
         switch (reader.id()) {
+        case ModelChunkId::skeleton:
+            verify(!reader.has_data());
+            reader.open();
+            model.bones = read_skeleton(reader);
+            reader.close();
+            break;
+
         case ModelChunkId::mesh:
             verify(!reader.has_data());
             reader.open();
+            mesh_indices.push_back(model.meshes.size());
             model.meshes.push_back(read_mesh(reader));
+            reader.close();
+            break;
+
+        case ModelChunkId::light:
+            // We don't support lights in models, but we have to count them so the object
+            // connections work properly (they count by object index).
+            verify(!reader.has_data());
+            mesh_indices.push_back(std::nullopt);
+            break;
+
+        case ModelChunkId::connections:
+            verify(!reader.has_data());
+            reader.open();
+            for (; reader.has_chunk(); reader.next()) {
+                switch (reader.id()) {
+                case ModelChunkId::connections_object: {
+                    verify(reader.has_data());
+                    const auto      data = reader.read_data();
+                    MinichunkReader mcr(data);
+
+                    std::optional<std::uint32_t> object_index;
+                    std::optional<std::uint32_t> bone_index;
+                    for (; mcr.has_chunk(); mcr.next()) {
+                        khepri::io::Deserializer d(mcr.read_data());
+                        switch (mcr.id()) {
+                        case 2:
+                            object_index = d.read<std::uint32_t>();
+                            break;
+                        case 3:
+                            bone_index = d.read<std::uint32_t>();
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+
+                    verify(object_index && object_index < mesh_indices.size());
+                    verify(bone_index && bone_index < model.bones.size());
+
+                    if (const auto& mesh_index = mesh_indices[*object_index]) {
+                        model.meshes[*mesh_index].bone_index = *bone_index;
+                    }
+                }
+                default:
+                    break;
+                }
+            }
             reader.close();
             break;
 

@@ -30,6 +30,12 @@ public:
     Scene& operator=(Scene&&) noexcept = delete;
     ~Scene();
 
+    /// Returns a reference to the environment for this scene
+    [[nodiscard]] const Environment& environment() const noexcept
+    {
+        return m_environment;
+    }
+
     /// Returns the skydome scenes
     [[nodiscard]] const auto& skydome_scenes() const noexcept
     {

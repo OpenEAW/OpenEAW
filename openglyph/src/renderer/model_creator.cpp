@@ -3,6 +3,24 @@
 #include <openglyph/renderer/model_creator.hpp>
 
 namespace openglyph::renderer {
+namespace {
+/**
+ * Calculates the absolute transformation matrix for a bone in a model from the series of local
+ * transformation in the bone hierarchy. This eventually creates a bone's absolute transformation in
+ * the model (i.e. relative to the model's origin).
+ */
+khepri::Matrixf absolute_transform(const std::vector<Model::Bone>& bones,
+                                   std::optional<std::uint32_t>    bone_index)
+{
+    khepri::Matrixf transform = khepri::Matrixf::IDENTITY;
+    while (bone_index) {
+        const auto& bone = bones[*bone_index];
+        transform *= bone.parent_transform;
+        bone_index = bone.parent_bone_index;
+    }
+    return transform;
+}
+} // namespace
 
 ModelCreator::ModelCreator(khepri::renderer::Renderer&        renderer,
                            Loader<khepri::renderer::Material> material_loader,
@@ -47,8 +65,23 @@ std::unique_ptr<RenderModel> ModelCreator::create_model(const Model& model)
                 }
             }
 
-            render_meshes.push_back({mesh.name, std::move(render_mesh), render_material,
-                                     std::move(params), mesh.visible});
+            RenderModel::Mesh created_mesh{mesh.name,
+                                           std::move(render_mesh),
+                                           BillboardMode::none,
+                                           render_material,
+                                           std::move(params),
+                                           mesh.visible,
+                                           khepri::Matrixf::IDENTITY,
+                                           khepri::Matrixf::IDENTITY};
+
+            if (mesh.bone_index) {
+                const auto& bone              = model.bones[*mesh.bone_index];
+                created_mesh.billboard_mode   = bone.billboard_mode;
+                created_mesh.root_transform   = absolute_transform(model.bones, mesh.bone_index);
+                created_mesh.parent_transform = bone.parent_transform;
+            }
+
+            render_meshes.push_back(std::move(created_mesh));
         }
     }
     return std::make_unique<RenderModel>(std::move(render_meshes));

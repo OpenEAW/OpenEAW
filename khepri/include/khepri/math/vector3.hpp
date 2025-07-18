@@ -252,7 +252,8 @@ public:
     /// Constructs a unit vector from a tilt (angle above the XY plane) and Z-angle (angle around
     /// Z-axis), both in radians.
     /// \note For Z-angle, 0 radians is the X axis and 1/2 PI radians is the Y axis.
-    [[nodiscard]] static BasicVector3 from_angles(double tilt, double z_angle) noexcept
+    [[nodiscard]] static BasicVector3 from_angles(ComponentType tilt,
+                                                  ComponentType z_angle) noexcept
     {
         const auto r = std::cos(tilt);
         return {r * std::cos(z_angle), r * std::sin(z_angle), std::sin(tilt)};
