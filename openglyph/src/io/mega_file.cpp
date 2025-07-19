@@ -1,15 +1,15 @@
+#include <khepri/math/math.hpp>
 #include <khepri/utility/crc.hpp>
 #include <khepri/utility/string.hpp>
 
 #include <openglyph/io/mega_file.hpp>
 
 #include <iostream>
-
 namespace openglyph::io {
 
 /**
  * @brief this class represents a subfile inside the megafile archive.
- * 
+ *
  * @note This instance may not outlive its parent megafile archive.
  */
 class MegaFile::SubFile : public khepri::io::Stream
@@ -63,7 +63,7 @@ MegaFile::MegaFile(const std::filesystem::path& mega_file_path)
 
 std::unique_ptr<khepri::io::Stream> MegaFile::open_file(const std::filesystem::path& path)
 {
-    std::uint32_t crc = khepri::CRC32::compute(khepri::uppercase(path.string()));
+    std::uint32_t crc = khepri::CRC32::calculate(khepri::uppercase(path.string()));
 
     auto it = std::lower_bound(
         m_fileinfo.begin(), m_fileinfo.end(), crc,
@@ -147,7 +147,7 @@ long long MegaFile::SubFile::seek(long long offset, khepri::io::SeekOrigin origi
     }
 
     new_local_read_offset =
-        std::clamp(new_local_read_offset, 0LL, static_cast<std::int64_t>(info.file_size));
+        khepri::clamp(new_local_read_offset, 0LL, static_cast<std::int64_t>(info.file_size));
 
     // Assign back to uint64_t after clamping
     local_read_offset = static_cast<uint64_t>(new_local_read_offset);
