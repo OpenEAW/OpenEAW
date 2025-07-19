@@ -1,8 +1,9 @@
 #pragma once
 
 #include <khepri/io/stream.hpp>
-#include <openglyph/assets/asset_layer.hpp>
+
 #include <gsl/gsl-lite.hpp>
+#include <openglyph/assets/asset_layer.hpp>
 
 #include <filesystem>
 #include <memory>

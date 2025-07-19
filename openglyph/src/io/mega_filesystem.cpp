@@ -17,8 +17,7 @@ MegaFileSystem::MegaFileSystem(const std::filesystem::path& data_path) : m_data_
     }
 }
 
-std::unique_ptr<khepri::io::Stream>
-MegaFileSystem::open_file(const std::filesystem::path& path)
+std::unique_ptr<khepri::io::Stream> MegaFileSystem::open_file(const std::filesystem::path& path)
 {
     for (const std::unique_ptr<MegaFile>& mega_file : m_mega_files) {
         if (std::unique_ptr<khepri::io::Stream> stream = mega_file->open_file(path)) {
