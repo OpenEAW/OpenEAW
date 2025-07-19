@@ -1,5 +1,7 @@
 #pragma once
 
+#include <khepri/utility/type_traits.hpp>
+
 #include <cmath>
 #include <stdexcept>
 
@@ -13,6 +15,90 @@ class BasicVector4;
 
 template <typename ComponentT>
 class BasicQuaternion;
+
+/**
+ * Describes an intrinsic rotation order.
+ *
+ * Intrinsic rotations after the first one are applied to the **rotated** coordinate axes.
+ * For instance, intrinstic order XYZ first rotates around the X axis, then around the **rotated** Y
+ * axis, then around the **rotated** Z axis.
+ */
+enum class IntrinsicRotationOrder
+{
+    xyz,
+    xzy,
+    yxz,
+    yzx,
+    zxy,
+    zyx,
+};
+
+/**
+ * Describes an extrinsic rotation order.
+ *
+ * Extrinsic rotations after the first one are applied to the **original** coordinate axes.
+ * For instance, intrinstic order XYZ first rotates around the X axis, then around the **original**
+ * Y axis, then around the **original** Z axis.
+ */
+enum class ExtrinsicRotationOrder
+{
+    xyz,
+    xzy,
+    yxz,
+    yzx,
+    zxy,
+    zyx,
+};
+
+/**
+ * Converts an extrinsic rotation order to its equivalent intrinsic rotation order.
+ */
+constexpr IntrinsicRotationOrder make_intrinsic(ExtrinsicRotationOrder rotation_order) noexcept
+{
+    // Extrinstic rotations can be turned into intrinstic rotations by flipping the order of
+    // operations
+    switch (rotation_order) {
+    default:
+        assert(false);
+    case ExtrinsicRotationOrder::xyz:
+        return IntrinsicRotationOrder::zyx;
+    case ExtrinsicRotationOrder::xzy:
+        return IntrinsicRotationOrder::yzx;
+    case ExtrinsicRotationOrder::yxz:
+        return IntrinsicRotationOrder::zxy;
+    case ExtrinsicRotationOrder::yzx:
+        return IntrinsicRotationOrder::xzy;
+    case ExtrinsicRotationOrder::zxy:
+        return IntrinsicRotationOrder::yxz;
+    case ExtrinsicRotationOrder::zyx:
+        return IntrinsicRotationOrder::xyz;
+    }
+}
+
+/**
+ * Converts an intrinsic rotation order to its equivalent extrinsic rotation order.
+ */
+constexpr ExtrinsicRotationOrder make_extrinsic(IntrinsicRotationOrder rotation_order) noexcept
+{
+    // Intrinstic rotations can be turned into extrinstic rotations by flipping the order of
+    // operations
+    switch (rotation_order) {
+    default:
+        assert(false);
+    case IntrinsicRotationOrder::xyz:
+        return ExtrinsicRotationOrder::zyx;
+    case IntrinsicRotationOrder::xzy:
+        return ExtrinsicRotationOrder::yzx;
+    case IntrinsicRotationOrder::yxz:
+        return ExtrinsicRotationOrder::zxy;
+    case IntrinsicRotationOrder::yzx:
+        return ExtrinsicRotationOrder::xzy;
+    case IntrinsicRotationOrder::zxy:
+        return ExtrinsicRotationOrder::yxz;
+    case IntrinsicRotationOrder::zyx:
+        return ExtrinsicRotationOrder::xyz;
+    }
+}
 
 /**
  * \brief BasicQuaternion
@@ -206,24 +292,63 @@ public:
     }
 
     /**
-     * \brief Constructs a quaternion from Euler rotation angles
-     *
-     * The applied rotation order is: First rotation around X-axis, then Y-axis, then Z-axis.
+     * \brief Constructs a quaternion from _intrinsic_ Euler rotation angles
      *
      * \param[in] x Rotation, in radians, around the X-axis
      * \param[in] y Rotation, in radians, around the Y-axis
      * \param[in] z Rotation, in radians, around the Z-axis
+     * \param[in] rotation_order the order of rotations
      */
-    static BasicQuaternion from_euler(ComponentType x, ComponentType y, ComponentType z) noexcept
+    static BasicQuaternion from_euler(ComponentType x, ComponentType y, ComponentType z,
+                                      IntrinsicRotationOrder rotation_order) noexcept
     {
-        const auto c1 = std::cos(-x / 2);
-        const auto s1 = std::sin(-x / 2);
-        const auto c2 = std::cos(-y / 2);
-        const auto s2 = std::sin(-y / 2);
-        const auto c3 = std::cos(-z / 2);
-        const auto s3 = std::sin(-z / 2);
-        return {s1 * c2 * c3 + c1 * s2 * s3, c1 * s2 * c3 - s1 * c2 * s3,
-                c1 * c2 * s3 + s1 * s2 * c3, c1 * c2 * c3 - s1 * s2 * s3};
+        const auto sx = std::sin(x / 2);
+        const auto cx = std::cos(x / 2);
+        const auto sy = std::sin(y / 2);
+        const auto cy = std::cos(y / 2);
+        const auto sz = std::sin(z / 2);
+        const auto cz = std::cos(z / 2);
+
+        switch (rotation_order) {
+        default:
+        case IntrinsicRotationOrder::xyz:
+            return {sx * cy * cz + cx * sy * sz, cx * sy * cz - sx * cy * sz,
+                    cx * cy * sz + sx * sy * cz, cx * cy * cz - sx * sy * sz};
+
+        case IntrinsicRotationOrder::xzy:
+            return {sx * cy * cz - cx * sy * sz, cx * sy * cz - sx * cy * sz,
+                    cx * cy * sz + sx * sy * cz, cx * cy * cz + sx * sy * sz};
+
+        case IntrinsicRotationOrder::yxz:
+            return {sx * cy * cz + cx * sy * sz, cx * sy * cz - sx * cy * sz,
+                    cx * cy * sz - sx * sy * cz, cx * cy * cz + sx * sy * sz};
+
+        case IntrinsicRotationOrder::yzx:
+            return {sx * cy * cz + cx * sy * sz, cx * sy * cz + sx * cy * sz,
+                    cx * cy * sz - sx * sy * cz, cx * cy * cz - sx * sy * sz};
+
+        case IntrinsicRotationOrder::zxy:
+            return {sx * cy * cz - cx * sy * sz, cx * sy * cz + sx * cy * sz,
+                    cx * cy * sz + sx * sy * cz, cx * cy * cz - sx * sy * sz};
+
+        case IntrinsicRotationOrder::zyx:
+            return {sx * cy * cz - cx * sy * sz, cx * sy * cz + sx * cy * sz,
+                    cx * cy * sz - sx * sy * cz, cx * cy * cz + sx * sy * sz};
+        }
+    }
+
+    /**
+     * \brief Constructs a quaternion from _extrinsic_ Euler rotation angles
+     *
+     * \param[in] x Rotation, in radians, around the X-axis
+     * \param[in] y Rotation, in radians, around the Y-axis
+     * \param[in] z Rotation, in radians, around the Z-axis
+     * \param[in] rotation_order the order of rotations
+     */
+    static BasicQuaternion from_euler(ComponentType x, ComponentType y, ComponentType z,
+                                      ExtrinsicRotationOrder rotation_order) noexcept
+    {
+        return from_euler(x, y, z, make_intrinsic(rotation_order));
     }
 
     /// Identity quaternion
@@ -310,8 +435,8 @@ template <typename T>
 BasicVector3<T> operator*(const BasicVector3<T>& v, const BasicQuaternion<T>& q) noexcept
 {
     // Optimized version of Matrix(q).transform_coord(v)
-    const Vector3 qv(q.x, q.y, q.z);
-    const Vector3 t = qv.cross(v) * 2;
+    const BasicVector3<T> qv(q.x, q.y, q.z);
+    const BasicVector3<T> t = qv.cross(v) * 2;
     return v + t * q.w + qv.cross(t);
 }
 

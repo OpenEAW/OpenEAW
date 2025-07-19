@@ -107,13 +107,15 @@ if (BUILD_TESTING)
     add_executable(${PROJECT_NAME}Tests
         tests/cubic_spline_test.cpp
         tests/interpolator_test.cpp
+        tests/matrix_test.cpp
         tests/polynomial_test.cpp
+        tests/quaternion_test.cpp
     )
 
     target_link_Libraries(${PROJECT_NAME}Tests
         PRIVATE
             ${PROJECT_NAME}
-            GTest::gtest_main
+            GTest::gmock_main
     )
 
     gtest_discover_tests(${PROJECT_NAME}Tests)
