@@ -23,6 +23,7 @@
 #include <openglyph/game/scene.hpp>
 #include <openglyph/game/scene_renderer.hpp>
 #include <openglyph/game/tactical_camera_store.hpp>
+#include <openglyph/io/mega_filesystem.hpp>
 #include <openglyph/renderer/io/material.hpp>
 #include <openglyph/renderer/io/model.hpp>
 #include <openglyph/renderer/material_store.hpp>
@@ -186,7 +187,7 @@ int main(int argc, const char* argv[])
             LOG.info(" - {}", data_path);
         }
 
-        openglyph::AssetLoader asset_loader(std::move(data_paths));
+        openglyph::AssetLoader asset_loader(data_paths);
 
         khepri::application::Window          window(APPLICATION_NAME);
         khepri::renderer::diligent::Renderer renderer(window.native_handle());

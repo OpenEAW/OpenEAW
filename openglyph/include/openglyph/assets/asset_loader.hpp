@@ -3,6 +3,7 @@
 #include <khepri/io/stream.hpp>
 
 #include <gsl/gsl-lite.hpp>
+#include <openglyph/assets/asset_layer.hpp>
 
 #include <filesystem>
 #include <memory>
@@ -60,7 +61,7 @@ private:
                                                   std::string_view                  name,
                                                   gsl::span<const std::string_view> extensions);
 
-    std::vector<std::filesystem::path> m_data_paths;
+    std::vector<AssetLayer> m_asset_layers;
 };
 
 } // namespace openglyph

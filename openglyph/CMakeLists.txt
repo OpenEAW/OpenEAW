@@ -9,6 +9,7 @@ find_package(rapidxml REQUIRED)
 
 add_library(${PROJECT_NAME}
     src/assets/asset_cache.cpp
+    src/assets/asset_layer.cpp
     src/assets/asset_loader.cpp
     src/assets/io/map.cpp
     src/game/game_object_type_store.cpp
@@ -16,6 +17,8 @@ add_library(${PROJECT_NAME}
     src/game/scene.cpp
     src/game/tactical_camera_store.cpp
     src/io/chunk_reader.cpp
+    src/io/mega_filesystem.cpp
+    src/io/mega_file.cpp
     src/renderer/io/material.cpp
     src/renderer/io/model.cpp
     src/renderer/material_store.cpp

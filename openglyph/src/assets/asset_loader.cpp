@@ -20,7 +20,13 @@ fs::path base_path()
 }
 } // namespace
 
-AssetLoader::AssetLoader(std::vector<fs::path> data_paths) : m_data_paths(std::move(data_paths)) {}
+AssetLoader::AssetLoader(std::vector<fs::path> data_paths)
+{
+    m_asset_layers.reserve(data_paths.size());
+    for (const fs::path& data_path : data_paths) {
+        m_asset_layers.emplace_back(AssetLayer(data_path));
+    }
+}
 
 std::unique_ptr<khepri::io::Stream> AssetLoader::open_config(std::string_view name)
 {
@@ -60,28 +66,9 @@ AssetLoader::open_file(const fs::path& base_path, std::string_view name_,
         return {};
     }
 
-    auto path = base_path / khepri::uppercase(name_);
-
-    const auto& try_open_file = [this](const fs::path& path) -> std::unique_ptr<khepri::io::File> {
-        for (const auto& data_path : m_data_paths) {
-            if (fs::exists(data_path / path)) {
-                return std::make_unique<khepri::io::File>(data_path / path,
-                                                          khepri::io::OpenMode::read);
-            }
-        }
-        return {};
-    };
-
-    // Try as-is
-    if (auto file = try_open_file(path)) {
-        LOG.info("Opened file \"{}\"", path.string());
-        return file;
-    }
-
-    // Try with the various extensions
-    for (const auto& extension : extensions) {
-        path.replace_extension(extension);
-        if (auto file = try_open_file(path)) {
+    fs::path path = base_path / name_;
+    for (auto& asset_layer : m_asset_layers) {
+        if (auto file = asset_layer.open_file(path, extensions)) {
             LOG.info("Opened file \"{}\"", path.string());
             return file;
         }
