@@ -1,5 +1,6 @@
 #include <khepri/io/exceptions.hpp>
 #include <khepri/io/serialize.hpp>
+#include <khepri/math/quaternion.hpp>
 #include <khepri/math/serialize.hpp>
 
 #include <openglyph/assets/io/map.hpp>
@@ -18,6 +19,13 @@ enum MapChunkId : std::uint16_t
     map_data_environments       = 0x04,
     map_data_environment        = 0x06,
     map_data_active_environment = 0x08,
+
+    map_data_objects     = 0x102,
+    map_data_object_list = 1,
+    map_data_object      = 0x44c,
+    map_data_object_id   = 0x454,
+    map_data_object_data = 0x459,
+    map_data_object_core = 0x4b0,
 };
 
 // Only supported map version
@@ -46,6 +54,12 @@ auto as_uint32(gsl::span<const uint8_t> data)
 {
     verify(data.size() == sizeof(std::uint32_t));
     return khepri::io::Deserializer(data).read<std::uint32_t>();
+}
+
+auto as_vector3(gsl::span<const uint8_t> data)
+{
+    verify(data.size() == sizeof(khepri::Vector3f));
+    return khepri::io::Deserializer(data).read<khepri::Vector3f>();
 }
 
 auto as_rgb_color(gsl::span<const uint8_t> data)
@@ -150,6 +164,7 @@ auto read_map_environment(gsl::span<const std::uint8_t> data)
             environment.skydomes[1].tilt = khepri::to_radians(as_float(reader.read_data()));
             break;
         case 31:
+            // Note:
             environment.skydomes[0].z_angle = khepri::to_radians(as_float(reader.read_data()));
             break;
         case 32:
@@ -232,6 +247,82 @@ auto read_map_environment_set(Map& map, ChunkReader& reader)
     }
 }
 
+Map::Object read_map_object(Map& map, ChunkReader& reader)
+{
+    Map::Object object;
+    for (; reader.has_chunk(); reader.next()) {
+        switch (reader.id()) {
+        case MapChunkId::map_data_object_id: {
+            MinichunkReader minireader(reader.read_data());
+            for (; minireader.has_chunk(); minireader.next()) {
+                switch (reader.id()) {
+                case 0:
+                    object.id = as_uint32(minireader.read_data());
+                    break;
+                default:
+                    break;
+                }
+            }
+            break;
+        }
+
+        case MapChunkId::map_data_object_data:
+            verify(!reader.has_data());
+            reader.open();
+            for (; reader.has_chunk(); reader.next()) {
+                switch (reader.id()) {
+                case MapChunkId::map_data_object_core: {
+                    MinichunkReader minireader(reader.read_data());
+                    for (; minireader.has_chunk(); minireader.next()) {
+                        switch (minireader.id()) {
+                        case 1:
+                            object.type_crc = as_uint32(minireader.read_data());
+                            break;
+                        case 4:
+                            object.position = as_vector3(minireader.read_data());
+                            break;
+                        case 18: {
+                            const auto angles = as_vector3(minireader.read_data());
+                            object.facing     = khepri::Quaternionf::from_euler(
+                                khepri::to_radians(angles.x), khepri::to_radians(angles.y),
+                                khepri::to_radians(angles.z), khepri::ExtrinsicRotationOrder::zyx);
+                            break;
+                        }
+                        default:
+                            break;
+                        }
+                    }
+                    break;
+                }
+                default:
+                    break;
+                }
+            }
+            reader.close();
+            break;
+
+        default:
+            break;
+        }
+    }
+    return object;
+}
+
+void read_map_objects(Map& map, ChunkReader& reader)
+{
+    for (; reader.has_chunk(); reader.next()) {
+        switch (reader.id()) {
+        case MapChunkId::map_data_object:
+            verify(!reader.has_data());
+            reader.open();
+            map.objects.push_back(read_map_object(map, reader));
+            reader.close();
+        default:
+            break;
+        }
+    }
+}
+
 void read_map_data(Map& map, ChunkReader& reader)
 {
     for (; reader.has_chunk(); reader.next()) {
@@ -240,6 +331,23 @@ void read_map_data(Map& map, ChunkReader& reader)
             verify(!reader.has_data());
             reader.open();
             read_map_environment_set(map, reader);
+            reader.close();
+            break;
+        case MapChunkId::map_data_objects:
+            verify(!reader.has_data());
+            reader.open();
+            for (; reader.has_chunk(); reader.next()) {
+                switch (reader.id()) {
+                case MapChunkId::map_data_object_list:
+                    verify(!reader.has_data());
+                    reader.open();
+                    read_map_objects(map, reader);
+                    reader.close();
+                    break;
+                default:
+                    break;
+                }
+            }
             reader.close();
             break;
         default:

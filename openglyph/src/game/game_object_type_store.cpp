@@ -1,3 +1,6 @@
+#include <khepri/utility/crc.hpp>
+#include <khepri/utility/string.hpp>
+
 #include <gsl/gsl-lite.hpp>
 #include <openglyph/game/game_object_type_store.hpp>
 #include <openglyph/parser/parsers.hpp>
@@ -48,7 +51,8 @@ void GameObjectTypeStore::read_game_object_types(khepri::io::Stream& stream)
     if (const auto& root = parser.root()) {
         for (const auto& node : root->nodes()) {
             const auto* type = read_game_object_type(node);
-            m_game_object_types.emplace(type->name, type);
+            m_game_object_types.emplace(khepri::CRC32::calculate(khepri::uppercase(type->name)),
+                                        type);
         }
     }
 }
@@ -65,6 +69,24 @@ GameObjectTypeStore::GameObjectTypeStore(AssetLoader& asset_loader, std::string_
             }
         }
     }
+}
+
+const GameObjectType* GameObjectTypeStore::get(std::string_view name) const noexcept
+{
+    const auto [first, last] =
+        m_game_object_types.equal_range(khepri::CRC32::calculate(khepri::uppercase(name)));
+    for (auto it = first; it != last; ++it) {
+        if (khepri::case_insensitive_equals(it->second->name, name)) {
+            return it->second;
+        }
+    }
+    return nullptr;
+}
+
+const GameObjectType* GameObjectTypeStore::get(std::uint32_t crc) const noexcept
+{
+    const auto it = m_game_object_types.find(crc);
+    return (it != m_game_object_types.end()) ? it->second : nullptr;
 }
 
 GameObjectTypeStore::~GameObjectTypeStore() = default;

@@ -276,6 +276,18 @@ public:
     /// Returns the camera's current distance from its target, in world space.
     double distance() const noexcept;
 
+    /// Returns the camera's currently configured yaw (in radians)
+    double yaw() const noexcept
+    {
+        return m_yaw.target();
+    }
+
+    /// Returns the camera's currently configured pitch (in radians)
+    double pitch() const noexcept
+    {
+        return m_pitch.target();
+    }
+
     /// Returns the camera's "look at" vector (normalized) in world space.
     Vector3 direction() const noexcept;
 

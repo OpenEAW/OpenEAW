@@ -113,6 +113,41 @@ auto create_camera(const khepri::Size& render_size)
     return khepri::renderer::Camera{properties};
 }
 
+std::unique_ptr<openglyph::Scene>
+CreateScene(std::string_view map_name, openglyph::AssetLoader& asset_loader,
+            openglyph::AssetCache&                asset_cache,
+            const openglyph::GameObjectTypeStore& game_object_types)
+{
+    if (auto stream = asset_loader.open_map(map_name)) {
+        const auto             map = openglyph::io::read_map(*stream);
+        openglyph::Environment environment{};
+        if (!map.environments.empty()) {
+            assert(map.active_environment < map.environments.size());
+            environment = map.environments[map.active_environment];
+        }
+
+        auto scene =
+            std::make_unique<openglyph::Scene>(asset_cache, game_object_types, environment);
+
+        for (const auto& obj : map.objects) {
+            if (auto type = game_object_types.get(obj.type_crc)) {
+                auto object = std::make_shared<khepri::scene::SceneObject>();
+                if (const auto* render_model =
+                        asset_cache.get_render_model(type->space_model_name)) {
+                    auto& behavior =
+                        object->create_behavior<openglyph::RenderBehavior>(*render_model);
+                    behavior.scale(type->scale_factor);
+                }
+                object->rotation(obj.facing);
+                object->position(obj.position);
+                scene->add_object(std::move(object));
+            }
+        }
+        return scene;
+    }
+    return {};
+}
+
 } // namespace
 
 int main(int argc, const char* argv[])
@@ -167,17 +202,7 @@ int main(int argc, const char* argv[])
         const openglyph::GameObjectTypeStore game_object_types(asset_loader, "GameObjectFiles.xml");
         const openglyph::TacticalCameraStore tactical_camera_store(asset_loader,
                                                                    "TacticalCameras.xml");
-        openglyph::Environment               environment{};
-
-        if (auto stream = asset_loader.open_map("_SPACE_PLANET_ALDERAAN_01")) {
-            const auto map = openglyph::io::read_map(*stream);
-            if (!map.environments.empty()) {
-                assert(map.active_environment < map.environments.size());
-                environment = map.environments[map.active_environment];
-            }
-        }
-
-        khepri::game::RtsCameraController rts_camera = [&] {
+        khepri::game::RtsCameraController    rts_camera = [&] {
             if (auto rts_camera = tactical_camera_store.create("Space_Mode", camera)) {
                 return std::move(*rts_camera);
             }
@@ -188,7 +213,8 @@ int main(int argc, const char* argv[])
         openglyph::ui::TacticalModeInputHandler tactical_mode_input_handler(rts_camera, window);
         input_event_generator.AddEventHandler(&tactical_mode_input_handler);
 
-        const openglyph::Scene   scene(asset_cache, game_object_types, environment);
+        std::unique_ptr<openglyph::Scene> scene =
+            CreateScene("_MP_SPACE_ALDERAAN", asset_loader, asset_cache, game_object_types);
         openglyph::SceneRenderer scene_renderer(renderer);
 
         std::chrono::steady_clock::time_point last_update_time = std::chrono::steady_clock::now();
@@ -212,7 +238,9 @@ int main(int argc, const char* argv[])
             }
 
             renderer.clear(khepri::renderer::Renderer::clear_all);
-            scene_renderer.render_scene(scene, camera);
+            if (scene) {
+                scene_renderer.render_scene(*scene, camera);
+            }
 
             // Presenting the rendered content has two different approaches, depending on the
             // rendering system: For OpenGL, the window needs to swap the front and back
