@@ -13,8 +13,6 @@ namespace khepri {
 template <typename ComponentT>
 class BasicQuaternion;
 
-using Quaternion = BasicQuaternion<double>;
-
 /**
  * \brief 4x4 matrix
  *
