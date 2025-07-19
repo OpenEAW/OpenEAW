@@ -42,6 +42,7 @@ add_library(${PROJECT_NAME}
     src/scene/scene_object.cpp
     src/utility/crc.cpp
     src/utility/string.cpp
+    src/utility/crc.cpp
     src/version_info.cpp
 )
 

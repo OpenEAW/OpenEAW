@@ -1,7 +1,7 @@
 #pragma once
 
 #include <khepri/io/stream.hpp>
-#include <openglyph/io/mega_filesystem.hpp>
+#include <openglyph/assets/asset_layer.hpp>
 #include <gsl/gsl-lite.hpp>
 
 #include <filesystem>
@@ -60,8 +60,7 @@ private:
                                                   std::string_view                  name,
                                                   gsl::span<const std::string_view> extensions);
 
-    std::vector<std::filesystem::path> m_data_paths;
-    std::unique_ptr<io::MegaFileSystem> m_megafs;
+    std::vector<AssetLayer> m_asset_layers;
 };
 
 } // namespace openglyph

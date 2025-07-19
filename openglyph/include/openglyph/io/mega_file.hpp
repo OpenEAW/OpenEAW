@@ -10,15 +10,17 @@
 #include <vector>
 
 namespace openglyph::io {
-struct SubFileInfo
-{
-    std::uint32_t crc32;
-    std::uint32_t file_index;
-    std::uint32_t file_size;
-    std::uint32_t file_offset;
-    std::uint32_t file_name_index;
-};
 
+/**
+ * @brief Represents a single MegaFile archive.
+ *
+ * This class provides functionality to open files stored inside
+ * a MegaFile archive (.meg). It manages the archive's metadata,
+ * including filenames and file info necessary for accessing
+ * individual files within the archive.
+ *
+ * Instances of this class are non-copyable and non-movable.
+ */
 class MegaFile final
 {
 public:
@@ -30,13 +32,20 @@ public:
     MegaFile(MegaFile&&) noexcept            = delete;
     MegaFile& operator=(MegaFile&&) noexcept = delete;
 
-    std::unique_ptr<khepri::io::Stream> open_file(std::filesystem::path& path);
+    std::unique_ptr<khepri::io::Stream> open_file(const std::filesystem::path& path);
 
 private:
     class SubFile;
+    struct SubFileInfo
+    {
+        std::uint32_t crc32;
+        std::uint32_t file_index;
+        std::uint32_t file_size;
+        std::uint32_t file_offset;
+        std::uint32_t file_name_index;
+    };
 
-    std::tuple<std::vector<std::string>, std::vector<openglyph::io::SubFileInfo>>
-    extract_metadata();
+    std::tuple<std::vector<std::string>, std::vector<SubFileInfo>> extract_metadata();
 
     std::unique_ptr<khepri::io::File> m_file;
 
@@ -48,4 +57,5 @@ private:
     std::uint32_t m_file_name_count = 0;
     std::uint32_t m_file_info_count = 0;
 };
+
 } // namespace openglyph::io
