@@ -2,8 +2,6 @@
 
 #include "game_object_type.hpp"
 
-#include <khepri/utility/string.hpp>
-
 #include <openglyph/assets/asset_loader.hpp>
 #include <openglyph/parser/xml_parser.hpp>
 
@@ -44,11 +42,17 @@ public:
      *
      * @note the name lookup is case insensitive.
      */
-    [[nodiscard]] const GameObjectType* get(std::string_view name) const noexcept
-    {
-        const auto it = m_game_object_types.find(name);
-        return (it != m_game_object_types.end()) ? it->second : nullptr;
-    }
+    [[nodiscard]] const GameObjectType* get(std::string_view name) const noexcept;
+
+    /**
+     * @brief Finds a GameObjectType by the CRC of its uppercased name.
+     *
+     * The lifetime of the returned reference is tied to the lifetime of the store.
+     *
+     * @note in case of types with duplicate CRCs, an arbitrary choice of the duplicates is
+     * returned.
+     */
+    [[nodiscard]] const GameObjectType* get(std::uint32_t crc) const noexcept;
 
 private:
     void read_game_object_types(khepri::io::Stream& stream);
@@ -61,10 +65,9 @@ private:
     // Typically, there are thousands of GameObjectType instances, using a monotonic_buffer_resource
     // to store them significantly speeds up loading and unloading times.
     std::pmr::monotonic_buffer_resource m_memory_resource{std::pmr::get_default_resource()};
-    std::pmr::map<std::string_view, const GameObjectType*, khepri::CaseInsensitiveLess>
-        m_game_object_types{
-            std::pmr::polymorphic_allocator<std::pair<std::string_view, const GameObjectType*>>(
-                &m_memory_resource)};
+    std::pmr::multimap<std::uint32_t, const GameObjectType*> m_game_object_types{
+        std::pmr::polymorphic_allocator<std::pair<std::string_view, const GameObjectType*>>(
+            &m_memory_resource)};
 };
 
 } // namespace openglyph

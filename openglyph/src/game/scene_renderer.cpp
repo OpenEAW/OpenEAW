@@ -4,6 +4,13 @@
 namespace openglyph {
 namespace {
 
+// Objects, when rendered, need a rotation correction of 90 degrees around Z.
+// Presumably, this is to to align -Y (the front in the model) with +X (the axis with no rotation,
+// i.e. in-game "natural front").
+// Weird, but this is the only way that aligns the behavior with the original game.
+const auto OBJECT_ROTATION_CORRECTION = khepri::Matrixf::create_rotation(
+    khepri::Quaternionf::from_axis_angle({0, 0, 1}, khepri::to_radians(90.0)));
+
 class RenderState
 {
 public:
@@ -204,18 +211,21 @@ void SceneRenderer::render_scene(const khepri::scene::Scene&     scene,
                 state = object->user_data<RenderState>();
             }
 
-            const auto& scene_transform = object->transform();
+            const auto& scene_transform = OBJECT_ROTATION_CORRECTION * object->transform();
             const auto& model_meshes    = render->model().meshes();
 
             assert(model_meshes.size() == state->meshes.size());
             for (std::size_t i = 0; i < state->meshes.size(); ++i) {
                 if (model_meshes[i].visible) {
-                    // Create the mesh's transformation.
+                    // Create the mesh's transformation: first transform the mesh according to the
+                    // in-model's transformation. Then apply any object-specific transformations
+                    // (first scale from the RenderState, then the rotation and position in the
+                    // scene).
                     khepri::Matrixf transform =
-                        model_meshes[i].root_transform * scene_transform * state->transform;
+                        model_meshes[i].root_transform * state->transform * scene_transform;
 
                     if (model_meshes[i].billboard_mode != renderer::BillboardMode::none) {
-                        //  Then apply billboarding. This will overwrite the scale/rotation
+                        //  Then apply billboarding. This will overwrite the rotation
                         //  components of the transformation, and in some cases its position too.
                         apply_billboard(transform, model_meshes[i], environment, camera);
                     }

@@ -40,6 +40,7 @@ add_library(${PROJECT_NAME}
     src/renderer/diligent/native_window.cpp
     src/renderer/diligent/renderer.cpp
     src/scene/scene_object.cpp
+    src/utility/crc.cpp
     src/utility/string.cpp
     src/version_info.cpp
 )
