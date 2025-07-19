@@ -61,6 +61,15 @@ void RtsCameraController::rotate(double yaw_angle_diff, double pitch_angle_diff)
     }
 }
 
+void RtsCameraController::rotation(double yaw_angle, double pitch_angle)
+{
+    m_yaw.target(update_free_property(m_yaw_property, m_yaw.target(), yaw_angle - m_yaw.target()));
+    if (const auto* free_pitch = std::get_if<FreeProperty>(&m_pitch_property)) {
+        m_pitch.target(
+            update_free_property(*free_pitch, m_pitch.target(), pitch_angle - m_pitch.target()));
+    }
+}
+
 void RtsCameraController::translate(const Vector2& camera_offset)
 {
     const auto camera_offset_length = camera_offset.length();
