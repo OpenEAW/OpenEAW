@@ -36,7 +36,6 @@ void MegaFileSystem::parse_index_file(const std::filesystem::path& data_path,
         for (const auto& node : root->nodes()) {
             std::string_view sub_path = node.value();
 
-            // TODO update to support DVD version
             //  the megafiles.xml sub_path is encapsulated by spaces, trim the sub_path
 
             // the filenames are all lowercase for steam.
