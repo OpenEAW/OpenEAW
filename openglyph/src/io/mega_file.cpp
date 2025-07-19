@@ -146,8 +146,8 @@ long long MegaFile::SubFile::seek(long long offset, khepri::io::SeekOrigin origi
         break;
     }
 
-    new_local_read_offset =
-        khepri::clamp(new_local_read_offset, 0LL, static_cast<std::int64_t>(info.file_size));
+    new_local_read_offset = khepri::clamp(new_local_read_offset, static_cast<std::int64_t>(0),
+                                          static_cast<std::int64_t>(info.file_size));
 
     // Assign back to uint64_t after clamping
     local_read_offset = static_cast<uint64_t>(new_local_read_offset);
