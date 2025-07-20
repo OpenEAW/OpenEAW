@@ -137,6 +137,9 @@ CreateScene(std::string_view map_name, openglyph::AssetLoader& asset_loader,
                     auto& behavior =
                         object->create_behavior<openglyph::RenderBehavior>(*render_model);
                     behavior.scale(type->scale_factor);
+                    if (type->is_in_background) {
+                        behavior.render_layer(openglyph::RenderBehavior::RenderLayer::background);
+                    }
                 }
                 object->rotation(obj.facing);
                 object->position(obj.position);

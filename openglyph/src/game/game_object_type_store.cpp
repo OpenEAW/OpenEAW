@@ -34,6 +34,7 @@ GameObjectType* GameObjectTypeStore::read_game_object_type(const XmlParser::Node
     type->name             = copy_string(require_attribute(node, "Name"));
     type->space_model_name = copy_string(optional_child(node, "Space_Model_Name", ""sv));
     type->scale_factor     = optional_child(node, "Scale_Factor", 1.0);
+    type->is_in_background = optional_child(node, "In_Background", false);
     return type;
 }
 

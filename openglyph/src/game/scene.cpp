@@ -4,6 +4,20 @@
 
 namespace openglyph {
 
+khepri::scene::Scene& Scene::target_scene(const khepri::scene::SceneObject& object)
+{
+    if (const auto* render = object.behavior<RenderBehavior>()) {
+        switch (render->render_layer()) {
+        case RenderBehavior::RenderLayer::background:
+            return m_background_scene;
+        case RenderBehavior::RenderLayer::foreground:
+        default:
+            break;
+        }
+    }
+    return m_foreground_scene;
+}
+
 Scene::Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_types,
              Environment environment)
     : m_game_object_types(game_object_types), m_environment(std::move(environment))
@@ -15,13 +29,30 @@ Scene::Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_typ
             if (const auto* render_model = asset_cache.get_render_model(type->space_model_name)) {
                 auto& behavior = object->create_behavior<openglyph::RenderBehavior>(*render_model);
                 behavior.scale(type->scale_factor);
+                if (type->is_in_background) {
+                    behavior.render_layer(RenderBehavior::RenderLayer::background);
+                }
             }
             object->scale({skydome.scale, skydome.scale, skydome.scale});
             object->rotation(khepri::Quaternion::from_euler(skydome.tilt, 0, skydome.z_angle,
                                                             khepri::ExtrinsicRotationOrder::zyx));
-            m_skydome_scenes[i].add_object(std::move(object));
+            add_object(std::move(object));
         }
     }
+}
+
+void Scene::add_object(const std::shared_ptr<khepri::scene::SceneObject>& object)
+{
+    assert(object != nullptr);
+    target_scene(*object).add_object(object);
+}
+
+void Scene::remove_object(const std::shared_ptr<khepri::scene::SceneObject>& object)
+{
+    // Try to remove from all scenes (to be safe)
+    assert(object != nullptr);
+    m_background_scene.remove_object(object);
+    m_foreground_scene.remove_object(object);
 }
 
 Scene::~Scene() = default;

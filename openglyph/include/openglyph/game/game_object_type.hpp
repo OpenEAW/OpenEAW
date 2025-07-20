@@ -22,6 +22,9 @@ struct GameObjectType final
 
     /// The factor by which the model be scaled
     double scale_factor{1.0};
+
+    /// Should this object be rendered in the background layer?
+    bool is_in_background;
 };
 
 } // namespace openglyph
