@@ -7,6 +7,15 @@
 #include <iostream>
 namespace openglyph::io {
 
+namespace {
+void verify(bool condition)
+{
+    if (!condition) {
+        throw khepri::io::InvalidFormatError();
+    }
+}
+} // namespace
+
 /**
  * @brief this class represents a subfile inside the megafile archive.
  *
@@ -51,8 +60,8 @@ public:
 
 private:
     const MegaFile::SubFileInfo info;
-    khepri::io::File*           mega_file;
-    std::uint64_t               local_read_offset;
+    khepri::io::File*           m_mega_file;
+    std::uint64_t               m_local_read_offset;
 };
 
 MegaFile::MegaFile(const std::filesystem::path& mega_file_path)
@@ -63,14 +72,19 @@ MegaFile::MegaFile(const std::filesystem::path& mega_file_path)
 
 std::unique_ptr<khepri::io::Stream> MegaFile::open_file(const std::filesystem::path& path)
 {
-    std::uint32_t crc = khepri::CRC32::calculate(khepri::uppercase(path.string()));
+    std::uint32_t crc            = khepri::CRC32::calculate(khepri::uppercase(path.string()));
+    std::string   uppercase_path = khepri::uppercase(path.string());
 
     auto it = std::lower_bound(
         m_fileinfo.begin(), m_fileinfo.end(), crc,
         [](const SubFileInfo& info, std::uint32_t value) { return info.crc32 < value; });
 
-    if (it != m_fileinfo.end() && it->crc32 == crc) {
-        return std::make_unique<SubFile>(*it, m_file.get());
+    while (it != m_fileinfo.end() && it->crc32 == crc) {
+        std::string_view file_path = m_filenames[it->file_name_index];
+        if (file_path == uppercase_path) {
+            return std::make_unique<SubFile>(*it, m_file.get());
+        }
+        ++it; // linear scearch until we see a different CRC32 from the matched one.
     }
 
     return nullptr;
@@ -98,29 +112,27 @@ MegaFile::extract_metadata()
         fileinfo.push_back(info);
     }
 
-    for (const std::string& filename : filenames) {
-        if (filename.compare(0, 8, "DATA\\XML") == 0) {
-            std::cout << filename << std::endl;
-        }
-    }
+    verify(std::is_sorted(fileinfo.begin(), fileinfo.end(),
+                          [](const auto& a, const auto& b) { return a.crc32 < b.crc32; }));
+
     return {std::move(filenames), std::move(fileinfo)};
 }
 
 MegaFile::SubFile::SubFile(const SubFileInfo& info, khepri::io::File* file)
-    : info(info), mega_file(file)
+    : info(info), m_mega_file(file)
 {
 }
 
 size_t MegaFile::SubFile::read(void* buffer, size_t count)
 {
     // Another file could have read from the current file, so update the read head.
-    mega_file->seek(info.file_offset + local_read_offset, khepri::io::SeekOrigin::begin);
+    m_mega_file->seek(info.file_offset + m_local_read_offset, khepri::io::SeekOrigin::begin);
 
     // Count could be larger then the file, prevent reading past the edge of the sub file
-    count = std::min(count, info.file_size - local_read_offset);
+    count = std::min(count, info.file_size - m_local_read_offset);
 
-    size_t actual_read = mega_file->read(buffer, count);
-    local_read_offset += actual_read;
+    size_t actual_read = m_mega_file->read(buffer, count);
+    m_local_read_offset += actual_read;
     return actual_read;
 }
 
@@ -131,7 +143,7 @@ size_t MegaFile::SubFile::write(const void* buffer, size_t count)
 
 long long MegaFile::SubFile::seek(long long offset, khepri::io::SeekOrigin origin)
 {
-    std::int64_t new_local_read_offset = static_cast<std::int64_t>(local_read_offset);
+    std::int64_t new_local_read_offset = static_cast<std::int64_t>(m_local_read_offset);
     switch (origin) {
     case khepri::io::SeekOrigin::begin:
         new_local_read_offset = offset;
@@ -150,9 +162,9 @@ long long MegaFile::SubFile::seek(long long offset, khepri::io::SeekOrigin origi
                                           static_cast<std::int64_t>(info.file_size));
 
     // Assign back to uint64_t after clamping
-    local_read_offset = static_cast<uint64_t>(new_local_read_offset);
+    m_local_read_offset = static_cast<uint64_t>(new_local_read_offset);
 
-    return local_read_offset;
+    return m_local_read_offset;
 }
 
 } // namespace openglyph::io

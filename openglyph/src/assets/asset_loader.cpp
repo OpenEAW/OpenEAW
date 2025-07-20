@@ -24,7 +24,7 @@ AssetLoader::AssetLoader(std::vector<fs::path> data_paths)
 {
     m_asset_layers.reserve(data_paths.size());
     for (const fs::path& data_path : data_paths) {
-        m_asset_layers.emplace_back(AssetLayer(data_path));
+        m_asset_layers.push_back(AssetLayer(data_path));
     }
 }
 
@@ -76,6 +76,56 @@ AssetLoader::open_file(const fs::path& base_path, std::string_view name_,
 
     LOG.error("unable to open file \"{}\"", path.string());
     return {};
+}
+
+AssetLoader::AssetLayer::AssetLayer(const std::filesystem::path& data_path)
+    : m_data_path(data_path), m_megafs(data_path)
+{
+}
+
+std::unique_ptr<khepri::io::Stream>
+AssetLoader::AssetLayer::open_file(const std::filesystem::path&      path,
+                                   gsl::span<const std::string_view> extensions)
+{
+    const auto& try_open_physical_file =
+        [this](const std::filesystem::path& p) -> std::unique_ptr<khepri::io::Stream> {
+        if (std::filesystem::exists(m_data_path / p)) {
+            return std::make_unique<khepri::io::File>(m_data_path / p, khepri::io::OpenMode::read);
+        }
+        return nullptr;
+    };
+
+    const auto& try_open_mega_file =
+        [this](const std::filesystem::path& p) -> std::unique_ptr<khepri::io::Stream> {
+        return m_megafs.open_file(p);
+    };
+
+    const auto& try_with_extensions =
+        [&](const auto& try_open_fn) -> std::unique_ptr<khepri::io::Stream> {
+        if (auto stream = try_open_fn(path)) {
+            return stream;
+        }
+
+        for (const auto& ext : extensions) {
+            std::filesystem::path extended_path = path;
+            extended_path.replace_extension(ext);
+            if (auto stream = try_open_fn(extended_path)) {
+                return stream;
+            }
+        }
+
+        return nullptr;
+    };
+
+    if (auto stream = try_with_extensions(try_open_physical_file)) {
+        return stream;
+    }
+
+    if (auto stream = try_with_extensions(try_open_mega_file)) {
+        return stream;
+    }
+
+    return nullptr;
 }
 
 } // namespace openglyph

@@ -9,7 +9,6 @@ find_package(rapidxml REQUIRED)
 
 add_library(${PROJECT_NAME}
     src/assets/asset_cache.cpp
-    src/assets/asset_layer.cpp
     src/assets/asset_loader.cpp
     src/assets/io/map.cpp
     src/game/game_object_type_store.cpp

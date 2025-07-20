@@ -190,7 +190,7 @@ int main(int argc, const char* argv[])
             LOG.info(" - {}", data_path);
         }
 
-        openglyph::AssetLoader asset_loader(data_paths);
+        openglyph::AssetLoader asset_loader(std::move(data_paths));
 
         khepri::application::Window          window(APPLICATION_NAME);
         khepri::renderer::diligent::Renderer renderer(window.native_handle());

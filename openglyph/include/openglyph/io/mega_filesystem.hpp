@@ -12,8 +12,8 @@ namespace openglyph::io {
 /**
  * @brief A virtual file system for accessing Empire at War .MEG archives.
  *
- * The MegaFileSystem class facilitates reading files stored in one or more Petroglyph-style
- * MegaFile (.MEG) archives used in Star Wars: Empire at War. It searches through multiple
+ * The MegaFileSystem class facilitates reading files stored in one or more
+ * MegaFile (.MEG) archives. It searches through multiple
  * MEG files in order and provides access to their contents through a stream interface.
  *
  * @note This class is not thread-safe. External synchronization is required for concurrent use.

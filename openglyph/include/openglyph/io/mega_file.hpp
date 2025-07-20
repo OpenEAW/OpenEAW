@@ -32,6 +32,19 @@ public:
     MegaFile(MegaFile&&) noexcept            = delete;
     MegaFile& operator=(MegaFile&&) noexcept = delete;
 
+    /**
+     * @brief Opens a file from the MegaFile archive.
+     *
+     * This method attempts to locate and open a file within the archive
+     * using the provided relative path. It first calculates the CRC32 hash
+     * of the path and uses it to look up the file's metadata in the archive.
+     * If the file is found, a `Stream` is returned to read its contents.
+     * Otherwise, a `nullptr` is returned.
+     *
+     * @param path The relative path of the file to open (as stored in the archive).
+     * @return A unique pointer to a `khepri::io::Stream` representing the file's
+     *         contents, or `nullptr` if the file was not found.
+     */
     std::unique_ptr<khepri::io::Stream> open_file(const std::filesystem::path& path);
 
 private:
