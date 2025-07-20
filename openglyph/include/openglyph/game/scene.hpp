@@ -36,16 +36,16 @@ public:
         return m_environment;
     }
 
-    /// Returns the skydome scenes
-    [[nodiscard]] const auto& skydome_scenes() const noexcept
+    /// Returns the background scene
+    [[nodiscard]] const auto& background_scene() const noexcept
     {
-        return m_skydome_scenes;
+        return m_background_scene;
     }
 
     /// Returns the main scene
-    [[nodiscard]] const auto& main_scene() const noexcept
+    [[nodiscard]] const auto& foreground_scene() const noexcept
     {
-        return m_main_scene;
+        return m_foreground_scene;
     }
 
     /**
@@ -53,30 +53,27 @@ public:
      *
      * Does nothing if the object is already added.
      */
-    void add_object(const std::shared_ptr<khepri::scene::SceneObject>& object)
-    {
-        m_main_scene.add_object(object);
-    }
+    void add_object(const std::shared_ptr<khepri::scene::SceneObject>& object);
 
     /**
      * Removes an object from the scene.
      *
      * Does nothing if the object is not in the scene.
      */
-    void remove_object(const std::shared_ptr<khepri::scene::SceneObject>& object)
-    {
-        m_main_scene.remove_object(object);
-    }
+    void remove_object(const std::shared_ptr<khepri::scene::SceneObject>& object);
 
 private:
+    // Returns a reference to the scene the object should be placed into
+    khepri::scene::Scene& target_scene(const khepri::scene::SceneObject& object);
+
     const GameObjectTypeStore& m_game_object_types;
 
-    // The skydome scenes, these are rendererd behind all other objects and are not impacted by
-    // z-near/far limitations of the camera.
-    std::array<khepri::scene::Scene, Environment::NUM_SKYDOMES> m_skydome_scenes;
+    // Special "background" scene that's rendered behind the foreground scene with special depth
+    // range and no fog. Useful for objects that should always appear in the background.
+    khepri::scene::Scene m_background_scene;
 
-    // The main scene where all the action happens.
-    khepri::scene::Scene m_main_scene;
+    // The main foreground scene where all the action happens.
+    khepri::scene::Scene m_foreground_scene;
 
     Environment m_environment;
 };
