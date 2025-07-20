@@ -35,15 +35,15 @@ public:
     /**
      * @brief Opens a file from the MegaFile archive.
      *
-     * This method attempts to locate and open a file within the archive
-     * using the provided relative path. It first calculates the CRC32 hash
-     * of the path and uses it to look up the file's metadata in the archive.
-     * If the file is found, a `Stream` is returned to read its contents.
-     * Otherwise, a `nullptr` is returned.
+     * Attempts to locate and open a file using the provided relative path.
+     * Returns a `Stream` for reading the file's contents if found; otherwise returns `nullptr`.
      *
-     * @param path The relative path of the file to open (as stored in the archive).
-     * @return A unique pointer to a `khepri::io::Stream` representing the file's
-     *         contents, or `nullptr` if the file was not found.
+     * @param path The relative path of the file to open.
+     * @return A unique pointer to a `khepri::io::Stream` for reading the file contents,
+     *         or `nullptr` if the file was not found.
+     *
+     * @note The returned `khepri::io::Stream` must not outlive parent `openglyph::io::MegaFile`
+     * instance that created it.
      */
     std::unique_ptr<khepri::io::Stream> open_file(const std::filesystem::path& path);
 
@@ -64,11 +64,6 @@ private:
 
     std::vector<std::string> m_filenames;
     std::vector<SubFileInfo> m_fileinfo;
-
-    std::vector<std::uint32_t> m_file_crcs; // used for lookup.
-
-    std::uint32_t m_file_name_count = 0;
-    std::uint32_t m_file_info_count = 0;
 };
 
 } // namespace openglyph::io

@@ -4,6 +4,7 @@
 #include <khepri/utility/string.hpp>
 
 #include <openglyph/assets/asset_loader.hpp>
+#include <openglyph/io/mega_filesystem.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -20,11 +21,60 @@ fs::path base_path()
 }
 } // namespace
 
+/**
+ * @brief Provides access to asset files from a single data source (physical or MegaFile).
+ *
+ * Each AssetLayer represents one data path.
+ *
+ * The class abstracts the file-loading logic by attempting to open files in the following
+ * order:
+ * 1. From the physical file system rooted at `data_path`.
+ * 2. From a MegaFile archive using `MegaFileSystem`.
+ *
+ */
+class AssetLoader::AssetLayer
+{
+public:
+    explicit AssetLayer(const std::filesystem::path& data_path);
+
+    ~AssetLayer() = default;
+
+    AssetLayer(const AssetLayer&)            = delete;
+    AssetLayer& operator=(const AssetLayer&) = delete;
+
+    AssetLayer(AssetLayer&&)            = delete;
+    AssetLayer& operator=(AssetLayer&&) = delete;
+
+    /**
+     * @brief Attempts to open a file from this asset layer.
+     *
+     * The method tries to open the specified file in the following order:
+     * 1. Directly from the physical filesystem under the base data path.
+     * 2. From physical files with each of the given extensions appended.
+     * 3. From the MegaFile archive (if available) using the base path.
+     * 4. From the MegaFile archive (if available) with each of the given extensions appended.
+     *
+     * @param path The relative path of the file to open.
+     * @param extensions A list of alternative file extensions to try if the base file is not
+     * found or an extension is not provided in the path.
+     * @return A unique pointer to a Stream representing the opened file, or nullptr if no file
+     * could be opened.
+     */
+    std::unique_ptr<khepri::io::Stream> open_file(const std::filesystem::path&      path,
+                                                  gsl::span<const std::string_view> extensions);
+
+private:
+    std::filesystem::path m_data_path{};
+    io::MegaFileSystem    m_megafs;
+};
+
+AssetLoader::~AssetLoader() = default;
+
 AssetLoader::AssetLoader(std::vector<fs::path> data_paths)
 {
     m_asset_layers.reserve(data_paths.size());
     for (const fs::path& data_path : data_paths) {
-        m_asset_layers.push_back(AssetLayer(data_path));
+        m_asset_layers.push_back(std::make_unique<AssetLayer>(data_path));
     }
 }
 
@@ -68,7 +118,7 @@ AssetLoader::open_file(const fs::path& base_path, std::string_view name_,
 
     fs::path path = base_path / name_;
     for (auto& asset_layer : m_asset_layers) {
-        if (auto file = asset_layer.open_file(path, extensions)) {
+        if (auto file = asset_layer->open_file(path, extensions)) {
             LOG.info("Opened file \"{}\"", path.string());
             return file;
         }

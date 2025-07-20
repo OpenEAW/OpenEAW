@@ -58,7 +58,6 @@ private:
     void parse_index_file(const std::filesystem::path& data_path, khepri::io::Stream& stream);
 
     std::filesystem::path                  m_data_path;
-    std::vector<std::filesystem::path>     m_mega_file_paths;
     std::vector<std::unique_ptr<MegaFile>> m_mega_files;
 };
 } // namespace openglyph::io

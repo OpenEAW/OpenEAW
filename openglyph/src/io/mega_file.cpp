@@ -72,19 +72,19 @@ MegaFile::MegaFile(const std::filesystem::path& mega_file_path)
 
 std::unique_ptr<khepri::io::Stream> MegaFile::open_file(const std::filesystem::path& path)
 {
-    std::uint32_t crc            = khepri::CRC32::calculate(khepri::uppercase(path.string()));
-    std::string   uppercase_path = khepri::uppercase(path.string());
+    const std::string   uppercase_path = khepri::uppercase(path.string());
+    const std::uint32_t crc            = khepri::CRC32::calculate(uppercase_path);
 
     auto it = std::lower_bound(
         m_fileinfo.begin(), m_fileinfo.end(), crc,
         [](const SubFileInfo& info, std::uint32_t value) { return info.crc32 < value; });
 
     while (it != m_fileinfo.end() && it->crc32 == crc) {
-        std::string_view file_path = m_filenames[it->file_name_index];
+        const auto& file_path = m_filenames[it->file_name_index];
         if (file_path == uppercase_path) {
             return std::make_unique<SubFile>(*it, m_file.get());
         }
-        ++it; // linear scearch until we see a different CRC32 from the matched one.
+        ++it; // linear search until we see a different CRC32 from the matched one.
     }
 
     return nullptr;
