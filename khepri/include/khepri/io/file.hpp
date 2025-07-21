@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 
 namespace khepri::io {
@@ -21,19 +22,17 @@ enum class OpenMode : std::uint8_t
 /// A file-based stream
 class File : public Stream
 {
-    using Path   = std::filesystem::path;
-    using Handle = FILE*;
-
 public:
     /// Opens a file for reading or reading and writing.
     /// \throws khepri::io::error if the file cannot be opened.
-    File(const Path& path, OpenMode mode);
+    File(const std::filesystem::path& path, OpenMode mode);
     ~File() override;
 
     File(const File&)            = delete;
-    File(File&&)                 = delete;
     File& operator=(const File&) = delete;
-    File& operator=(File&&)      = delete;
+
+    File(File&& other) noexcept;
+    File& operator=(File&& other) noexcept;
 
     /// \see stream::readable
     [[nodiscard]] bool readable() const noexcept override
@@ -63,8 +62,8 @@ public:
     long long seek(long long offset, io::SeekOrigin origin) override;
 
 private:
-    gsl::owner<Handle> m_handle;
-    OpenMode           m_mode;
+    std::fstream m_stream;
+    OpenMode     m_mode;
 };
 
 } // namespace khepri::io

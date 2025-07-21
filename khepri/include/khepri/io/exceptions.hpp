@@ -18,4 +18,9 @@ public:
     InvalidFormatError() : khepri::io::Error("invalid format") {}
 };
 
+class NotSupportedError : public khepri::io::Error
+{
+public:
+    NotSupportedError() : khepri::io::Error("operation is not supported") {}
+};
 } // namespace khepri::io

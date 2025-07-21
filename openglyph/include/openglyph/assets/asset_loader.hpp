@@ -30,6 +30,8 @@ public:
      */
     explicit AssetLoader(std::vector<std::filesystem::path> data_paths);
 
+    ~AssetLoader();
+
     /**
      * Opens a configuration asset
      */
@@ -56,11 +58,13 @@ public:
     std::unique_ptr<khepri::io::Stream> open_map(std::string_view name);
 
 private:
+    class AssetLayer;
+
     std::unique_ptr<khepri::io::Stream> open_file(const std::filesystem::path&      base_path,
                                                   std::string_view                  name,
                                                   gsl::span<const std::string_view> extensions);
 
-    std::vector<std::filesystem::path> m_data_paths;
+    std::vector<std::unique_ptr<AssetLayer>> m_asset_layers;
 };
 
 } // namespace openglyph

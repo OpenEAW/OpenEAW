@@ -23,6 +23,7 @@
 #include <openglyph/game/scene.hpp>
 #include <openglyph/game/scene_renderer.hpp>
 #include <openglyph/game/tactical_camera_store.hpp>
+#include <openglyph/io/mega_filesystem.hpp>
 #include <openglyph/renderer/io/material.hpp>
 #include <openglyph/renderer/io/model.hpp>
 #include <openglyph/renderer/material_store.hpp>
