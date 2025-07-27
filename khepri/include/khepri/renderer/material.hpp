@@ -32,10 +32,11 @@ public:
     Material()          = default;
     virtual ~Material() = default;
 
-    Material(const Material&)            = delete;
-    Material(Material&&)                 = delete;
-    Material& operator=(const Material&) = delete;
-    Material& operator=(Material&&)      = delete;
+protected:
+    Material(const Material&)            = default;
+    Material(Material&&)                 = default;
+    Material& operator=(const Material&) = default;
+    Material& operator=(Material&&)      = default;
 };
 
 } // namespace khepri::renderer

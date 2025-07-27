@@ -26,10 +26,8 @@ void MaterialStore::register_materials(
 {
     for (const auto& desc : material_descs) {
         khepri::renderer::MaterialDesc info;
-        info.cull_mode        = khepri::renderer::MaterialDesc::CullMode::front;
-        info.alpha_blend_mode = desc.alpha_blend_mode;
-        info.depth_buffer     = desc.depth_buffer;
-        info.shader           = m_shader_loader(desc.shader);
+        info.type   = desc.type;
+        info.shader = m_shader_loader(desc.shader);
         for (const auto& property : desc.properties) {
             khepri::renderer::MaterialDesc::Property prop;
             prop.name = property.name;

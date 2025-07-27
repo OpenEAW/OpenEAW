@@ -218,7 +218,13 @@ int main(int argc, const char* argv[])
 
         std::unique_ptr<openglyph::Scene> scene =
             CreateScene("_MP_SPACE_ALDERAAN", asset_loader, asset_cache, game_object_types);
-        openglyph::SceneRenderer scene_renderer(renderer);
+
+        auto render_pipeline = asset_cache.get_render_pipeline("Default");
+        if (!render_pipeline) {
+            // We can't render without a pipeline, so this is a fatal error
+            throw std::runtime_error("Unable to load default render pipeline");
+        }
+        openglyph::SceneRenderer scene_renderer(renderer, *render_pipeline);
 
         std::chrono::steady_clock::time_point last_update_time = std::chrono::steady_clock::now();
         double                                unhandled_update_time = 0.0;

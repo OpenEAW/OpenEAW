@@ -57,6 +57,10 @@ public:
     /// \see #khepri::renderer::Renderer::create_mesh
     std::unique_ptr<Mesh> create_mesh(const MeshDesc& mesh_desc) override;
 
+    /// \see #khepri::renderer::Renderer::create_render_pipeline
+    std::unique_ptr<RenderPipeline>
+    create_render_pipeline(const RenderPipelineDesc& render_pipeline_desc) override;
+
     /// \see #khepri::renderer::Renderer::clear
     void clear(ClearFlags flags) override;
 
@@ -64,11 +68,12 @@ public:
     void present() override;
 
     /// \see #khepri::renderer::Renderer::render_meshes
-    void render_meshes(gsl::span<const MeshInstance> meshes, const Camera& camera) override;
+    void render_meshes(RenderPipeline& render_pipeline, gsl::span<const MeshInstance> meshes,
+                       const Camera& camera) override;
 
     /// \see #khepri::renderer::Renderer::render_sprites
-    void render_sprites(gsl::span<const Sprite> sprites, Material& material,
-                        gsl::span<const Material::Param> params) override;
+    void render_sprites(RenderPipeline& render_pipeline, gsl::span<const Sprite> sprites,
+                        Material& material, gsl::span<const Material::Param> params) override;
 
 private:
     class Impl;

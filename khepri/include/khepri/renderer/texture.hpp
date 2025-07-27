@@ -22,16 +22,17 @@ public:
     explicit Texture(const Size& size) : m_size(size) {}
     virtual ~Texture() = default;
 
-    Texture(const Texture&)            = delete;
-    Texture(Texture&&)                 = delete;
-    Texture& operator=(const Texture&) = delete;
-    Texture& operator=(Texture&&)      = delete;
-
     /// Retrieves the size of the texture
     [[nodiscard]] const Size& size() const noexcept
     {
         return m_size;
     }
+
+protected:
+    Texture(const Texture&)            = default;
+    Texture(Texture&&)                 = default;
+    Texture& operator=(const Texture&) = default;
+    Texture& operator=(Texture&&)      = default;
 
 private:
     Size m_size;

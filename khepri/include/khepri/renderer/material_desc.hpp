@@ -30,40 +30,6 @@ namespace khepri::renderer {
  */
 struct MaterialDesc
 {
-    /// The type of face culling
-    enum class CullMode : std::uint8_t
-    {
-        none,
-        back,
-        front,
-    };
-
-    /// The type of alpha blending
-    enum class AlphaBlendMode : std::uint8_t
-    {
-        /// Do not alpha blend.
-        none,
-
-        /// Source and destination are blended according to source alpha.
-        blend_src,
-
-        /// Source is added on top of destination.
-        additive,
-    };
-
-    /// Comparison function for depth or stencil buffer operations
-    enum class ComparisonFunc : std::uint8_t
-    {
-        never,
-        less,
-        equal,
-        less_equal,
-        greater,
-        not_equal,
-        greater_equal,
-        always,
-    };
-
     /// Value of a material shader property
     using PropertyValue =
         std::variant<std::int32_t, float, Vector2f, Vector3f, Vector4f, Matrixf, Texture*>;
@@ -79,24 +45,9 @@ struct MaterialDesc
         PropertyValue default_value;
     };
 
-    struct DepthBufferDesc
-    {
-        /// Depth test comparison function, if any.
-        /// Set to \a std::nullopt to disable depth testing.
-        ComparisonFunc comparison_func{ComparisonFunc::less};
-
-        /// Enable depth-buffer writing
-        bool write_enable{true};
-    };
-
-    /// Face culling mode of this material
-    CullMode cull_mode{CullMode::none};
-
-    /// Type of alpha blending to use when rendering with this material
-    AlphaBlendMode alpha_blend_mode{AlphaBlendMode::none};
-
-    /// Depth-buffer settings to use when rendering this material
-    std::optional<DepthBufferDesc> depth_buffer;
+    /// The type of the material. This is only used to allow render passes in the render pipeline to
+    /// render certain materials. See #khepri::renderer::RenderPassDesc.
+    std::string type;
 
     /// Shader of this material
     Shader* shader{nullptr};

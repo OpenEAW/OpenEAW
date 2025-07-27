@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<RenderPipelines>
+    <RenderPipeline Name="Default">
+        <!-- Render phase for all solid, non-transparent objects. -->
+        <RenderPass>
+            <Material_Type>Opaque</Material_Type>
+            <!-- Sort front-to-back to minimize overdraw -->
+            <Depth_Sort>front_to_back</Depth_Sort>
+            <AlphaBlend>blend_src</AlphaBlend>
+            <DepthFunc>less_equal</DepthFunc>
+        </RenderPass>
+
+        <!-- Render phase for all transparent objects. This is rendered after the solids to allow alpha-blending effects to work -->
+        <RenderPass>
+            <Material_Type>Transparent</Material_Type>
+            <!-- Sort back-to-front to ensure alpha blending works correctly -->
+            <Depth_Sort>back_to_front</Depth_Sort>
+            <AlphaBlend>additive</AlphaBlend>
+            <DepthFunc>less_equal</DepthFunc>
+            <DepthWriteEnable>false</DepthWriteEnable>
+        </RenderPass>
+    </RenderPipeline>
+</RenderPipelines>

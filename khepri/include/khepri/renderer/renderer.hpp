@@ -6,6 +6,8 @@
 #include "mesh.hpp"
 #include "mesh_desc.hpp"
 #include "mesh_instance.hpp"
+#include "render_pipeline.hpp"
+#include "render_pipeline_desc.hpp"
 #include "shader.hpp"
 #include "shader_desc.hpp"
 #include "sprite.hpp"
@@ -102,7 +104,7 @@ public:
     virtual std::unique_ptr<Texture> create_texture(const TextureDesc& texture_desc) = 0;
 
     /**
-     * \brief Creates a mesh from a mesh descrpition.
+     * \brief Creates a mesh from a mesh description.
      *
      * The returned mesh can be specified in a #khepri::renderer::MeshInstance to be rendered.
      *
@@ -111,6 +113,18 @@ public:
      * \return the created mesh.
      */
     virtual std::unique_ptr<Mesh> create_mesh(const MeshDesc& mesh_desc) = 0;
+
+    /**
+     * \brief Create a render pipeline.
+     *
+     * See \see khepri::renderer::RenderPipelineDesc for an explanation of render pipelines.
+     *
+     * \param render_pipeline_desc the render pipeline to create.
+     *
+     * \throw ArgumentError if \a render_pipeline_desc contains an invalid description.
+     */
+    virtual std::unique_ptr<RenderPipeline>
+    create_render_pipeline(const RenderPipelineDesc& render_pipeline_desc) = 0;
 
     /**
      * Clears the render target and/or depth/stencil buffer
@@ -125,22 +139,32 @@ public:
     virtual void present() = 0;
 
     /**
-     * Renders a collection of meshe instances.
+     * Renders a collection of mesh instances.
      *
+     * \param[in] render_pipeline the render pipeline to use
      * \param[in] meshes a collection of mesh instances to render.
      * \param[in] camera the camera to render them with.
+     *
+     * \throws ArgumentError if any meshes use materials that were created by a different
+     *                       render pipeline, or if the render pipeline was not created by
+     *                       this renderer.
      */
-    virtual void render_meshes(gsl::span<const MeshInstance> meshes, const Camera& camera) = 0;
+    virtual void render_meshes(RenderPipeline&               render_pipeline,
+                               gsl::span<const MeshInstance> meshes, const Camera& camera) = 0;
 
     /**
      * Renders a collection of sprites in camera-space
      *
+     * \param[in] render_pipeline the render pipeline to use
      * \param[in] sprites a collection of sprites to render.
      * \param[in] material the material to render the sprites with.
      * \param[in] params the material parameters to render the sprites with.
+     *
+     * \throws ArgumentError if the material was created by a different render pipeline, or
+     *                       if the render pipeline was not created by this renderer.
      */
-    virtual void render_sprites(gsl::span<const Sprite> sprites, Material& material,
-                                gsl::span<const Material::Param> params) = 0;
+    virtual void render_sprites(RenderPipeline& render_pipeline, gsl::span<const Sprite> sprites,
+                                Material& material, gsl::span<const Material::Param> params) = 0;
 };
 
 } // namespace khepri::renderer

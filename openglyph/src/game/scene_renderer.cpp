@@ -235,7 +235,7 @@ void SceneRenderer::render_scene(const khepri::scene::Scene&     scene,
         }
     }
 
-    m_renderer.render_meshes(meshes, camera);
+    m_renderer.render_meshes(m_render_pipeline, meshes, camera);
 }
 
 } // namespace openglyph
