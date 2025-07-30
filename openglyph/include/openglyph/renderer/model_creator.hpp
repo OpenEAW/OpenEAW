@@ -15,9 +15,9 @@ public:
     template <typename T>
     using Loader = std::function<T*(std::string_view)>;
 
-    ModelCreator(khepri::renderer::Renderer&        renderer,
-                 Loader<khepri::renderer::Material> material_loader,
-                 Loader<khepri::renderer::Texture>  texture_loader);
+    ModelCreator(khepri::renderer::Renderer&              renderer,
+                 Loader<const khepri::renderer::Material> material_loader,
+                 Loader<const khepri::renderer::Texture>  texture_loader);
     ~ModelCreator() = default;
 
     ModelCreator(const ModelCreator&)                = delete;
@@ -28,9 +28,9 @@ public:
     std::unique_ptr<RenderModel> create_model(const Model& model);
 
 private:
-    khepri::renderer::Renderer&        m_renderer;
-    Loader<khepri::renderer::Material> m_material_loader;
-    Loader<khepri::renderer::Texture>  m_texture_loader;
+    khepri::renderer::Renderer&              m_renderer;
+    Loader<const khepri::renderer::Material> m_material_loader;
+    Loader<const khepri::renderer::Texture>  m_texture_loader;
 };
 
 } // namespace openglyph::renderer

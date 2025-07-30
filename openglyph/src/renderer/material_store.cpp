@@ -12,9 +12,9 @@ template <class... Ts>
 Overloaded(Ts...) -> Overloaded<Ts...>;
 } // namespace
 
-MaterialStore::MaterialStore(khepri::renderer::Renderer&       renderer,
-                             Loader<khepri::renderer::Shader>  shader_loader,
-                             Loader<khepri::renderer::Texture> texture_loader)
+MaterialStore::MaterialStore(khepri::renderer::Renderer&             renderer,
+                             Loader<const khepri::renderer::Shader>  shader_loader,
+                             Loader<const khepri::renderer::Texture> texture_loader)
     : m_renderer(renderer)
     , m_shader_loader(std::move(shader_loader))
     , m_texture_loader(std::move(texture_loader))

@@ -149,7 +149,7 @@ public:
      *                       render pipeline, or if the render pipeline was not created by
      *                       this renderer.
      */
-    virtual void render_meshes(RenderPipeline&               render_pipeline,
+    virtual void render_meshes(const RenderPipeline&         render_pipeline,
                                gsl::span<const MeshInstance> meshes, const Camera& camera) = 0;
 
     /**
@@ -163,8 +163,9 @@ public:
      * \throws ArgumentError if the material was created by a different render pipeline, or
      *                       if the render pipeline was not created by this renderer.
      */
-    virtual void render_sprites(RenderPipeline& render_pipeline, gsl::span<const Sprite> sprites,
-                                Material& material, gsl::span<const Material::Param> params) = 0;
+    virtual void render_sprites(const RenderPipeline&   render_pipeline,
+                                gsl::span<const Sprite> sprites, const Material& material,
+                                gsl::span<const Material::Param> params) = 0;
 };
 
 } // namespace khepri::renderer

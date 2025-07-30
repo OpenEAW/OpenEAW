@@ -1,4 +1,5 @@
 #include "native_window.hpp"
+#include "refcnt_ptr.hpp"
 #include "shader_stream_factory.hpp"
 
 #include <khepri/exceptions.hpp>
@@ -17,7 +18,6 @@
 #include <DeviceContext.h>
 #include <HLSL2GLSLConverter.h>
 #include <MapHelper.hpp>
-#include <RefCntAutoPtr.hpp>
 #include <RenderDevice.h>
 #include <Sampler.h>
 #include <SwapChain.h>
@@ -170,17 +170,17 @@ class Renderer::Impl
 {
     struct Shader : public khepri::renderer::Shader
     {
-        RefCntAutoPtr<IShader> vertex_shader;
-        RefCntAutoPtr<IShader> pixel_shader;
+        RefCntPtr<IShader> vertex_shader;
+        RefCntPtr<IShader> pixel_shader;
     };
 
     struct Mesh : public khepri::renderer::Mesh
     {
         using Index = khepri::renderer::MeshDesc::Index;
 
-        Index                  index_count{0};
-        RefCntAutoPtr<IBuffer> vertex_buffer;
-        RefCntAutoPtr<IBuffer> index_buffer;
+        Index              index_count{0};
+        RefCntPtr<IBuffer> vertex_buffer;
+        RefCntPtr<IBuffer> index_buffer;
     };
 
     class Material : public khepri::renderer::Material
@@ -365,7 +365,7 @@ class Renderer::Impl
         // Activates the material for the given render pass on the context with specified
         // parameters.
         void set_active(GlobalRenderPassIndex render_pass_index, IDeviceContext& context,
-                        gsl::span<const khepri::renderer::Material::Param> params)
+                        gsl::span<const khepri::renderer::Material::Param> params) const
         {
             if (render_pass_index < m_render_pass_data.size()) {
                 if (auto& data = m_render_pass_data[render_pass_index]; data.pipeline) {
@@ -394,7 +394,7 @@ class Renderer::Impl
         {
             // The graphics pipeline for this render pass/material combo.
             // Not set if this material is not renderer in this render pass.
-            RefCntAutoPtr<IPipelineState> pipeline;
+            RefCntPtr<IPipelineState> pipeline;
 
             // Reference the pipeline's "InstanceConstants" variable
             IShaderResourceVariable* var_instance_constants{nullptr};
@@ -402,11 +402,11 @@ class Renderer::Impl
             // Reference the pipeline's "ViewConstants" variable
             IShaderResourceVariable* var_view_constants{nullptr};
 
-            RefCntAutoPtr<IShaderResourceBinding> shader_resource_binding;
+            RefCntPtr<IShaderResourceBinding> shader_resource_binding;
         };
 
-        void apply_material_params(RenderPassData& data, IDeviceContext& context,
-                                   gsl::span<const khepri::renderer::Material::Param> params)
+        void apply_material_params(const RenderPassData& data, IDeviceContext& context,
+                                   gsl::span<const khepri::renderer::Material::Param> params) const
         {
             const auto& set_variable = [&](const char* name, IDeviceObject* object) {
                 auto& srb = *data.shader_resource_binding;
@@ -433,8 +433,8 @@ class Renderer::Impl
                 const auto& value = (it != params.end()) ? it->value : param.default_value;
 
                 std::visit(
-                    Overloaded{[&](khepri::renderer::Texture* value) {
-                                   auto* texture = dynamic_cast<Texture*>(value);
+                    Overloaded{[&](const khepri::renderer::Texture* value) {
+                                   auto* texture = dynamic_cast<const Texture*>(value);
                                    if (texture != nullptr) {
                                        set_variable(param.name.c_str(), texture->shader_view);
                                    }
@@ -476,16 +476,16 @@ class Renderer::Impl
         std::vector<RenderPassData> m_render_pass_data;
 
         // Buffer for the material's parameters
-        RefCntAutoPtr<IBuffer> m_param_buffer;
-        std::vector<Param>     m_params;
+        RefCntPtr<IBuffer> m_param_buffer;
+        std::vector<Param> m_params;
     };
 
     struct Texture : public khepri::renderer::Texture
     {
         using khepri::renderer::Texture::Texture;
 
-        RefCntAutoPtr<ITexture> texture;
-        ITextureView*           shader_view{};
+        RefCntPtr<ITexture> texture;
+        ITextureView*       shader_view{};
     };
 
     class RenderPipeline : public khepri::renderer::RenderPipeline
@@ -633,7 +633,7 @@ public:
     [[nodiscard]] std::unique_ptr<Shader> create_shader(const std::filesystem::path& path,
                                                         const ShaderLoader&          loader)
     {
-        RefCntAutoPtr<ShaderStreamFactory> factory(MakeNewRCObj<ShaderStreamFactory>()(loader));
+        RefCntPtr<ShaderStreamFactory> factory(MakeNewRCObj<ShaderStreamFactory>()(loader));
 
         auto shader = std::make_unique<Shader>();
         shader->vertex_shader =
@@ -723,7 +723,7 @@ public:
         sampler_desc.MipFilter = FILTER_TYPE_LINEAR;
         sampler_desc.AddressU  = TEXTURE_ADDRESS_WRAP;
         sampler_desc.AddressV  = TEXTURE_ADDRESS_WRAP;
-        RefCntAutoPtr<ISampler> sampler;
+        RefCntPtr<ISampler> sampler;
         m_device->CreateSampler(sampler_desc, &sampler);
         if (!sampler) {
             throw khepri::renderer::Error("Failed to create texture sampler");
@@ -837,18 +837,18 @@ public:
         m_swapchain->Present();
     }
 
-    void render_meshes(khepri::renderer::RenderPipeline& render_pipeline,
+    void render_meshes(const khepri::renderer::RenderPipeline& render_pipeline,
                        gsl::span<const MeshInstance> meshes, const Camera& camera)
     {
         // Validate the input first
-        auto* const pipeline = dynamic_cast<RenderPipeline*>(&render_pipeline);
+        const auto* const pipeline = dynamic_cast<const RenderPipeline*>(&render_pipeline);
         if (pipeline == nullptr) {
             throw ArgumentError();
         }
 
         for (const auto& mesh_info : meshes) {
-            auto* const material = dynamic_cast<Material*>(mesh_info.material);
-            auto* const mesh     = dynamic_cast<Mesh*>(mesh_info.mesh);
+            const auto* const material = dynamic_cast<const Material*>(mesh_info.material);
+            const auto* const mesh     = dynamic_cast<const Mesh*>(mesh_info.mesh);
             if (material == nullptr || mesh == nullptr) {
                 throw ArgumentError();
             }
@@ -879,7 +879,7 @@ public:
             // Collect the meshes for this render pass
             render_pass_meshes.clear();
             for (const auto& mesh_info : meshes) {
-                auto* const material = static_cast<Material*>(mesh_info.material);
+                const auto* const material = static_cast<const Material*>(mesh_info.material);
                 if (material->is_used(render_pass_index)) {
                     render_pass_meshes.push_back(&mesh_info);
                 }
@@ -911,8 +911,8 @@ public:
 
             // Now render the meshes in order
             for (const auto* mesh_info : render_pass_meshes) {
-                auto* const material = static_cast<Material*>(mesh_info->material);
-                auto* const mesh     = static_cast<Mesh*>(mesh_info->mesh);
+                auto* const material = static_cast<const Material*>(mesh_info->material);
+                auto* const mesh     = static_cast<const Mesh*>(mesh_info->mesh);
 
                 assert(material->is_used(render_pass_index));
                 material->set_active(render_pass_index, *m_context, mesh_info->material_params);
@@ -944,16 +944,16 @@ public:
         }
     }
 
-    void render_sprites(khepri::renderer::RenderPipeline& render_pipeline,
-                        gsl::span<const Sprite> sprites, khepri::renderer::Material& material,
+    void render_sprites(const khepri::renderer::RenderPipeline& render_pipeline,
+                        gsl::span<const Sprite> sprites, const khepri::renderer::Material& material,
                         gsl::span<const khepri::renderer::Material::Param> params)
     {
-        auto* const pipeline = dynamic_cast<RenderPipeline*>(&render_pipeline);
+        const auto* const pipeline = dynamic_cast<const RenderPipeline*>(&render_pipeline);
         if (!pipeline) {
             throw ArgumentError();
         }
 
-        auto* mat = dynamic_cast<Material*>(&material);
+        auto* mat = dynamic_cast<const Material*>(&material);
         if (mat == nullptr) {
             throw ArgumentError();
         }
@@ -1034,13 +1034,11 @@ private:
 
     using SpriteVertex = MeshDesc::Vertex;
 
-    RefCntAutoPtr<IShader> create_shader_object(const std::string&   path,
-                                                ShaderStreamFactory& factory,
-                                                SHADER_TYPE          shader_type,
-                                                const std::string&   entrypoint)
+    RefCntPtr<IShader> create_shader_object(const std::string& path, ShaderStreamFactory& factory,
+                                            SHADER_TYPE shader_type, const std::string& entrypoint)
     {
-        RefCntAutoPtr<IDataBlob>                  compiler_output;
-        RefCntAutoPtr<IHLSL2GLSLConversionStream> conversion_stream;
+        RefCntPtr<IDataBlob>                  compiler_output;
+        RefCntPtr<IHLSL2GLSLConversionStream> conversion_stream;
 
         ShaderCreateInfo ci;
         ci.Desc.Name                  = path.c_str();
@@ -1059,7 +1057,7 @@ private:
         ci.Desc.UseCombinedTextureSamplers = true;
         ci.Desc.CombinedSamplerSuffix      = "Sampler";
 
-        RefCntAutoPtr<IShader> shader;
+        RefCntPtr<IShader> shader;
         m_device->CreateShader(ci, &shader);
         if (shader == nullptr) {
             LOG.error("Failed to create shader from file: {}, error: {}", path,
@@ -1074,19 +1072,18 @@ private:
         return shader;
     }
 
-    static void
-    print_converted_glsl_source(RefCntAutoPtr<IHLSL2GLSLConversionStream> conversion_stream,
-                                const std::string& path, ShaderStreamFactory& factory,
-                                SHADER_TYPE shader_type, const std::string& entrypoint)
+    static void print_converted_glsl_source(RefCntPtr<IHLSL2GLSLConversionStream> conversion_stream,
+                                            const std::string& path, ShaderStreamFactory& factory,
+                                            SHADER_TYPE shader_type, const std::string& entrypoint)
     {
         if (conversion_stream == nullptr) {
             // If we didn't get a conversion stream, try to create one ourselves
-            RefCntAutoPtr<IHLSL2GLSLConverter> converter;
+            RefCntPtr<IHLSL2GLSLConverter> converter;
             CreateHLSL2GLSLConverter(&converter);
             converter->CreateStream(path.c_str(), &factory, nullptr, 0, &conversion_stream);
         }
 
-        RefCntAutoPtr<IDataBlob> glsl_source;
+        RefCntPtr<IDataBlob> glsl_source;
         if (conversion_stream != nullptr) {
             conversion_stream->Convert(entrypoint.c_str(), shader_type, true, "Sampler", false,
                                        &glsl_source);
@@ -1145,7 +1142,7 @@ private:
         // Validate properties and collect all dynamic top-level materials
         std::vector<std::string> dynamic_variables;
         for (const auto& p : properties) {
-            if (!std::holds_alternative<khepri::renderer::Texture*>(p.default_value)) {
+            if (!std::holds_alternative<const khepri::renderer::Texture*>(p.default_value)) {
                 // Non-texture properties are fine, they are in a cbuffer and not top-level
                 // variables
                 continue;
@@ -1210,14 +1207,14 @@ private:
         }
     }
 
-    RefCntAutoPtr<IRenderDevice>  m_device;
-    RefCntAutoPtr<IDeviceContext> m_context;
-    RefCntAutoPtr<ISwapChain>     m_swapchain;
+    RefCntPtr<IRenderDevice>  m_device;
+    RefCntPtr<IDeviceContext> m_context;
+    RefCntPtr<ISwapChain>     m_swapchain;
 
-    RefCntAutoPtr<IBuffer> m_constants_instance;
-    RefCntAutoPtr<IBuffer> m_constants_view;
-    RefCntAutoPtr<IBuffer> m_sprite_vertex_buffer;
-    RefCntAutoPtr<IBuffer> m_sprite_index_buffer;
+    RefCntPtr<IBuffer> m_constants_instance;
+    RefCntPtr<IBuffer> m_constants_view;
+    RefCntPtr<IBuffer> m_sprite_vertex_buffer;
+    RefCntPtr<IBuffer> m_sprite_index_buffer;
 
     // This is a non-owning set of all alive materials.
     // This is necessary for when new render pipelines are created. When that happens, all alive
@@ -1285,14 +1282,14 @@ void Renderer::present()
     m_impl->present();
 }
 
-void Renderer::render_meshes(khepri::renderer::RenderPipeline& render_pipeline,
+void Renderer::render_meshes(const khepri::renderer::RenderPipeline& render_pipeline,
                              gsl::span<const MeshInstance> meshes, const Camera& camera)
 {
     m_impl->render_meshes(render_pipeline, meshes, camera);
 }
 
-void Renderer::render_sprites(khepri::renderer::RenderPipeline& render_pipeline,
-                              gsl::span<const Sprite> sprites, Material& material,
+void Renderer::render_sprites(const khepri::renderer::RenderPipeline& render_pipeline,
+                              gsl::span<const Sprite> sprites, const Material& material,
                               gsl::span<const Material::Param> params)
 {
     m_impl->render_sprites(render_pipeline, sprites, material, params);

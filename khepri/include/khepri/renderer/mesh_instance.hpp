@@ -29,13 +29,13 @@ namespace khepri::renderer {
 struct MeshInstance
 {
     /// The mesh this is an instance of
-    Mesh* mesh{nullptr};
+    const Mesh* mesh{nullptr};
 
     /// The transformation matrix for this instance
     Matrixf transform;
 
     /// The material to render this instance with
-    Material* material{nullptr};
+    const Material* material{nullptr};
 
     /// Material parameters for this instance
     gsl::span<Material::Param> material_params;
