@@ -22,9 +22,9 @@ khepri::Matrixf absolute_transform(const std::vector<Model::Bone>& bones,
 }
 } // namespace
 
-ModelCreator::ModelCreator(khepri::renderer::Renderer&        renderer,
-                           Loader<khepri::renderer::Material> material_loader,
-                           Loader<khepri::renderer::Texture>  texture_loader)
+ModelCreator::ModelCreator(khepri::renderer::Renderer&              renderer,
+                           Loader<const khepri::renderer::Material> material_loader,
+                           Loader<const khepri::renderer::Texture>  texture_loader)
     : m_renderer(renderer)
     , m_material_loader(std::move(material_loader))
     , m_texture_loader(std::move(texture_loader))

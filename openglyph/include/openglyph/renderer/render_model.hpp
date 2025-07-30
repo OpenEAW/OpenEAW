@@ -20,7 +20,7 @@ public:
         std::string                             name;
         std::unique_ptr<khepri::renderer::Mesh> render_mesh;
         BillboardMode                           billboard_mode;
-        khepri::renderer::Material*             material;
+        const khepri::renderer::Material*       material;
         std::vector<Param>                      material_params;
         bool                                    visible;
         khepri::Matrixf                         root_transform;   // relative to the model's root

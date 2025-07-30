@@ -68,12 +68,12 @@ public:
     void present() override;
 
     /// \see #khepri::renderer::Renderer::render_meshes
-    void render_meshes(RenderPipeline& render_pipeline, gsl::span<const MeshInstance> meshes,
+    void render_meshes(const RenderPipeline& render_pipeline, gsl::span<const MeshInstance> meshes,
                        const Camera& camera) override;
 
     /// \see #khepri::renderer::Renderer::render_sprites
-    void render_sprites(RenderPipeline& render_pipeline, gsl::span<const Sprite> sprites,
-                        Material& material, gsl::span<const Material::Param> params) override;
+    void render_sprites(const RenderPipeline& render_pipeline, gsl::span<const Sprite> sprites,
+                        const Material& material, gsl::span<const Material::Param> params) override;
 
 private:
     class Impl;

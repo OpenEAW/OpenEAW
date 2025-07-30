@@ -22,9 +22,9 @@ public:
     template <typename T>
     using Loader = std::function<T*(std::string_view)>;
 
-    MaterialStore(khepri::renderer::Renderer&       renderer,
-                  Loader<khepri::renderer::Shader>  shader_loader,
-                  Loader<khepri::renderer::Texture> texture_loader);
+    MaterialStore(khepri::renderer::Renderer&             renderer,
+                  Loader<const khepri::renderer::Shader>  shader_loader,
+                  Loader<const khepri::renderer::Texture> texture_loader);
     ~MaterialStore() = default;
 
     MaterialStore(const MaterialStore&)                = delete;
@@ -45,9 +45,9 @@ private:
     using MaterialMap = std::map<std::string, std::unique_ptr<khepri::renderer::Material>,
                                  khepri::CaseInsensitiveLess>;
 
-    khepri::renderer::Renderer&       m_renderer;
-    Loader<khepri::renderer::Shader>  m_shader_loader;
-    Loader<khepri::renderer::Texture> m_texture_loader;
+    khepri::renderer::Renderer&             m_renderer;
+    Loader<const khepri::renderer::Shader>  m_shader_loader;
+    Loader<const khepri::renderer::Texture> m_texture_loader;
 
     MaterialMap m_materials;
 };

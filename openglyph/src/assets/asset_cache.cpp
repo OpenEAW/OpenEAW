@@ -70,22 +70,22 @@ AssetCache::AssetCache(AssetLoader& asset_loader, khepri::renderer::Renderer& re
 
 AssetCache::~AssetCache() = default;
 
-khepri::renderer::RenderPipeline* AssetCache::get_render_pipeline(std::string_view name)
+const khepri::renderer::RenderPipeline* AssetCache::get_render_pipeline(std::string_view name)
 {
     return m_render_pipelines.get(name);
 }
 
-khepri::renderer::Material* AssetCache::get_material(std::string_view name)
+const khepri::renderer::Material* AssetCache::get_material(std::string_view name)
 {
     return m_materials.get(name);
 }
 
-khepri::renderer::Texture* AssetCache::get_texture(std::string_view name)
+const khepri::renderer::Texture* AssetCache::get_texture(std::string_view name)
 {
     return m_texture_cache.get(name);
 }
 
-openglyph::renderer::RenderModel* AssetCache::get_render_model(std::string_view name)
+const openglyph::renderer::RenderModel* AssetCache::get_render_model(std::string_view name)
 {
     return m_render_model_cache.get(name);
 }

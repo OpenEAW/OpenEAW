@@ -32,7 +32,7 @@ struct MaterialDesc
 {
     /// Value of a material shader property
     using PropertyValue =
-        std::variant<std::int32_t, float, Vector2f, Vector3f, Vector4f, Matrixf, Texture*>;
+        std::variant<std::int32_t, float, Vector2f, Vector3f, Vector4f, Matrixf, const Texture*>;
 
     /// Description of a material shader property
     struct Property
@@ -50,7 +50,7 @@ struct MaterialDesc
     std::string type;
 
     /// Shader of this material
-    Shader* shader{nullptr};
+    const Shader* shader{nullptr};
 
     /// Shader properties of this material
     std::vector<Property> properties;

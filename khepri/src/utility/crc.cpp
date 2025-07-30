@@ -1,5 +1,3 @@
-#pragma once
-
 #include <khepri/utility/crc.hpp>
 
 #include <array>
