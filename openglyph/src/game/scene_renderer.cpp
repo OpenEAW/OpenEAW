@@ -156,7 +156,7 @@ void apply_billboard(khepri::Matrixf& transform, const renderer::RenderModel::Me
     case renderer::BillboardMode::sun_glow: {
         // Get offset from the parent bone (maintain scaling of final transformation)
         const auto offset_from_parent =
-            mesh.parent_transform.get_translation() * transform.get_scale();
+            mesh.parent_transform.get_translation() * transform.get_rotation_scale();
         const auto distance = offset_from_parent.length();
         // Rotate the object around its parent towards the main light
         transform.set_translation(transform.get_translation() - offset_from_parent +
