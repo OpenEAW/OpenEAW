@@ -1,13 +1,4 @@
-cbuffer InstanceConstants
-{
-	float4x4 World;
-	float4x4 WorldInv;
-};
-
-cbuffer ViewConstants
-{
-	float4x4 ViewProj;
-};
+#include "common.hlsli"
 
 ////////////////////////////////////////////////
 // Material
@@ -21,48 +12,6 @@ cbuffer Material
 
 Texture2D BaseTexture;
 SamplerState BaseTextureSampler;
-
-////////////////////////////////////////////////
-
-// Encodes a (assumed normalized) vector for storage in a TEXCOORD attribute
-float3 encode_vector(float3 vec)
-{
-	return 0.5 * vec + 0.5;
-}
-
-float4 encode_vector(float4 vec)
-{
-	return 0.5 * vec + 0.5;
-}
-
-// Decodes a TEXCOORD attribute into a (assumed normalized) vector
-float3 decode_vector(float3 texcoord)
-{
-	return 2 * (texcoord - 0.5);
-}
-
-float4 decode_vector(float4 texcoord)
-{
-	return 2 * (texcoord - 0.5);
-}
-
-// Returns a matrix that transforms vectors from the tangent space defined by the arguments to object space
-float3x3 from_tangent_matrix(float3 tangent, float3 binormal, float3 normal)
-{
-	float3x3 tm;
-	tm[0] = tangent;
-	tm[1] = binormal;
-	tm[2] = normal;
-	return tm;
-}
-
-// Returns a matrix that transforms vectors object space to the tangent space defined by the arguments
-float3x3 to_tangent_matrix(float3 tangent, float3 binormal, float3 normal)
-{
-	// The from-tangent-space matrix can assumed to be orthogonal.
-	// The inverse of a orthogonal matrix is the same as its transpose.
-	return transpose(from_tangent_matrix(tangent,binormal,normal));
-}
 
 ////////////////////////////////////////////////
 
@@ -86,9 +35,17 @@ VS_OUTPUT vs_main(VS_INPUT_MESH In)
 {
 	VS_OUTPUT Out;
 
+	float3 world_normal = normalize(mul(In.Normal, (float3x3)World));
+
+	// No bump mapping, so calculate all lights per-vertex
+	float3 diff_light =
+		DirectionalLights[0].intensity * DirectionalLights[0].diffuse_color * saturate(dot(world_normal, -DirectionalLights[0].direction)) +
+	    DirectionalLights[1].intensity * DirectionalLights[1].diffuse_color * saturate(dot(world_normal, -DirectionalLights[1].direction)) +
+	    DirectionalLights[2].intensity * DirectionalLights[2].diffuse_color * saturate(dot(world_normal, -DirectionalLights[2].direction));
+
 	Out.Pos = mul(float4(In.Pos, 1), mul(World, ViewProj));
 	Out.UV = In.UV;
-	Out.Diffuse = Diffuse + Emissive;
+	Out.Diffuse = Diffuse * diff_light + Emissive;
 
 	return Out;
 }
@@ -96,6 +53,5 @@ VS_OUTPUT vs_main(VS_INPUT_MESH In)
 float4 ps_main(VS_OUTPUT In) : SV_Target
 {
 	float4 texel = BaseTexture.Sample(BaseTextureSampler, In.UV);
-	float3 diffuse = texel.rgb * In.Diffuse.rgb * 2;
-	return float4(diffuse, 1);
+	return float4(texel.rgb * In.Diffuse, 1);
 }

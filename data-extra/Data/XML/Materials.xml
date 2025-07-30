@@ -20,6 +20,7 @@
 
     <Material Name="MeshBumpColorize" Type="Opaque">
         <Shader>MeshBumpColorize</Shader>
+        <Num_Directional_Lights>3</Num_Directional_Lights>
         <Param Name="Colorization" Type="float3">1, 1, 1</Param>
         <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
@@ -28,6 +29,7 @@
 
     <Material Name="MeshGloss" Type="Opaque">
         <Shader>MeshGloss</Shader>
+        <Num_Directional_Lights>3</Num_Directional_Lights>
         <Param Name="Emissive" Type="float3">0, 0, 0</Param>
         <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
         <Param Name="Specular" Type="float3">0, 0, 0</Param>
@@ -37,6 +39,7 @@
 
     <Material Name="MeshAdditive" Type="Transparent">
         <Shader>MeshAdditive</Shader>
+        <Num_Directional_Lights>0</Num_Directional_Lights>
         <Param Name="Color" Type="float3">1, 0, 1</Param>
         <Param Name="UVScrollRate" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
@@ -44,6 +47,7 @@
 
     <Material Name="MeshAdditiveVColor" Type="Transparent">
         <Shader>MeshAdditiveVColor</Shader>
+        <Num_Directional_Lights>0</Num_Directional_Lights>
         <Param Name="UVScrollRate" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
     </Material>

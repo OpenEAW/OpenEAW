@@ -26,7 +26,6 @@
 #include <iterator>
 #include <stack>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
 using namespace Diligent;
@@ -41,16 +40,43 @@ using LocalRenderPassIndex = std::size_t;
 // Index of a render pass in a global render pass collection
 using GlobalRenderPassIndex = std::size_t;
 
+#pragma pack(push, 4)
 struct InstanceConstantBuffer
 {
     Matrixf world;
     Matrixf world_inv;
 };
+static_assert(sizeof(InstanceConstantBuffer) == 8 * 16); // Validate packing
 
 struct ViewConstantBuffer
 {
     Matrixf view_proj;
+    Matrixf view_proj_inv;
 };
+static_assert(sizeof(ViewConstantBuffer) == 8 * 16); // Validate packing
+
+struct DirectionalLight
+{
+    Vector3f direction;
+    float    intensity;
+    Vector3f diffuse_color;
+    long : 32;
+    Vector3f specular_color;
+    long : 32;
+};
+static_assert(sizeof(DirectionalLight) == 3 * 16); // Validate packing
+
+struct PointLight
+{
+    Vector3f direction;
+    float    intensity;
+    Vector3f diffuse_color;
+    long : 32;
+    Vector3f specular_color;
+    float    max_distance;
+};
+static_assert(sizeof(PointLight) == 3 * 16); // Validate packing
+#pragma pack(pop)
 
 CULL_MODE to_cull_mode(RenderPassDesc::CullMode cull_mode) noexcept
 {
@@ -168,6 +194,15 @@ constexpr bool using_shader_conversion()
 
 class Renderer::Impl
 {
+    struct ConstantsBuffers
+    {
+        RefCntPtr<IBuffer> instance;
+        RefCntPtr<IBuffer> view;
+        RefCntPtr<IBuffer> directional_lights;
+        RefCntPtr<IBuffer> point_lights;
+        RefCntPtr<IBuffer> environment;
+    };
+
     struct Shader : public khepri::renderer::Shader
     {
         RefCntPtr<IShader> vertex_shader;
@@ -203,9 +238,15 @@ class Renderer::Impl
             , m_swapchain(swapchain)
             , m_destroy_callback(destroy_callback)
             , m_type(desc.type)
+            , m_num_directional_lights(desc.num_directional_lights)
+            , m_num_point_lights(desc.num_point_lights)
             , m_shader(copy_shader(desc.shader))
             , m_dynamic_variables(determine_dynamic_material_variables(m_shader, desc.properties))
         {
+            if (desc.num_directional_lights < 0 || desc.num_point_lights < 0) {
+                throw ArgumentError();
+            }
+
             const auto& property_size = [](const MaterialDesc::PropertyValue& value) -> Uint32 {
                 // Every type has its own size, except for textures, which don't take up space.
                 return std::visit(
@@ -242,8 +283,18 @@ class Renderer::Impl
             m_destroy_callback(*this);
         }
 
+        int num_directional_lights() const noexcept
+        {
+            return m_num_directional_lights;
+        }
+
+        int num_point_lights() const noexcept
+        {
+            return m_num_point_lights;
+        }
+
         void set_render_pass(GlobalRenderPassIndex render_pass_index, const RenderPassDesc& desc,
-                             IBuffer& constants_instance, IBuffer& constants_view)
+                             ConstantsBuffers& constants)
         {
             // Check if this material is rendered in the render pass
             if (!khepri::case_insensitive_equals(desc.material_type, m_type)) {
@@ -333,16 +384,19 @@ class Renderer::Impl
 
             RenderPassData data;
             m_device.CreateGraphicsPipelineState(ci, &data.pipeline);
-            data.var_instance_constants =
-                data.pipeline->GetStaticVariableByName(SHADER_TYPE_VERTEX, "InstanceConstants");
-            data.var_view_constants =
-                data.pipeline->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ViewConstants");
-            if (data.var_instance_constants) {
-                data.var_instance_constants->Set(&constants_instance);
-            }
-            if (data.var_view_constants) {
-                data.var_view_constants->Set(&constants_view);
-            }
+
+            const auto& set_variable = [&](const char* name, IDeviceObject* object) {
+                if (auto* var = data.pipeline->GetStaticVariableByName(SHADER_TYPE_VERTEX, name)) {
+                    var->Set(object);
+                }
+                if (auto* var = data.pipeline->GetStaticVariableByName(SHADER_TYPE_PIXEL, name)) {
+                    var->Set(object);
+                }
+            };
+
+            set_variable("InstanceConstants", constants.instance);
+            set_variable("ViewConstants", constants.view);
+
             data.pipeline->CreateShaderResourceBinding(&data.shader_resource_binding, true);
 
             m_render_pass_data[render_pass_index] = std::move(data);
@@ -365,13 +419,16 @@ class Renderer::Impl
         // Activates the material for the given render pass on the context with specified
         // parameters.
         void set_active(GlobalRenderPassIndex render_pass_index, IDeviceContext& context,
-                        gsl::span<const khepri::renderer::Material::Param> params) const
+                        gsl::span<const khepri::renderer::Material::Param> params,
+                        IBuffer& directional_lights_buffer) const
         {
             if (render_pass_index < m_render_pass_data.size()) {
                 if (auto& data = m_render_pass_data[render_pass_index]; data.pipeline) {
                     context.SetPipelineState(data.pipeline);
 
                     apply_material_params(data, context, params);
+
+                    set_variable(data, "DirectionalLightConstants", &directional_lights_buffer);
 
                     context.CommitShaderResources(data.shader_resource_binding,
                                                   RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -396,28 +453,12 @@ class Renderer::Impl
             // Not set if this material is not renderer in this render pass.
             RefCntPtr<IPipelineState> pipeline;
 
-            // Reference the pipeline's "InstanceConstants" variable
-            IShaderResourceVariable* var_instance_constants{nullptr};
-
-            // Reference the pipeline's "ViewConstants" variable
-            IShaderResourceVariable* var_view_constants{nullptr};
-
             RefCntPtr<IShaderResourceBinding> shader_resource_binding;
         };
 
         void apply_material_params(const RenderPassData& data, IDeviceContext& context,
                                    gsl::span<const khepri::renderer::Material::Param> params) const
         {
-            const auto& set_variable = [&](const char* name, IDeviceObject* object) {
-                auto& srb = *data.shader_resource_binding;
-                if (auto* var = srb.GetVariableByName(SHADER_TYPE_VERTEX, name)) {
-                    var->Set(object);
-                }
-                if (auto* var = srb.GetVariableByName(SHADER_TYPE_PIXEL, name)) {
-                    var->Set(object);
-                }
-            };
-
             std::optional<MapHelper<std::uint8_t>> map_helper;
             if (m_param_buffer != nullptr) {
                 map_helper =
@@ -436,7 +477,7 @@ class Renderer::Impl
                     Overloaded{[&](const khepri::renderer::Texture* value) {
                                    auto* texture = dynamic_cast<const Texture*>(value);
                                    if (texture != nullptr) {
-                                       set_variable(param.name.c_str(), texture->shader_view);
+                                       set_variable(data, param.name.c_str(), texture->shader_view);
                                    }
                                },
                                [&](const auto& value) {
@@ -453,7 +494,18 @@ class Renderer::Impl
             }
 
             if (m_param_buffer != nullptr) {
-                set_variable("Material", m_param_buffer);
+                set_variable(data, "Material", m_param_buffer);
+            }
+        }
+
+        void set_variable(const RenderPassData& data, const char* name, IDeviceObject* object) const
+        {
+            auto& srb = *data.shader_resource_binding;
+            if (auto* var = srb.GetVariableByName(SHADER_TYPE_VERTEX, name)) {
+                var->Set(object);
+            }
+            if (auto* var = srb.GetVariableByName(SHADER_TYPE_PIXEL, name)) {
+                var->Set(object);
             }
         }
 
@@ -467,6 +519,11 @@ class Renderer::Impl
 
         // The material type (for matching with the RenderPass material filter)
         std::string m_type;
+
+        // The material light count
+        int m_num_directional_lights;
+        int m_num_point_lights;
+
         // The material's original shader
         Shader m_shader;
         // Names of variables in the shaders that are dynamic (can change on every render)
@@ -561,7 +618,7 @@ public:
             desc.Usage          = USAGE_DYNAMIC;
             desc.BindFlags      = BIND_UNIFORM_BUFFER;
             desc.CPUAccessFlags = CPU_ACCESS_WRITE;
-            m_device->CreateBuffer(desc, nullptr, &m_constants_instance);
+            m_device->CreateBuffer(desc, nullptr, &m_constants.instance);
         }
 
         {
@@ -571,7 +628,7 @@ public:
             desc.Usage          = USAGE_DYNAMIC;
             desc.BindFlags      = BIND_UNIFORM_BUFFER;
             desc.CPUAccessFlags = CPU_ACCESS_WRITE;
-            m_device->CreateBuffer(desc, nullptr, &m_constants_view);
+            m_device->CreateBuffer(desc, nullptr, &m_constants.view);
         }
 
         // Create dynamic buffers for sprite rendering
@@ -655,19 +712,58 @@ public:
     [[nodiscard]] std::unique_ptr<khepri::renderer::Material>
     create_material(const khepri::renderer::MaterialDesc& material_desc)
     {
+        const auto& update_max_light_count = [this](const Material& mat) {
+            m_max_directional_light_count =
+                std::max(m_max_directional_light_count,
+                         static_cast<unsigned int>(mat.num_directional_lights()));
+            m_max_point_light_count = std::max(m_max_point_light_count,
+                                               static_cast<unsigned int>(mat.num_point_lights()));
+        };
+
         auto material =
-            std::make_unique<Material>(*m_device, *m_swapchain, material_desc,
-                                       [this](auto& mat) { m_alive_materials.erase(&mat); });
+            std::make_unique<Material>(*m_device, *m_swapchain, material_desc, [=](auto& mat) {
+                // Remove the destroyed material from the alive list, and update the max light count
+                // in the process.
+                m_max_directional_light_count = 0;
+                m_max_point_light_count       = 0;
+                for (std::size_t i = 0; i < m_alive_materials.size(); ++i) {
+                    if (m_alive_materials[i] == &mat) {
+                        std::swap(m_alive_materials[i], m_alive_materials.back());
+                        m_alive_materials.resize(m_alive_materials.size() - 1);
+                    }
+                    update_max_light_count(*m_alive_materials[i]);
+                }
+            });
 
         // Set all existing render passes on the material
         for (GlobalRenderPassIndex i = 0; i < m_render_passes.size(); ++i) {
             if (m_render_passes[i]) {
-                material->set_render_pass(i, *m_render_passes[i], *m_constants_instance,
-                                          *m_constants_view);
+                material->set_render_pass(i, *m_render_passes[i], m_constants);
             }
         }
 
-        m_alive_materials.insert(material.get());
+        m_alive_materials.push_back(material.get());
+        update_max_light_count(*material);
+
+        // The max number of lights might have grown, check if we should re-allocate the buffer.
+        if (m_max_directional_light_count > 0 &&
+            (!m_constants.directional_lights ||
+             m_max_directional_light_count >
+                 m_constants.directional_lights->GetDesc().Size / sizeof(DirectionalLight))) {
+            // Re-allocate the directional light buffer
+            BufferDesc desc;
+            desc.Name           = "Directional Lights";
+            desc.Size           = sizeof(DirectionalLight) * m_max_directional_light_count;
+            desc.Usage          = USAGE_DYNAMIC;
+            desc.BindFlags      = BIND_UNIFORM_BUFFER;
+            desc.CPUAccessFlags = CPU_ACCESS_WRITE;
+            m_device->CreateBuffer(desc, nullptr, &m_constants.directional_lights);
+            assert(m_constants.directional_lights != nullptr);
+
+            fill_directional_light_buffer(*m_constants.directional_lights,
+                                          m_dynamic_light_desc.directional_lights);
+        }
+
         return std::move(material);
     }
 
@@ -799,12 +895,22 @@ public:
         for (auto* const material : m_alive_materials) {
             for (std::size_t i = 0; i < render_pass_indices.size(); ++i) {
                 material->set_render_pass(render_pass_indices[i],
-                                          render_pipeline_desc.render_passes[i],
-                                          *m_constants_instance, *m_constants_view);
+                                          render_pipeline_desc.render_passes[i], m_constants);
             }
         }
 
         return std::move(pipeline);
+    }
+
+    void set_dynamic_lights(const DynamicLightDesc& light_desc)
+    {
+        m_dynamic_light_desc = light_desc;
+
+        if (m_constants.directional_lights) {
+            // Update the light buffer, if we have any
+            fill_directional_light_buffer(*m_constants.directional_lights,
+                                          m_dynamic_light_desc.directional_lights);
+        }
     }
 
     void clear(ClearFlags flags)
@@ -857,9 +963,10 @@ public:
         // Set the view-specific constants
         const auto& camera_matrices = camera.matrices();
         {
-            MapHelper<ViewConstantBuffer> constants(m_context, m_constants_view, MAP_WRITE,
+            MapHelper<ViewConstantBuffer> constants(m_context, m_constants.view, MAP_WRITE,
                                                     MAP_FLAG_DISCARD);
-            constants->view_proj = camera_matrices.view_proj;
+            constants->view_proj     = camera_matrices.view_proj;
+            constants->view_proj_inv = camera_matrices.view_proj_inv;
         }
 
         // Returns the mesh's distance 'in front of' the camera
@@ -915,7 +1022,8 @@ public:
                 auto* const mesh     = static_cast<const Mesh*>(mesh_info->mesh);
 
                 assert(material->is_used(render_pass_index));
-                material->set_active(render_pass_index, *m_context, mesh_info->material_params);
+                material->set_active(render_pass_index, *m_context, mesh_info->material_params,
+                                     *m_constants.directional_lights);
 
                 std::array<IBuffer*, 1> vertex_buffers{mesh->vertex_buffer};
                 m_context->SetVertexBuffers(
@@ -926,7 +1034,7 @@ public:
 
                 // Set instance-specific constants
                 {
-                    MapHelper<InstanceConstantBuffer> constants(m_context, m_constants_instance,
+                    MapHelper<InstanceConstantBuffer> constants(m_context, m_constants.instance,
                                                                 MAP_WRITE, MAP_FLAG_DISCARD);
                     constants->world     = mesh_info->transform;
                     constants->world_inv = inverse(mesh_info->transform);
@@ -965,7 +1073,7 @@ public:
                 continue;
             }
 
-            mat->set_active(render_pass_index, *m_context, params);
+            mat->set_active(render_pass_index, *m_context, params, *m_constants.directional_lights);
 
             std::size_t sprite_index = 0;
             while (sprite_index < sprites.size()) {
@@ -1111,6 +1219,7 @@ private:
             {"InstanceConstants", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
             {"ViewConstants", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
             {"Material", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
+            {"DirectionalLightConstants", SHADER_RESOURCE_TYPE_CONSTANT_BUFFER},
         };
 
         // Collect all top-level shader resources, they must be matched by top-level material
@@ -1156,8 +1265,11 @@ private:
             // See if the property has a matching shader variable
             const auto it = shader_variables.find(p.name);
             if (it == shader_variables.end()) {
+                // Don't make this a fatal error (i.e. don't throw), because this can happen during
+                // normal development flow when shader code is temporarily commented out during
+                // development and the variable is optimized away.
                 LOG.error("missing shader variable for property \"{}\"", p.name);
-                throw ArgumentError();
+                continue;
             }
             if (it->second != SHADER_RESOURCE_TYPE_TEXTURE_SRV) {
                 LOG.error("mismatch for shader variable type for property \"{}\"", p.name);
@@ -1168,7 +1280,10 @@ private:
 
             dynamic_variables.push_back(p.name);
         }
+
+        // These predefined variables can change
         dynamic_variables.emplace_back("Material");
+        dynamic_variables.emplace_back("DirectionalLightConstants");
 
         if (!shader_variables.empty()) {
             // Not all shader variables have been accounted for
@@ -1207,12 +1322,38 @@ private:
         }
     }
 
+    void fill_directional_light_buffer(IBuffer&                              buffer,
+                                       gsl::span<const DirectionalLightDesc> lights) const
+    {
+        const std::size_t buffer_count   = buffer.GetDesc().Size / sizeof(DirectionalLight);
+        const std::size_t lights_to_copy = std::min(lights.size(), buffer_count);
+
+        MapHelper<DirectionalLight> constants(m_context, &buffer, MAP_WRITE, MAP_FLAG_DISCARD);
+
+        // Fill the buffer with as many lights as we have
+        std::size_t i = 0;
+        for (; i < lights_to_copy; ++i) {
+            const auto& light          = lights[i];
+            constants[i].direction     = Vector3f(normalize(light.direction));
+            constants[i].intensity     = static_cast<float>(light.intensity);
+            constants[i].diffuse_color = Vector3f(
+                Vector3(light.diffuse_color.r, light.diffuse_color.g, light.diffuse_color.b));
+            constants[i].specular_color = Vector3f(
+                Vector3(light.specular_color.r, light.specular_color.g, light.specular_color.b));
+        }
+
+        // Clear the rest of the buffer (if we have fewer lights)
+        for (; i < buffer_count; ++i) {
+            constants[i] = {{0, 0, -1}, 0, {0, 0, 0}, {0, 0, 0}};
+        }
+    }
+
     RefCntPtr<IRenderDevice>  m_device;
     RefCntPtr<IDeviceContext> m_context;
     RefCntPtr<ISwapChain>     m_swapchain;
 
-    RefCntPtr<IBuffer> m_constants_instance;
-    RefCntPtr<IBuffer> m_constants_view;
+    ConstantsBuffers m_constants;
+
     RefCntPtr<IBuffer> m_sprite_vertex_buffer;
     RefCntPtr<IBuffer> m_sprite_index_buffer;
 
@@ -1220,7 +1361,11 @@ private:
     // This is necessary for when new render pipelines are created. When that happens, all alive
     // materials need to be updated with newly construct graphics pipelines for the new render
     // pipeline's render passes.
-    std::unordered_set<Material*> m_alive_materials;
+    std::vector<Material*> m_alive_materials;
+
+    // Maximum count of lights in the alive materials
+    unsigned int m_max_directional_light_count{0};
+    unsigned int m_max_point_light_count{0};
 
     // Freed and reusable global render pass indices
     std::stack<GlobalRenderPassIndex> m_unused_render_pass_indices;
@@ -1228,6 +1373,9 @@ private:
     GlobalRenderPassIndex m_next_render_pass_index{0};
     // Global list of render passes. Indexed by GlobalRenderPassIndex
     std::vector<std::optional<RenderPassDesc>> m_render_passes;
+
+    // Currently active dynamic lighting
+    DynamicLightDesc m_dynamic_light_desc{};
 };
 
 Renderer::Renderer(const std::any& window) : m_impl(std::make_unique<Impl>(window)) {}
@@ -1270,6 +1418,11 @@ std::unique_ptr<RenderPipeline>
 Renderer::create_render_pipeline(const RenderPipelineDesc& render_pipeline_desc)
 {
     return m_impl->create_render_pipeline(render_pipeline_desc);
+}
+
+void Renderer::set_dynamic_lights(const DynamicLightDesc& light_desc)
+{
+    m_impl->set_dynamic_lights(light_desc);
 }
 
 void Renderer::clear(ClearFlags flags)

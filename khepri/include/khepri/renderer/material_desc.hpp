@@ -27,6 +27,16 @@ namespace khepri::renderer {
  * to the renderer. The specified (non-texture) properties are set in the shader's constant buffer
  * with name @c Material (if present). Texture properties are set on the shader's texture resource
  * with the same name directly.
+ *
+ * @c num_directional_lights and @c num_point_lights define the number of @c{DirectionalLight} and
+ * @c{PointLight} objects, respectively, passed in their cbuffers to the shadersm filled with the
+ * lighting information specified with \see{khepri::renderer::Renderer::set_dynamic_lights}.
+ *
+ * The shader's @c{EnvironmentConstants}' @c{NumDirectionalLights} and @c{NumPointLights} members
+ * specify the actual number of lights that have been passed to the shader, but the shader is free
+ * to ignore those fields since extra lights are inaccessible via the cbuffer anyway, and missing
+ * lights are filled with 0-intensity black lights. So hardcoded calculations for the expected
+ * number of lights should work regardless.
  */
 struct MaterialDesc
 {
@@ -48,6 +58,12 @@ struct MaterialDesc
     /// The type of the material. This is only used to allow render passes in the render pipeline to
     /// render certain materials. See #khepri::renderer::RenderPassDesc.
     std::string type;
+
+    /// Number of directional lights the material's shader uses.
+    int num_directional_lights{0};
+
+    /// Number of point lights the material's shader uses.
+    int num_point_lights{0};
 
     /// Shader of this material
     const Shader* shader{nullptr};

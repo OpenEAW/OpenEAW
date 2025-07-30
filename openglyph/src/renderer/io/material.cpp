@@ -54,13 +54,15 @@ namespace {
 auto load_material(const openglyph::XmlParser::Node& node)
 {
     struct MaterialDesc material_desc;
-    material_desc.name = require_attribute(node, "Name");
-    material_desc.type = optional_attribute(node, "Type", "");
+    material_desc.name   = require_attribute(node, "Name");
+    material_desc.type   = optional_attribute(node, "Type", "");
+    material_desc.shader = optional_child(node, "Shader", "");
+    material_desc.num_directional_lights =
+        parse<int>(optional_child(node, "Num_Directional_Lights", "0"));
+    material_desc.num_point_lights = parse<int>(optional_child(node, "Num_Point_Lights", "0"));
 
     for (const auto& propnode : node.nodes()) {
-        if (propnode.name() == "Shader") {
-            material_desc.shader = propnode.value();
-        } else if (propnode.name() == "Param") {
+        if (propnode.name() == "Param") {
             MaterialDesc::Property property;
             property.name = require_attribute(propnode, "Name");
             auto type     = openglyph::parse<PropertyType>(require_attribute(propnode, "Type"));

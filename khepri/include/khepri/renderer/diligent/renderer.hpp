@@ -61,6 +61,9 @@ public:
     std::unique_ptr<RenderPipeline>
     create_render_pipeline(const RenderPipelineDesc& render_pipeline_desc) override;
 
+    /// \see #khepri::renderer::Renderer::set_dynamic_lights
+    void set_dynamic_lights(const DynamicLightDesc& light_desc) override;
+
     /// \see #khepri::renderer::Renderer::clear
     void clear(ClearFlags flags) override;
 

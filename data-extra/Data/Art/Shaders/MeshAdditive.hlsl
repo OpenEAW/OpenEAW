@@ -1,13 +1,4 @@
-cbuffer InstanceConstants
-{
-	float4x4 World;
-	float4x4 WorldInv;
-};
-
-cbuffer ViewConstants
-{
-	float4x4 ViewProj;
-};
+#include "common.hlsli"
 
 ////////////////////////////////////////////////
 // Material

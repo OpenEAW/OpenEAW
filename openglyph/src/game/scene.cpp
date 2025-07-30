@@ -22,6 +22,7 @@ Scene::Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_typ
              Environment environment)
     : m_game_object_types(game_object_types), m_environment(std::move(environment))
 {
+    // Create the skydomes
     for (auto i = 0; i < Environment::NUM_SKYDOMES; ++i) {
         const auto& skydome = m_environment.skydomes[i];
         if (const auto* type = m_game_object_types.get(skydome.name)) {
@@ -38,6 +39,13 @@ Scene::Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_typ
                                                             khepri::ExtrinsicRotationOrder::zyx));
             add_object(std::move(object));
         }
+    }
+
+    // Set up the dynamic lighting
+    m_dynamic_lights.directional_lights.reserve(m_environment.lights.size());
+    for (const auto& light : m_environment.lights) {
+        m_dynamic_lights.directional_lights.push_back(
+            {-light.from_direction, 1.0, light.color, light.specular_color});
     }
 }
 
