@@ -176,6 +176,9 @@ void apply_billboard(khepri::Matrixf& transform, const renderer::RenderModel::Me
 void SceneRenderer::render_scene(const openglyph::Scene&         scene,
                                  const khepri::renderer::Camera& camera)
 {
+    // Set the lights
+    m_renderer.set_dynamic_lights(scene.dynamic_lights());
+
     // Create a copy of the camera for rendering the background scene. This camera has a larger
     // znear and zfar to ensure that the background objects are visible from all distances.
     khepri::renderer::Camera background_camera = camera;

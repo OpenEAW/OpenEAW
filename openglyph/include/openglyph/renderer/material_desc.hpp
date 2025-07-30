@@ -32,6 +32,12 @@ struct MaterialDesc
     /// render certain materials. See #khepri::renderer::RenderPassDesc.
     std::string type;
 
+    /// Number of directional lights the material's shader uses.
+    int num_directional_lights{0};
+
+    /// Number of point lights the material's shader uses.
+    int num_point_lights{0};
+
     /// Name of the shader of this material
     std::string shader;
 

@@ -26,8 +26,10 @@ void MaterialStore::register_materials(
 {
     for (const auto& desc : material_descs) {
         khepri::renderer::MaterialDesc info;
-        info.type   = desc.type;
-        info.shader = m_shader_loader(desc.shader);
+        info.type                   = desc.type;
+        info.shader                 = m_shader_loader(desc.shader);
+        info.num_directional_lights = desc.num_directional_lights;
+        info.num_point_lights       = desc.num_point_lights;
         for (const auto& property : desc.properties) {
             khepri::renderer::MaterialDesc::Property prop;
             prop.name = property.name;

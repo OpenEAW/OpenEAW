@@ -1,6 +1,7 @@
 #pragma once
 
 #include "camera.hpp"
+#include "light_desc.hpp"
 #include "material.hpp"
 #include "material_desc.hpp"
 #include "mesh.hpp"
@@ -125,6 +126,13 @@ public:
      */
     virtual std::unique_ptr<RenderPipeline>
     create_render_pipeline(const RenderPipelineDesc& render_pipeline_desc) = 0;
+
+    /**
+     * Sets the dynamic lighting for all subsequent render commands.
+     *
+     * The dynamic lighting information is passed to the shaders as specified in their materials.
+     */
+    virtual void set_dynamic_lights(const DynamicLightDesc& light_desc) = 0;
 
     /**
      * Clears the render target and/or depth/stencil buffer

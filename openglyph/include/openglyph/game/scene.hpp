@@ -48,6 +48,12 @@ public:
         return m_foreground_scene;
     }
 
+    /// Returns the dynamic lights of the scene
+    [[nodiscard]] const auto& dynamic_lights() const noexcept
+    {
+        return m_dynamic_lights;
+    }
+
     /**
      * Adds an object to the scene.
      *
@@ -74,6 +80,9 @@ private:
 
     // The main foreground scene where all the action happens.
     khepri::scene::Scene m_foreground_scene;
+
+    // The dynamic lighting setup for this scene
+    khepri::renderer::DynamicLightDesc m_dynamic_lights;
 
     Environment m_environment;
 };
