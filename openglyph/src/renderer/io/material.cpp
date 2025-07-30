@@ -48,79 +48,14 @@ struct Parser<PropertyType>
     }
 };
 
-template <>
-struct Parser<renderer::MaterialDesc::AlphaBlendMode>
-{
-    using AlphaBlendMode = renderer::MaterialDesc::AlphaBlendMode;
-
-    static std::optional<AlphaBlendMode> parse(std::string_view str) noexcept
-    {
-        if (str == "none") {
-            return AlphaBlendMode::none;
-        }
-        if (str == "blend_src") {
-            return AlphaBlendMode::blend_src;
-        }
-        if (str == "additive") {
-            return AlphaBlendMode::additive;
-        }
-        return {};
-    }
-};
-
-template <>
-struct Parser<renderer::MaterialDesc::ComparisonFunc>
-{
-    using ComparisonFunc = renderer::MaterialDesc::ComparisonFunc;
-
-    static std::optional<ComparisonFunc> parse(std::string_view str) noexcept
-    {
-        if (str == "never") {
-            return ComparisonFunc::never;
-        }
-        if (str == "less") {
-            return ComparisonFunc::less;
-        }
-        if (str == "equal") {
-            return ComparisonFunc::equal;
-        }
-        if (str == "less_equal") {
-            return ComparisonFunc::less_equal;
-        }
-        if (str == "greater") {
-            return ComparisonFunc::greater;
-        }
-        if (str == "not_equal") {
-            return ComparisonFunc::not_equal;
-        }
-        if (str == "greater_equal") {
-            return ComparisonFunc::greater_equal;
-        }
-        if (str == "always") {
-            return ComparisonFunc::always;
-        }
-        return {};
-    }
-};
-
 namespace renderer::io {
 
 namespace {
 auto load_material(const openglyph::XmlParser::Node& node)
 {
     struct MaterialDesc material_desc;
-    material_desc.name             = require_attribute(node, "Name");
-    material_desc.alpha_blend_mode = openglyph::parse<MaterialDesc::AlphaBlendMode>(
-        optional_attribute(node, "AlphaBlend", "none"));
-
-    if (openglyph::parse<bool>(optional_attribute(node, "DepthEnable", "true"))) {
-        MaterialDesc::DepthBufferDesc desc{};
-        desc.comparison_func = openglyph::parse<MaterialDesc::ComparisonFunc>(
-            optional_attribute(node, "DepthFunc", "less"));
-        desc.write_enable =
-            openglyph::parse<bool>(optional_attribute(node, "DepthWriteEnable", "true"));
-        material_desc.depth_buffer = desc;
-    }
+    material_desc.name = require_attribute(node, "Name");
+    material_desc.type = optional_attribute(node, "Type", "");
 
     for (const auto& propnode : node.nodes()) {
         if (propnode.name() == "Shader") {

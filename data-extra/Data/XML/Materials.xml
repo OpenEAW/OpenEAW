@@ -18,7 +18,7 @@
     </Material>
     -->
 
-    <Material Name="MeshBumpColorize">
+    <Material Name="MeshBumpColorize" Type="Opaque">
         <Shader>MeshBumpColorize</Shader>
         <Param Name="Colorization" Type="float3">1, 1, 1</Param>
         <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
@@ -26,7 +26,7 @@
         <Param Name="NormalTexture" Type="texture"></Param>
     </Material>
 
-    <Material Name="MeshGloss" AlphaBlend="blend_src" DepthFunc="less_equal">
+    <Material Name="MeshGloss" Type="Opaque">
         <Shader>MeshGloss</Shader>
         <Param Name="Emissive" Type="float3">0, 0, 0</Param>
         <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
@@ -35,14 +35,14 @@
         <Param Name="BaseTexture" Type="texture"></Param>
     </Material>
 
-    <Material Name="MeshAdditive" AlphaBlend="additive" DepthWriteEnable="false" DepthFunc="less_equal">
+    <Material Name="MeshAdditive" Type="Transparent">
         <Shader>MeshAdditive</Shader>
         <Param Name="Color" Type="float3">1, 0, 1</Param>
         <Param Name="UVScrollRate" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
     </Material>
 
-    <Material Name="MeshAdditiveVColor" AlphaBlend="additive" DepthWriteEnable="false" DepthFunc="less_equal">
+    <Material Name="MeshAdditiveVColor" Type="Transparent">
         <Shader>MeshAdditiveVColor</Shader>
         <Param Name="UVScrollRate" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>

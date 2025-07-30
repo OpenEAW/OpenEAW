@@ -22,8 +22,11 @@
 #include <Sampler.h>
 #include <SwapChain.h>
 #include <Texture.h>
+#include <functional>
 #include <iterator>
+#include <stack>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 using namespace Diligent;
@@ -31,6 +34,13 @@ using namespace Diligent;
 namespace khepri::renderer::diligent {
 namespace {
 constexpr khepri::log::Logger LOG("diligent");
+
+// Index of a render pass in a render pipeline
+using LocalRenderPassIndex = std::size_t;
+
+// Index of a render pass in a global render pass collection
+using GlobalRenderPassIndex = std::size_t;
+
 struct InstanceConstantBuffer
 {
     Matrixf world;
@@ -42,14 +52,14 @@ struct ViewConstantBuffer
     Matrixf view_proj;
 };
 
-CULL_MODE to_cull_mode(MaterialDesc::CullMode cull_mode) noexcept
+CULL_MODE to_cull_mode(RenderPassDesc::CullMode cull_mode) noexcept
 {
     switch (cull_mode) {
-    case MaterialDesc::CullMode::none:
+    case RenderPassDesc::CullMode::none:
         return CULL_MODE_NONE;
-    case MaterialDesc::CullMode::back:
+    case RenderPassDesc::CullMode::back:
         return CULL_MODE_BACK;
-    case MaterialDesc::CullMode::front:
+    case RenderPassDesc::CullMode::front:
         return CULL_MODE_FRONT;
     default:
         break;
@@ -94,24 +104,24 @@ TEXTURE_FORMAT to_texture_format(PixelFormat format)
     return TEX_FORMAT_UNKNOWN;
 }
 
-COMPARISON_FUNCTION to_comparison_func(MaterialDesc::ComparisonFunc func)
+COMPARISON_FUNCTION to_comparison_func(RenderPassDesc::ComparisonFunc func)
 {
     switch (func) {
-    case MaterialDesc::ComparisonFunc::never:
+    case RenderPassDesc::ComparisonFunc::never:
         return COMPARISON_FUNC_NEVER;
-    case MaterialDesc::ComparisonFunc::less:
+    case RenderPassDesc::ComparisonFunc::less:
         return COMPARISON_FUNC_LESS;
-    case MaterialDesc::ComparisonFunc::equal:
+    case RenderPassDesc::ComparisonFunc::equal:
         return COMPARISON_FUNC_EQUAL;
-    case MaterialDesc::ComparisonFunc::less_equal:
+    case RenderPassDesc::ComparisonFunc::less_equal:
         return COMPARISON_FUNC_LESS_EQUAL;
-    case MaterialDesc::ComparisonFunc::greater:
+    case RenderPassDesc::ComparisonFunc::greater:
         return COMPARISON_FUNC_GREATER;
-    case MaterialDesc::ComparisonFunc::not_equal:
+    case RenderPassDesc::ComparisonFunc::not_equal:
         return COMPARISON_FUNC_NOT_EQUAL;
-    case MaterialDesc::ComparisonFunc::greater_equal:
+    case RenderPassDesc::ComparisonFunc::greater_equal:
         return COMPARISON_FUNC_GREATER_EQUAL;
-    case MaterialDesc::ComparisonFunc::always:
+    case RenderPassDesc::ComparisonFunc::always:
         return COMPARISON_FUNC_ALWAYS;
     }
     assert(false);
@@ -173,8 +183,203 @@ class Renderer::Impl
         RefCntAutoPtr<IBuffer> index_buffer;
     };
 
-    struct Material : public khepri::renderer::Material
+    class Material : public khepri::renderer::Material
     {
+        static Shader copy_shader(const khepri::renderer::Shader* generic_shader)
+        {
+            auto* const shader = dynamic_cast<const Shader*>(generic_shader);
+            if (shader == nullptr) {
+                throw ArgumentError();
+            }
+            assert(shader->vertex_shader != nullptr);
+            assert(shader->pixel_shader != nullptr);
+            return *shader;
+        }
+
+    public:
+        Material(IRenderDevice& device, ISwapChain& swapchain, const MaterialDesc& desc,
+                 std::function<void(Material&)> destroy_callback)
+            : m_device(device)
+            , m_swapchain(swapchain)
+            , m_destroy_callback(destroy_callback)
+            , m_type(desc.type)
+            , m_shader(copy_shader(desc.shader))
+            , m_dynamic_variables(determine_dynamic_material_variables(m_shader, desc.properties))
+        {
+            const auto& property_size = [](const MaterialDesc::PropertyValue& value) -> Uint32 {
+                // Every type has its own size, except for textures, which don't take up space.
+                return std::visit(
+                    Overloaded{[&](khepri::renderer::Texture* /*texture*/) -> Uint32 { return 0; },
+                               [&](const auto& value) -> Uint32 { return sizeof(value); }},
+                    value);
+            };
+
+            Uint32 buffer_size = 0;
+            m_params.reserve(desc.properties.size());
+            for (const auto& p : desc.properties) {
+                m_params.push_back({p.name, p.default_value, buffer_size});
+                buffer_size += property_size(p.default_value);
+                // Align next parameter to 16 bytes
+                constexpr auto param_alignment = 16;
+                buffer_size =
+                    (buffer_size + param_alignment - 1) / param_alignment * param_alignment;
+            }
+
+            // Create the material properties buffer
+            if (buffer_size > 0) {
+                BufferDesc desc;
+                desc.Name           = "Material Constants";
+                desc.Size           = buffer_size;
+                desc.Usage          = USAGE_DYNAMIC;
+                desc.BindFlags      = BIND_UNIFORM_BUFFER;
+                desc.CPUAccessFlags = CPU_ACCESS_WRITE;
+                m_device.CreateBuffer(desc, nullptr, &m_param_buffer);
+            }
+        }
+
+        ~Material() override
+        {
+            m_destroy_callback(*this);
+        }
+
+        void set_render_pass(GlobalRenderPassIndex render_pass_index, const RenderPassDesc& desc,
+                             IBuffer& constants_instance, IBuffer& constants_view)
+        {
+            // Check if this material is rendered in the render pass
+            if (!khepri::case_insensitive_equals(desc.material_type, m_type)) {
+                // Nope, nothing to do
+                return;
+            }
+
+            if (render_pass_index >= m_render_pass_data.size()) {
+                m_render_pass_data.resize(render_pass_index + 1);
+            }
+
+            GraphicsPipelineStateCreateInfo ci;
+            ci.PSODesc.PipelineType              = PIPELINE_TYPE_GRAPHICS;
+            ci.GraphicsPipeline.NumRenderTargets = 1;
+            ci.GraphicsPipeline.RTVFormats[0]    = m_swapchain.GetDesc().ColorBufferFormat;
+            ci.GraphicsPipeline.DSVFormat        = m_swapchain.GetDesc().DepthBufferFormat;
+
+            switch (desc.alpha_blend_mode) {
+            case RenderPassDesc::AlphaBlendMode::additive:
+                ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = true;
+                ci.GraphicsPipeline.BlendDesc.RenderTargets[0].SrcBlend    = BLEND_FACTOR_ONE;
+                ci.GraphicsPipeline.BlendDesc.RenderTargets[0].DestBlend   = BLEND_FACTOR_ONE;
+                ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendOp     = BLEND_OPERATION_ADD;
+                break;
+            case RenderPassDesc::AlphaBlendMode::blend_src:
+                ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = true;
+                ci.GraphicsPipeline.BlendDesc.RenderTargets[0].SrcBlend    = BLEND_FACTOR_SRC_ALPHA;
+                ci.GraphicsPipeline.BlendDesc.RenderTargets[0].DestBlend =
+                    BLEND_FACTOR_INV_SRC_ALPHA;
+                ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendOp = BLEND_OPERATION_ADD;
+                break;
+            case RenderPassDesc::AlphaBlendMode::none:
+                ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = false;
+                break;
+            }
+            if (desc.depth_buffer) {
+                ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = true;
+                ci.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable =
+                    desc.depth_buffer->write_enable;
+                ci.GraphicsPipeline.DepthStencilDesc.DepthFunc =
+                    to_comparison_func(desc.depth_buffer->comparison_func);
+            } else {
+                ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = false;
+            }
+            ci.GraphicsPipeline.RasterizerDesc.CullMode = to_cull_mode(desc.cull_mode);
+
+            static_assert(sizeof(MeshDesc::Vertex) < std::numeric_limits<Uint32>::max(),
+                          "Vertex is too large");
+
+            constexpr auto                                 num_layout_elements = 6;
+            std::array<LayoutElement, num_layout_elements> layout{
+                LayoutElement{0, 0, 3, VT_FLOAT32, false,
+                              static_cast<Uint32>(offsetof(MeshDesc::Vertex, position)),
+                              static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
+                LayoutElement{1, 0, 3, VT_FLOAT32, false,
+                              static_cast<Uint32>(offsetof(MeshDesc::Vertex, normal)),
+                              static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
+                LayoutElement{2, 0, 3, VT_FLOAT32, false,
+                              static_cast<Uint32>(offsetof(MeshDesc::Vertex, tangent)),
+                              static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
+                LayoutElement{3, 0, 3, VT_FLOAT32, false,
+                              static_cast<Uint32>(offsetof(MeshDesc::Vertex, binormal)),
+                              static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
+                LayoutElement{4, 0, 2, VT_FLOAT32, false,
+                              static_cast<Uint32>(offsetof(MeshDesc::Vertex, uv)),
+                              static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
+                LayoutElement{5, 0, 4, VT_FLOAT32, false,
+                              static_cast<Uint32>(offsetof(MeshDesc::Vertex, color)),
+                              static_cast<Uint32>(sizeof(MeshDesc::Vertex))}};
+            ci.GraphicsPipeline.InputLayout.LayoutElements = layout.data();
+            ci.GraphicsPipeline.InputLayout.NumElements    = static_cast<Uint32>(layout.size());
+
+            ci.pPS = m_shader.pixel_shader;
+            ci.pVS = m_shader.vertex_shader;
+
+            // Mark all material properties as dynamic (the rest is static by default)
+            std::vector<ShaderResourceVariableDesc> variables;
+            for (const auto& var : m_dynamic_variables) {
+                variables.emplace_back(SHADER_TYPE_VERTEX, var.c_str(),
+                                       SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC);
+                variables.emplace_back(SHADER_TYPE_PIXEL, var.c_str(),
+                                       SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC);
+            }
+
+            ci.PSODesc.ResourceLayout.Variables    = variables.data();
+            ci.PSODesc.ResourceLayout.NumVariables = static_cast<Uint32>(variables.size());
+
+            RenderPassData data;
+            m_device.CreateGraphicsPipelineState(ci, &data.pipeline);
+            data.var_instance_constants =
+                data.pipeline->GetStaticVariableByName(SHADER_TYPE_VERTEX, "InstanceConstants");
+            data.var_view_constants =
+                data.pipeline->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ViewConstants");
+            if (data.var_instance_constants) {
+                data.var_instance_constants->Set(&constants_instance);
+            }
+            if (data.var_view_constants) {
+                data.var_view_constants->Set(&constants_view);
+            }
+            data.pipeline->CreateShaderResourceBinding(&data.shader_resource_binding, true);
+
+            m_render_pass_data[render_pass_index] = std::move(data);
+        }
+
+        void clear_render_pass(GlobalRenderPassIndex render_pass_index)
+        {
+            if (render_pass_index < m_render_pass_data.size()) {
+                m_render_pass_data[render_pass_index] = {};
+            }
+        }
+
+        // Checks if this material is used during this render pass
+        bool is_used(GlobalRenderPassIndex render_pass_index) const noexcept
+        {
+            return render_pass_index < m_render_pass_data.size() &&
+                   m_render_pass_data[render_pass_index].pipeline;
+        }
+
+        // Activates the material for the given render pass on the context with specified
+        // parameters.
+        void set_active(GlobalRenderPassIndex render_pass_index, IDeviceContext& context,
+                        gsl::span<const khepri::renderer::Material::Param> params)
+        {
+            if (render_pass_index < m_render_pass_data.size()) {
+                if (auto& data = m_render_pass_data[render_pass_index]; data.pipeline) {
+                    context.SetPipelineState(data.pipeline);
+
+                    apply_material_params(data, context, params);
+
+                    context.CommitShaderResources(data.shader_resource_binding,
+                                                  RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+                }
+            }
+        }
+
+    private:
         struct Param
         {
             std::string                                   name;
@@ -182,10 +387,97 @@ class Renderer::Impl
             size_t                                        buffer_offset;
         };
 
-        RefCntAutoPtr<IPipelineState>         pipeline;
-        RefCntAutoPtr<IShaderResourceBinding> shader_resource_binding;
-        RefCntAutoPtr<IBuffer>                param_buffer;
-        std::vector<Param>                    params;
+        // Data for this material for a particular render pass.
+        // The indices for render passes are shared by all materials and managed by the renderer,
+        // not here.
+        struct RenderPassData
+        {
+            // The graphics pipeline for this render pass/material combo.
+            // Not set if this material is not renderer in this render pass.
+            RefCntAutoPtr<IPipelineState> pipeline;
+
+            // Reference the pipeline's "InstanceConstants" variable
+            IShaderResourceVariable* var_instance_constants{nullptr};
+
+            // Reference the pipeline's "ViewConstants" variable
+            IShaderResourceVariable* var_view_constants{nullptr};
+
+            RefCntAutoPtr<IShaderResourceBinding> shader_resource_binding;
+        };
+
+        void apply_material_params(RenderPassData& data, IDeviceContext& context,
+                                   gsl::span<const khepri::renderer::Material::Param> params)
+        {
+            const auto& set_variable = [&](const char* name, IDeviceObject* object) {
+                auto& srb = *data.shader_resource_binding;
+                if (auto* var = srb.GetVariableByName(SHADER_TYPE_VERTEX, name)) {
+                    var->Set(object);
+                }
+                if (auto* var = srb.GetVariableByName(SHADER_TYPE_PIXEL, name)) {
+                    var->Set(object);
+                }
+            };
+
+            std::optional<MapHelper<std::uint8_t>> map_helper;
+            if (m_param_buffer != nullptr) {
+                map_helper =
+                    MapHelper<std::uint8_t>(&context, m_param_buffer, MAP_WRITE, MAP_FLAG_DISCARD);
+            }
+
+            for (const auto& param : m_params) {
+                // Use the value from the provided params if it exists, otherwise the material's
+                // default
+                const auto* const it =
+                    std::find_if(params.begin(), params.end(),
+                                 [&](const auto& p) { return p.name == param.name; });
+                const auto& value = (it != params.end()) ? it->value : param.default_value;
+
+                std::visit(
+                    Overloaded{[&](khepri::renderer::Texture* value) {
+                                   auto* texture = dynamic_cast<Texture*>(value);
+                                   if (texture != nullptr) {
+                                       set_variable(param.name.c_str(), texture->shader_view);
+                                   }
+                               },
+                               [&](const auto& value) {
+                                   if (map_helper) {
+                                       // NOLINTBEGIN - pointer arithmetic and reinterpret_cast
+                                       auto* param_data = static_cast<std::uint8_t*>(*map_helper) +
+                                                          param.buffer_offset;
+                                       *reinterpret_cast<std::decay_t<decltype(value)>*>(
+                                           param_data) = value;
+                                       // NOLINTEND
+                                   }
+                               }},
+                    value);
+            }
+
+            if (m_param_buffer != nullptr) {
+                set_variable("Material", m_param_buffer);
+            }
+        }
+
+        IRenderDevice&                 m_device;
+        ISwapChain&                    m_swapchain;
+        std::function<void(Material&)> m_destroy_callback;
+
+        //
+        // The material's original data (as specified in the material description)
+        //
+
+        // The material type (for matching with the RenderPass material filter)
+        std::string m_type;
+        // The material's original shader
+        Shader m_shader;
+        // Names of variables in the shaders that are dynamic (can change on every render)
+        std::vector<std::string> m_dynamic_variables;
+
+        // The graphics pipelines for each render pass in each render pipeline
+        std::vector<RenderPassData> m_render_pass_data;
+
+        // Buffer for the material's parameters
+        RefCntAutoPtr<IBuffer> m_param_buffer;
+        std::vector<Param>     m_params;
     };
 
     struct Texture : public khepri::renderer::Texture
@@ -194,6 +486,31 @@ class Renderer::Impl
 
         RefCntAutoPtr<ITexture> texture;
         ITextureView*           shader_view{};
+    };
+
+    class RenderPipeline : public khepri::renderer::RenderPipeline
+    {
+    public:
+        RenderPipeline(const std::vector<GlobalRenderPassIndex>& render_pass_indices,
+                       std::function<void(RenderPipeline&)>      destroy_callback)
+            : m_render_pass_indices(render_pass_indices)
+            , m_destroy_callback(std::move(destroy_callback))
+        {
+        }
+
+        ~RenderPipeline()
+        {
+            m_destroy_callback(*this);
+        }
+
+        const auto& render_pass_indices() const noexcept
+        {
+            return m_render_pass_indices;
+        }
+
+    private:
+        std::vector<GlobalRenderPassIndex>   m_render_pass_indices;
+        std::function<void(RenderPipeline&)> m_destroy_callback;
     };
 
 public:
@@ -335,137 +652,23 @@ public:
         return shader;
     }
 
-    [[nodiscard]] std::unique_ptr<Material>
+    [[nodiscard]] std::unique_ptr<khepri::renderer::Material>
     create_material(const khepri::renderer::MaterialDesc& material_desc)
     {
-        auto* const shader = dynamic_cast<Shader*>(material_desc.shader);
-        if (shader == nullptr) {
-            throw ArgumentError();
+        auto material =
+            std::make_unique<Material>(*m_device, *m_swapchain, material_desc,
+                                       [this](auto& mat) { m_alive_materials.erase(&mat); });
+
+        // Set all existing render passes on the material
+        for (GlobalRenderPassIndex i = 0; i < m_render_passes.size(); ++i) {
+            if (m_render_passes[i]) {
+                material->set_render_pass(i, *m_render_passes[i], *m_constants_instance,
+                                          *m_constants_view);
+            }
         }
 
-        assert(shader->vertex_shader != nullptr);
-        assert(shader->pixel_shader != nullptr);
-
-        const auto dynamic_variables =
-            determine_dynamic_material_variables(*shader, material_desc.properties);
-
-        GraphicsPipelineStateCreateInfo ci;
-        ci.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
-
-        switch (material_desc.alpha_blend_mode) {
-        case MaterialDesc::AlphaBlendMode::additive:
-            ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = true;
-            ci.GraphicsPipeline.BlendDesc.RenderTargets[0].SrcBlend    = BLEND_FACTOR_ONE;
-            ci.GraphicsPipeline.BlendDesc.RenderTargets[0].DestBlend   = BLEND_FACTOR_ONE;
-            ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendOp     = BLEND_OPERATION_ADD;
-            break;
-        case MaterialDesc::AlphaBlendMode::blend_src:
-            ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = true;
-            ci.GraphicsPipeline.BlendDesc.RenderTargets[0].SrcBlend    = BLEND_FACTOR_SRC_ALPHA;
-            ci.GraphicsPipeline.BlendDesc.RenderTargets[0].DestBlend   = BLEND_FACTOR_INV_SRC_ALPHA;
-            ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendOp     = BLEND_OPERATION_ADD;
-            break;
-        case MaterialDesc::AlphaBlendMode::none:
-            ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = false;
-            break;
-        }
-        ci.GraphicsPipeline.NumRenderTargets = 1;
-        ci.GraphicsPipeline.RTVFormats[0]    = m_swapchain->GetDesc().ColorBufferFormat;
-        ci.GraphicsPipeline.DSVFormat        = m_swapchain->GetDesc().DepthBufferFormat;
-        if (material_desc.depth_buffer) {
-            ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = true;
-            ci.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable =
-                material_desc.depth_buffer->write_enable;
-            ci.GraphicsPipeline.DepthStencilDesc.DepthFunc =
-                to_comparison_func(material_desc.depth_buffer->comparison_func);
-        } else {
-            ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = false;
-        }
-        ci.GraphicsPipeline.RasterizerDesc.CullMode = to_cull_mode(material_desc.cull_mode);
-
-        static_assert(sizeof(MeshDesc::Vertex) < std::numeric_limits<Uint32>::max(),
-                      "Vertex is too large");
-
-        constexpr auto                                 num_layout_elements = 6;
-        std::array<LayoutElement, num_layout_elements> layout{
-            LayoutElement{0, 0, 3, VT_FLOAT32, false,
-                          static_cast<Uint32>(offsetof(MeshDesc::Vertex, position)),
-                          static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
-            LayoutElement{1, 0, 3, VT_FLOAT32, false,
-                          static_cast<Uint32>(offsetof(MeshDesc::Vertex, normal)),
-                          static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
-            LayoutElement{2, 0, 3, VT_FLOAT32, false,
-                          static_cast<Uint32>(offsetof(MeshDesc::Vertex, tangent)),
-                          static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
-            LayoutElement{3, 0, 3, VT_FLOAT32, false,
-                          static_cast<Uint32>(offsetof(MeshDesc::Vertex, binormal)),
-                          static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
-            LayoutElement{4, 0, 2, VT_FLOAT32, false,
-                          static_cast<Uint32>(offsetof(MeshDesc::Vertex, uv)),
-                          static_cast<Uint32>(sizeof(MeshDesc::Vertex))},
-            LayoutElement{5, 0, 4, VT_FLOAT32, false,
-                          static_cast<Uint32>(offsetof(MeshDesc::Vertex, color)),
-                          static_cast<Uint32>(sizeof(MeshDesc::Vertex))}};
-        ci.GraphicsPipeline.InputLayout.LayoutElements = layout.data();
-        ci.GraphicsPipeline.InputLayout.NumElements    = static_cast<Uint32>(layout.size());
-
-        ci.pVS = shader->vertex_shader;
-        ci.pPS = shader->pixel_shader;
-
-        // Mark all material properties as dynamic (the rest is static by default)
-        std::vector<ShaderResourceVariableDesc> variables;
-        for (const auto& var : dynamic_variables) {
-            variables.emplace_back(SHADER_TYPE_VERTEX, var.c_str(),
-                                   SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC);
-            variables.emplace_back(SHADER_TYPE_PIXEL, var.c_str(),
-                                   SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC);
-        }
-
-        ci.PSODesc.ResourceLayout.Variables    = variables.data();
-        ci.PSODesc.ResourceLayout.NumVariables = static_cast<Uint32>(variables.size());
-
-        auto material = std::make_unique<Material>();
-        m_device->CreateGraphicsPipelineState(ci, &material->pipeline);
-
-        if (auto* var = material->pipeline->GetStaticVariableByName(SHADER_TYPE_VERTEX,
-                                                                    "InstanceConstants")) {
-            var->Set(m_constants_instance);
-        }
-        if (auto* var =
-                material->pipeline->GetStaticVariableByName(SHADER_TYPE_VERTEX, "ViewConstants")) {
-            var->Set(m_constants_view);
-        }
-        material->pipeline->CreateShaderResourceBinding(&material->shader_resource_binding, true);
-
-        const auto& property_size = [](const MaterialDesc::PropertyValue& value) -> Uint32 {
-            // Every type has its own size, except for textures, which don't take up space.
-            return std::visit(
-                Overloaded{[&](khepri::renderer::Texture* /*texture*/) -> Uint32 { return 0; },
-                           [&](const auto& value) -> Uint32 { return sizeof(value); }},
-                value);
-        };
-
-        Uint32 buffer_size = 0;
-        material->params.reserve(material_desc.properties.size());
-        for (const auto& p : material_desc.properties) {
-            material->params.push_back({p.name, p.default_value, buffer_size});
-            buffer_size += property_size(p.default_value);
-            // Align next parameter to 16 bytes
-            constexpr auto param_alignment = 16;
-            buffer_size = (buffer_size + param_alignment - 1) / param_alignment * param_alignment;
-        }
-
-        // Create the material properties buffer
-        if (buffer_size > 0) {
-            BufferDesc desc;
-            desc.Name           = "Material Constants";
-            desc.Size           = buffer_size;
-            desc.Usage          = USAGE_DYNAMIC;
-            desc.BindFlags      = BIND_UNIFORM_BUFFER;
-            desc.CPUAccessFlags = CPU_ACCESS_WRITE;
-            m_device->CreateBuffer(desc, nullptr, &material->param_buffer);
-        }
-        return material;
+        m_alive_materials.insert(material.get());
+        return std::move(material);
     }
 
     [[nodiscard]] std::unique_ptr<Texture> create_texture(const TextureDesc& texture_desc)
@@ -502,7 +705,7 @@ public:
             }
         }
 
-        Diligent::TextureData texdata;
+        TextureData texdata;
         texdata.pSubResources   = subresources.data();
         texdata.NumSubresources = static_cast<Uint32>(subresources.size());
 
@@ -520,7 +723,7 @@ public:
         sampler_desc.MipFilter = FILTER_TYPE_LINEAR;
         sampler_desc.AddressU  = TEXTURE_ADDRESS_WRAP;
         sampler_desc.AddressV  = TEXTURE_ADDRESS_WRAP;
-        Diligent::RefCntAutoPtr<Diligent::ISampler> sampler;
+        RefCntAutoPtr<ISampler> sampler;
         m_device->CreateSampler(sampler_desc, &sampler);
         if (!sampler) {
             throw khepri::renderer::Error("Failed to create texture sampler");
@@ -561,6 +764,49 @@ public:
         return mesh;
     }
 
+    std::unique_ptr<RenderPipeline>
+    create_render_pipeline(const RenderPipelineDesc& render_pipeline_desc)
+    {
+        // Store the render passes and get their global IDs
+        const auto render_pass_indices = store_render_passes(render_pipeline_desc.render_passes);
+
+        const auto on_pipeline_destroyed = [this](RenderPipeline& pipeline) {
+            // Update all alive materials to clear the render passes.
+            // Note: this is safe to do even if the render pass wasn't set yet (it's just ignored).
+            const auto& render_pass_indices = pipeline.render_pass_indices();
+            for (auto* const material : m_alive_materials) {
+                for (const auto render_pass_index : render_pass_indices) {
+                    material->clear_render_pass(render_pass_index);
+                }
+            }
+            // Free the pipeline's render passes
+            remove_render_passes(render_pass_indices);
+        };
+
+        // Create the pipeline and its resources
+        auto pipeline = [&] {
+            try {
+                return std::make_unique<RenderPipeline>(render_pass_indices, on_pipeline_destroyed);
+            } catch (...) {
+                // Something went wrong, free the allocated indices
+                remove_render_passes(render_pass_indices);
+                throw;
+            }
+        }();
+
+        // Update all alive materials with the new render passes.
+        // This will create new graphics pipelines for those render pass/material combinations.
+        for (auto* const material : m_alive_materials) {
+            for (std::size_t i = 0; i < render_pass_indices.size(); ++i) {
+                material->set_render_pass(render_pass_indices[i],
+                                          render_pipeline_desc.render_passes[i],
+                                          *m_constants_instance, *m_constants_view);
+            }
+        }
+
+        return std::move(pipeline);
+    }
+
     void clear(ClearFlags flags)
     {
         auto* rtv = m_swapchain->GetCurrentBackBufferRTV();
@@ -591,13 +837,13 @@ public:
         m_swapchain->Present();
     }
 
-    void render_meshes(gsl::span<const MeshInstance> meshes, const Camera& camera)
+    void render_meshes(khepri::renderer::RenderPipeline& render_pipeline,
+                       gsl::span<const MeshInstance> meshes, const Camera& camera)
     {
-        // Set the view-specific constants
-        {
-            MapHelper<ViewConstantBuffer> constants(m_context, m_constants_view, MAP_WRITE,
-                                                    MAP_FLAG_DISCARD);
-            constants->view_proj = camera.matrices().view_proj;
+        // Validate the input first
+        auto* const pipeline = dynamic_cast<RenderPipeline*>(&render_pipeline);
+        if (pipeline == nullptr) {
+            throw ArgumentError();
         }
 
         for (const auto& mesh_info : meshes) {
@@ -606,102 +852,173 @@ public:
             if (material == nullptr || mesh == nullptr) {
                 throw ArgumentError();
             }
+        }
 
-            m_context->SetPipelineState(material->pipeline);
+        // Set the view-specific constants
+        const auto& camera_matrices = camera.matrices();
+        {
+            MapHelper<ViewConstantBuffer> constants(m_context, m_constants_view, MAP_WRITE,
+                                                    MAP_FLAG_DISCARD);
+            constants->view_proj = camera_matrices.view_proj;
+        }
 
-            apply_material_params(*material, mesh_info.material_params);
+        // Returns the mesh's distance 'in front of' the camera
+        const auto& get_view_distance = [&](const MeshInstance& mesh_info) {
+            // Note that view space's Z axis (pointing from the camera into the scene) is the
+            // *negative* Z axis. So we invert Z to get the the view distance, where larger is
+            // further away.
+            return -(mesh_info.transform.get_translation() * camera.matrices().view_proj).z;
+        };
 
-            m_context->CommitShaderResources(material->shader_resource_binding,
-                                             RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+        // Space to filter and sort meshes per render pass. Reserved once and reused.
+        std::vector<const MeshInstance*> render_pass_meshes;
+        render_pass_meshes.reserve(meshes.size());
 
-            IBuffer* vertex_buffer = mesh->vertex_buffer.RawPtr();
-            m_context->SetVertexBuffers(0, 1, &vertex_buffer, nullptr,
-                                        RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                                        SET_VERTEX_BUFFERS_FLAG_RESET);
-            m_context->SetIndexBuffer(mesh->index_buffer, 0,
-                                      RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-            // Set instance-specific constants
-            {
-                MapHelper<InstanceConstantBuffer> constants(m_context, m_constants_instance,
-                                                            MAP_WRITE, MAP_FLAG_DISCARD);
-                constants->world     = mesh_info.transform;
-                constants->world_inv = inverse(mesh_info.transform);
+        // Execute all render passes, in order
+        for (const auto render_pass_index : pipeline->render_pass_indices()) {
+            // Collect the meshes for this render pass
+            render_pass_meshes.clear();
+            for (const auto& mesh_info : meshes) {
+                auto* const material = static_cast<Material*>(mesh_info.material);
+                if (material->is_used(render_pass_index)) {
+                    render_pass_meshes.push_back(&mesh_info);
+                }
             }
 
-            static_assert(sizeof(Mesh::Index) == sizeof(std::uint16_t));
-            DrawIndexedAttribs draw_attribs;
-            draw_attribs.NumIndices = mesh->index_count;
-            draw_attribs.IndexType  = VT_UINT16;
+            // Depth-sort the meshes if needed.
+            switch (m_render_passes[render_pass_index]->depth_sorting) {
+            default:
+                assert(false);
+                // Fall-through
+            case RenderPassDesc::DepthSorting::none:
+                // Nothing to do
+                break;
+            case RenderPassDesc::DepthSorting::front_to_back:
+                // Smaller distance gets rendered first
+                std::sort(render_pass_meshes.begin(), render_pass_meshes.end(),
+                          [&](const MeshInstance* lhs, const MeshInstance* rhs) {
+                              return get_view_distance(*lhs) < get_view_distance(*rhs);
+                          });
+                break;
+            case RenderPassDesc::DepthSorting::back_to_front:
+                // Larger distance gets rendered first
+                std::sort(render_pass_meshes.begin(), render_pass_meshes.end(),
+                          [&](const MeshInstance* lhs, const MeshInstance* rhs) {
+                              return get_view_distance(*lhs) > get_view_distance(*rhs);
+                          });
+                break;
+            }
+
+            // Now render the meshes in order
+            for (const auto* mesh_info : render_pass_meshes) {
+                auto* const material = static_cast<Material*>(mesh_info->material);
+                auto* const mesh     = static_cast<Mesh*>(mesh_info->mesh);
+
+                assert(material->is_used(render_pass_index));
+                material->set_active(render_pass_index, *m_context, mesh_info->material_params);
+
+                std::array<IBuffer*, 1> vertex_buffers{mesh->vertex_buffer};
+                m_context->SetVertexBuffers(
+                    0, static_cast<Uint32>(vertex_buffers.size()), vertex_buffers.data(), nullptr,
+                    RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+                m_context->SetIndexBuffer(mesh->index_buffer, 0,
+                                          RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+                // Set instance-specific constants
+                {
+                    MapHelper<InstanceConstantBuffer> constants(m_context, m_constants_instance,
+                                                                MAP_WRITE, MAP_FLAG_DISCARD);
+                    constants->world     = mesh_info->transform;
+                    constants->world_inv = inverse(mesh_info->transform);
+                }
+
+                static_assert(sizeof(Mesh::Index) == sizeof(std::uint16_t));
+                DrawIndexedAttribs draw_attribs;
+                draw_attribs.NumIndices = mesh->index_count;
+                draw_attribs.IndexType  = VT_UINT16;
 #ifndef NDEBUG
-            draw_attribs.Flags = DRAW_FLAG_VERIFY_ALL;
+                draw_attribs.Flags = DRAW_FLAG_VERIFY_ALL;
 #endif
-            m_context->DrawIndexed(draw_attribs);
+                m_context->DrawIndexed(draw_attribs);
+            }
         }
     }
 
-    void render_sprites(gsl::span<const Sprite> sprites, khepri::renderer::Material& material,
+    void render_sprites(khepri::renderer::RenderPipeline& render_pipeline,
+                        gsl::span<const Sprite> sprites, khepri::renderer::Material& material,
                         gsl::span<const khepri::renderer::Material::Param> params)
     {
+        auto* const pipeline = dynamic_cast<RenderPipeline*>(&render_pipeline);
+        if (!pipeline) {
+            throw ArgumentError();
+        }
+
         auto* mat = dynamic_cast<Material*>(&material);
         if (mat == nullptr) {
             throw ArgumentError();
         }
 
-        m_context->SetPipelineState(mat->pipeline);
-        apply_material_params(*mat, params);
-
-        m_context->CommitShaderResources(mat->shader_resource_binding,
-                                         RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
-
-        std::size_t sprite_index = 0;
-        while (sprite_index < sprites.size()) {
-            const std::size_t sprites_left = sprites.size() - sprite_index;
-            const std::size_t sprite_count = std::min(sprites_left, SPRITE_BUFFER_COUNT);
-
-            {
-                // Copy the vertex data
-                MapHelper<SpriteVertex> vertices_map(m_context, m_sprite_vertex_buffer, MAP_WRITE,
-                                                     MAP_FLAG_DISCARD);
-
-                const auto vertices = gsl::span<SpriteVertex>(
-                    vertices_map, m_sprite_vertex_buffer->GetDesc().Size / sizeof(SpriteVertex));
-
-                for (std::size_t i = 0; i < sprite_count * VERTICES_PER_SPRITE;
-                     i += VERTICES_PER_SPRITE, ++sprite_index) {
-                    const auto& sprite = sprites[sprite_index];
-                    vertices[i + 0].position =
-                        Vector3f(sprite.position_top_left.x, sprite.position_top_left.y, 0);
-                    vertices[i + 1].position =
-                        Vector3f(sprite.position_bottom_right.x, sprite.position_top_left.y, 0);
-                    vertices[i + 2].position =
-                        Vector3f(sprite.position_bottom_right.x, sprite.position_bottom_right.y, 0);
-                    vertices[i + 3].position =
-                        Vector3f(sprite.position_top_left.x, sprite.position_bottom_right.y, 0);
-                    vertices[i + 0].uv = Vector2f(sprite.uv_top_left.x, sprite.uv_top_left.y);
-                    vertices[i + 1].uv = Vector2f(sprite.uv_bottom_right.x, sprite.uv_top_left.y);
-                    vertices[i + 2].uv =
-                        Vector2f(sprite.uv_bottom_right.x, sprite.uv_bottom_right.y);
-                    vertices[i + 3].uv = Vector2f(sprite.uv_top_left.x, sprite.uv_bottom_right.y);
-                }
+        // Execute all render passes, in order
+        for (const auto render_pass_index : pipeline->render_pass_indices()) {
+            if (!mat->is_used(render_pass_index)) {
+                // Nothing to do for this material in this render pass
+                continue;
             }
 
-            m_context->SetVertexBuffers(0, 1, &m_sprite_vertex_buffer, nullptr,
-                                        RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
-                                        SET_VERTEX_BUFFERS_FLAG_RESET);
+            mat->set_active(render_pass_index, *m_context, params);
 
-            m_context->SetIndexBuffer(m_sprite_index_buffer, 0,
-                                      RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+            std::size_t sprite_index = 0;
+            while (sprite_index < sprites.size()) {
+                const std::size_t sprites_left = sprites.size() - sprite_index;
+                const std::size_t sprite_count = std::min(sprites_left, SPRITE_BUFFER_COUNT);
 
-            static_assert(sizeof(Mesh::Index) == sizeof(std::uint16_t));
-            DrawIndexedAttribs draw_attribs;
-            draw_attribs.NumIndices =
-                static_cast<Uint32>(sprite_count * TRIANGLES_PER_SPRITE * VERTICES_PER_TRIANGLE);
-            draw_attribs.IndexType = VT_UINT16;
+                {
+                    // Copy the vertex data
+                    MapHelper<SpriteVertex> vertices_map(m_context, m_sprite_vertex_buffer,
+                                                         MAP_WRITE, MAP_FLAG_DISCARD);
+
+                    const auto vertices = gsl::span<SpriteVertex>(
+                        vertices_map,
+                        m_sprite_vertex_buffer->GetDesc().Size / sizeof(SpriteVertex));
+
+                    for (std::size_t i = 0; i < sprite_count * VERTICES_PER_SPRITE;
+                         i += VERTICES_PER_SPRITE, ++sprite_index) {
+                        const auto& sprite = sprites[sprite_index];
+                        vertices[i + 0].position =
+                            Vector3f(sprite.position_top_left.x, sprite.position_top_left.y, 0);
+                        vertices[i + 1].position =
+                            Vector3f(sprite.position_bottom_right.x, sprite.position_top_left.y, 0);
+                        vertices[i + 2].position = Vector3f(sprite.position_bottom_right.x,
+                                                            sprite.position_bottom_right.y, 0);
+                        vertices[i + 3].position =
+                            Vector3f(sprite.position_top_left.x, sprite.position_bottom_right.y, 0);
+                        vertices[i + 0].uv = Vector2f(sprite.uv_top_left.x, sprite.uv_top_left.y);
+                        vertices[i + 1].uv =
+                            Vector2f(sprite.uv_bottom_right.x, sprite.uv_top_left.y);
+                        vertices[i + 2].uv =
+                            Vector2f(sprite.uv_bottom_right.x, sprite.uv_bottom_right.y);
+                        vertices[i + 3].uv =
+                            Vector2f(sprite.uv_top_left.x, sprite.uv_bottom_right.y);
+                    }
+                }
+
+                m_context->SetVertexBuffers(0, 1, &m_sprite_vertex_buffer, nullptr,
+                                            RESOURCE_STATE_TRANSITION_MODE_TRANSITION,
+                                            SET_VERTEX_BUFFERS_FLAG_RESET);
+
+                m_context->SetIndexBuffer(m_sprite_index_buffer, 0,
+                                          RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+                static_assert(sizeof(Mesh::Index) == sizeof(std::uint16_t));
+                DrawIndexedAttribs draw_attribs;
+                draw_attribs.NumIndices = static_cast<Uint32>(sprite_count * TRIANGLES_PER_SPRITE *
+                                                              VERTICES_PER_TRIANGLE);
+                draw_attribs.IndexType  = VT_UINT16;
 #ifndef NDEBUG
-            draw_attribs.Flags = DRAW_FLAG_VERIFY_ALL;
+                draw_attribs.Flags = DRAW_FLAG_VERIFY_ALL;
 #endif
-            m_context->DrawIndexed(draw_attribs);
+                m_context->DrawIndexed(draw_attribs);
+            }
         }
     }
 
@@ -765,7 +1082,7 @@ private:
         if (conversion_stream == nullptr) {
             // If we didn't get a conversion stream, try to create one ourselves
             RefCntAutoPtr<IHLSL2GLSLConverter> converter;
-            Diligent::CreateHLSL2GLSLConverter(&converter);
+            CreateHLSL2GLSLConverter(&converter);
             converter->CreateStream(path.c_str(), &factory, nullptr, 0, &conversion_stream);
         }
 
@@ -785,56 +1102,6 @@ private:
             LOG.info("---End of GLSL source---");
         } else {
             LOG.info("Couldn't convert shader to GLSL for diagnostics.");
-        }
-    }
-
-    void apply_material_params(Material&                                          material,
-                               gsl::span<const khepri::renderer::Material::Param> params)
-    {
-        const auto& set_variable = [&](const char* name, IDeviceObject* object) {
-            auto& srb = *material.shader_resource_binding;
-            if (auto* var = srb.GetVariableByName(SHADER_TYPE_VERTEX, name)) {
-                var->Set(object);
-            }
-            if (auto* var = srb.GetVariableByName(SHADER_TYPE_PIXEL, name)) {
-                var->Set(object);
-            }
-        };
-
-        std::optional<MapHelper<std::uint8_t>> map_helper;
-        if (material.param_buffer != nullptr) {
-            map_helper = MapHelper<std::uint8_t>(m_context, material.param_buffer, MAP_WRITE,
-                                                 MAP_FLAG_DISCARD);
-        }
-
-        for (const auto& param : material.params) {
-            // Use the value from the provided params if it exists, otherwise the material's default
-            const auto* const it = std::find_if(
-                params.begin(), params.end(), [&](const auto& p) { return p.name == param.name; });
-            const auto& value = (it != params.end()) ? it->value : param.default_value;
-
-            std::visit(Overloaded{[&](khepri::renderer::Texture* value) {
-                                      auto* texture = dynamic_cast<Texture*>(value);
-                                      if (texture != nullptr) {
-                                          set_variable(param.name.c_str(), texture->shader_view);
-                                      }
-                                  },
-                                  [&](const auto& value) {
-                                      if (map_helper) {
-                                          // NOLINTBEGIN - pointer arithmetic and reinterpret_cast
-                                          auto* param_data =
-                                              static_cast<std::uint8_t*>(*map_helper) +
-                                              param.buffer_offset;
-                                          *reinterpret_cast<std::decay_t<decltype(value)>*>(
-                                              param_data) = value;
-                                          // NOLINTEND
-                                      }
-                                  }},
-                       value);
-        }
-
-        if (material.param_buffer != nullptr) {
-            set_variable("Material", material.param_buffer);
         }
     }
 
@@ -915,14 +1182,55 @@ private:
         return dynamic_variables;
     }
 
-    bool                                              m_using_shader_conversion{false};
-    Diligent::RefCntAutoPtr<Diligent::IRenderDevice>  m_device;
-    Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_context;
-    Diligent::RefCntAutoPtr<Diligent::ISwapChain>     m_swapchain;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_constants_instance;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_constants_view;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_sprite_vertex_buffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_sprite_index_buffer;
+    std::vector<GlobalRenderPassIndex>
+    store_render_passes(gsl::span<const RenderPassDesc> render_passes)
+    {
+        std::vector<GlobalRenderPassIndex> indices;
+        indices.reserve(render_passes.size());
+        for (const auto& render_pass : render_passes) {
+            std::size_t index;
+            if (!m_unused_render_pass_indices.empty()) {
+                index = m_unused_render_pass_indices.top();
+                m_unused_render_pass_indices.pop();
+            } else {
+                index = m_next_render_pass_index++;
+                m_render_passes.push_back({});
+            }
+            m_render_passes[index] = render_pass;
+            indices.push_back(index);
+        }
+        return indices;
+    }
+
+    void remove_render_passes(gsl::span<const GlobalRenderPassIndex> indices)
+    {
+        for (const auto& index : indices) {
+            m_render_passes[index] = {};
+            m_unused_render_pass_indices.push(index);
+        }
+    }
+
+    RefCntAutoPtr<IRenderDevice>  m_device;
+    RefCntAutoPtr<IDeviceContext> m_context;
+    RefCntAutoPtr<ISwapChain>     m_swapchain;
+
+    RefCntAutoPtr<IBuffer> m_constants_instance;
+    RefCntAutoPtr<IBuffer> m_constants_view;
+    RefCntAutoPtr<IBuffer> m_sprite_vertex_buffer;
+    RefCntAutoPtr<IBuffer> m_sprite_index_buffer;
+
+    // This is a non-owning set of all alive materials.
+    // This is necessary for when new render pipelines are created. When that happens, all alive
+    // materials need to be updated with newly construct graphics pipelines for the new render
+    // pipeline's render passes.
+    std::unordered_set<Material*> m_alive_materials;
+
+    // Freed and reusable global render pass indices
+    std::stack<GlobalRenderPassIndex> m_unused_render_pass_indices;
+    // Next available render pass index (after reusing the unused ones)
+    GlobalRenderPassIndex m_next_render_pass_index{0};
+    // Global list of render passes. Indexed by GlobalRenderPassIndex
+    std::vector<std::optional<RenderPassDesc>> m_render_passes;
 };
 
 Renderer::Renderer(const std::any& window) : m_impl(std::make_unique<Impl>(window)) {}
@@ -945,7 +1253,8 @@ std::unique_ptr<Shader> Renderer::create_shader(const std::filesystem::path& pat
     return m_impl->create_shader(path, loader);
 }
 
-std::unique_ptr<Material> Renderer::create_material(const MaterialDesc& material_desc)
+std::unique_ptr<khepri::renderer::Material>
+Renderer::create_material(const MaterialDesc& material_desc)
 {
     return m_impl->create_material(material_desc);
 }
@@ -960,6 +1269,12 @@ std::unique_ptr<Mesh> Renderer::create_mesh(const MeshDesc& mesh_desc)
     return m_impl->create_mesh(mesh_desc);
 }
 
+std::unique_ptr<RenderPipeline>
+Renderer::create_render_pipeline(const RenderPipelineDesc& render_pipeline_desc)
+{
+    return m_impl->create_render_pipeline(render_pipeline_desc);
+}
+
 void Renderer::clear(ClearFlags flags)
 {
     m_impl->clear(flags);
@@ -970,15 +1285,17 @@ void Renderer::present()
     m_impl->present();
 }
 
-void Renderer::render_meshes(gsl::span<const MeshInstance> meshes, const Camera& camera)
+void Renderer::render_meshes(khepri::renderer::RenderPipeline& render_pipeline,
+                             gsl::span<const MeshInstance> meshes, const Camera& camera)
 {
-    m_impl->render_meshes(meshes, camera);
+    m_impl->render_meshes(render_pipeline, meshes, camera);
 }
 
-void Renderer::render_sprites(gsl::span<const Sprite> sprites, Material& material,
+void Renderer::render_sprites(khepri::renderer::RenderPipeline& render_pipeline,
+                              gsl::span<const Sprite> sprites, Material& material,
                               gsl::span<const Material::Param> params)
 {
-    m_impl->render_sprites(sprites, material, params);
+    m_impl->render_sprites(render_pipeline, sprites, material, params);
 }
 
 } // namespace khepri::renderer::diligent

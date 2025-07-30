@@ -5,6 +5,7 @@
 #include <openglyph/assets/asset_cache.hpp>
 #include <openglyph/renderer/io/material.hpp>
 #include <openglyph/renderer/io/model.hpp>
+#include <openglyph/renderer/io/render_pipeline.hpp>
 
 namespace openglyph {
 namespace {
@@ -52,16 +53,27 @@ auto create_render_model_loader(AssetLoader&                       asset_loader,
 AssetCache::AssetCache(AssetLoader& asset_loader, khepri::renderer::Renderer& renderer)
     : m_shader_cache(create_shader_loader(asset_loader, renderer))
     , m_texture_cache(create_texture_loader(asset_loader, renderer))
+    , m_render_pipelines(renderer)
     , m_materials(renderer, m_shader_cache.as_loader(), m_texture_cache.as_loader())
     , m_model_creator(renderer, m_materials.as_loader(), m_texture_cache.as_loader())
     , m_render_model_cache(create_render_model_loader(asset_loader, m_model_creator))
 {
+    if (auto stream = asset_loader.open_config("RenderPipelines")) {
+        m_render_pipelines.register_render_pipelines(
+            openglyph::renderer::io::load_render_pipelines(*stream));
+    }
+
     if (auto stream = asset_loader.open_config("Materials")) {
         m_materials.register_materials(openglyph::renderer::io::load_materials(*stream));
     }
 }
 
 AssetCache::~AssetCache() = default;
+
+khepri::renderer::RenderPipeline* AssetCache::get_render_pipeline(std::string_view name)
+{
+    return m_render_pipelines.get(name);
+}
 
 khepri::renderer::Material* AssetCache::get_material(std::string_view name)
 {

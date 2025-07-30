@@ -20,8 +20,10 @@ add_library(${PROJECT_NAME}
     src/io/mega_file.cpp
     src/renderer/io/material.cpp
     src/renderer/io/model.cpp
+    src/renderer/io/render_pipeline.cpp
     src/renderer/material_store.cpp
     src/renderer/model_creator.cpp
+    src/renderer/render_pipeline_store.cpp
     src/parser/parsers.cpp
     src/parser/xml_parser.cpp
     src/ui/input.cpp

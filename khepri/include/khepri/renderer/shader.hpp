@@ -16,10 +16,11 @@ public:
     Shader()          = default;
     virtual ~Shader() = default;
 
-    Shader(const Shader&)            = delete;
-    Shader(Shader&&)                 = delete;
-    Shader& operator=(const Shader&) = delete;
-    Shader& operator=(Shader&&)      = delete;
+protected:
+    Shader(const Shader&)            = default;
+    Shader(Shader&&)                 = default;
+    Shader& operator=(const Shader&) = default;
+    Shader& operator=(Shader&&)      = default;
 };
 
 } // namespace khepri::renderer

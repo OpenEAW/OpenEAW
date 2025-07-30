@@ -10,7 +10,11 @@ namespace openglyph {
 class SceneRenderer
 {
 public:
-    explicit SceneRenderer(khepri::renderer::Renderer& renderer) : m_renderer(renderer) {}
+    SceneRenderer(khepri::renderer::Renderer&       renderer,
+                  khepri::renderer::RenderPipeline& render_pipeline)
+        : m_renderer(renderer), m_render_pipeline(render_pipeline)
+    {
+    }
     ~SceneRenderer() = default;
 
     SceneRenderer(const SceneRenderer&)                = delete;
@@ -24,7 +28,8 @@ private:
     void render_scene(const khepri::scene::Scene& scene, const openglyph::Environment& environment,
                       const khepri::renderer::Camera& camera);
 
-    khepri::renderer::Renderer& m_renderer;
+    khepri::renderer::Renderer&       m_renderer;
+    khepri::renderer::RenderPipeline& m_render_pipeline;
 };
 
 } // namespace openglyph

@@ -18,10 +18,11 @@ public:
     Mesh()          = default;
     virtual ~Mesh() = default;
 
-    Mesh(const Mesh&)            = delete;
-    Mesh(Mesh&&)                 = delete;
-    Mesh& operator=(const Mesh&) = delete;
-    Mesh& operator=(Mesh&&)      = delete;
+protected:
+    Mesh(const Mesh&)            = default;
+    Mesh(Mesh&&)                 = default;
+    Mesh& operator=(const Mesh&) = default;
+    Mesh& operator=(Mesh&&)      = default;
 };
 
 } // namespace khepri::renderer
