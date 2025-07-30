@@ -7,6 +7,9 @@
 #include <openglyph/renderer/io/model.hpp>
 #include <openglyph/renderer/io/render_pipeline.hpp>
 
+#include <mutex>
+#include <set>
+
 namespace openglyph {
 namespace {
 constexpr khepri::log::Logger LOG("assets");
@@ -55,7 +58,8 @@ AssetCache::AssetCache(AssetLoader& asset_loader, khepri::renderer::Renderer& re
     , m_texture_cache(create_texture_loader(asset_loader, renderer))
     , m_render_pipelines(renderer)
     , m_materials(renderer, m_shader_cache.as_loader(), m_texture_cache.as_loader())
-    , m_model_creator(renderer, m_materials.as_loader(), m_texture_cache.as_loader())
+    , m_model_creator(
+          renderer, [this](auto name) { return get_material(name); }, m_texture_cache.as_loader())
     , m_render_model_cache(create_render_model_loader(asset_loader, m_model_creator))
 {
     if (auto stream = asset_loader.open_config("RenderPipelines")) {
@@ -72,21 +76,53 @@ AssetCache::~AssetCache() = default;
 
 const khepri::renderer::RenderPipeline* AssetCache::get_render_pipeline(std::string_view name)
 {
-    return m_render_pipelines.get(name);
+    if (const auto* pipeline = m_render_pipelines.get(name)) {
+        return pipeline;
+    }
+
+    // Log only once to avoid spamming
+    static std::set<std::string, std::less<>> logged_names;
+    static std::mutex                         log_mutex;
+    {
+        std::lock_guard lock(log_mutex);
+        if (logged_names.find(name) == logged_names.end()) {
+            logged_names.insert(std::string(name));
+            LOG.error("cannot find render pipeline \"{}\"", name);
+        }
+    }
+
+    return nullptr;
 }
 
 const khepri::renderer::Material* AssetCache::get_material(std::string_view name)
 {
-    return m_materials.get(name);
+    if (const auto* material = m_materials.get(name)) {
+        return material;
+    }
+
+    // Log only once to avoid spamming
+    static std::set<std::string, std::less<>> logged_names;
+    static std::mutex                         log_mutex;
+    {
+        std::lock_guard lock(log_mutex);
+        if (logged_names.find(name) == logged_names.end()) {
+            logged_names.insert(std::string(name));
+            LOG.error("cannot find material \"{}\"", name);
+        }
+    }
+
+    return nullptr;
 }
 
 const khepri::renderer::Texture* AssetCache::get_texture(std::string_view name)
 {
+    // Unfindable textures are logged from the AssetLoader
     return m_texture_cache.get(name);
 }
 
 const openglyph::renderer::RenderModel* AssetCache::get_render_model(std::string_view name)
 {
+    // Unfindable models are logged from the AssetLoader
     return m_render_model_cache.get(name);
 }
 
