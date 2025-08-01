@@ -89,10 +89,12 @@ auto read_map_environment(gsl::span<const std::uint8_t> data)
     Environment     environment;
     MinichunkReader reader(data);
 
-    // Angles for the lights, in radians
-    // By default: point to +Y, thus lighting the 'front' (-Y) of objects.
-    std::array<float, 3> light_zangles = {khepri::PI / 4, khepri::PI / 4, khepri::PI / 4};
-    std::array<float, 3> light_tilts   = {0, 0, 0};
+    // Angles where the lights are coming from, in radians. Note that the z-angles stored in the map
+    // do NOT have 0° at +X, but at -Y.
+    // By default: point to -Y, thus lighting the 'front' (-Y) of objects if not rotated.
+    std::array<float, 3> light_zangles = {0, 0, 0}; // CCW angle from -Y.
+    std::array<float, 3> light_tilts   = {0, 0, 0}; // Angle above/below XY plane.
+
     // Wind angle, in degrees
     float wind_zangle = 0;
 
@@ -182,9 +184,10 @@ auto read_map_environment(gsl::span<const std::uint8_t> data)
     }
 
     // Convert some stored representations into more-easily used versions (e.g. angles into vectors)
+    // Note that z-angles in the map have 0° at -Y, but still go counter-clockwise (viewed from +Z).
     for (int i = 0; i < Environment::NUM_LIGHTS; ++i) {
         environment.lights[i].from_direction =
-            khepri::Vector3f::from_angles(light_tilts[i], light_zangles[i]);
+            khepri::Vector3f::from_angles(light_tilts[i], light_zangles[i] - 90);
     }
     environment.wind.to_direction = khepri::Vector2f::from_angle(khepri::to_radians(wind_zangle));
 
