@@ -18,6 +18,25 @@
     </Material>
     -->
 
+    <Material Name="MeshAlpha" Type="Transparent">
+        <Shader>MeshAlpha</Shader>
+        <Num_Directional_Lights>3</Num_Directional_Lights>
+        <Param Name="Emissive" Type="float3">0, 0, 0</Param>
+        <Param Name="Diffuse" Type="float4">1, 1, 1, 1</Param>
+        <Param Name="Specular" Type="float3">1, 1, 1</Param>
+        <Param Name="BaseTexture" Type="texture"></Param>
+    </Material>
+
+    <Material Name="MeshAlphaGloss" Type="Transparent">
+        <Shader>MeshAlphaGloss</Shader>
+        <Num_Directional_Lights>3</Num_Directional_Lights>
+        <Param Name="Emissive" Type="float3">0, 0, 0</Param>
+        <Param Name="Diffuse" Type="float4">1, 1, 1, 1</Param>
+        <Param Name="Specular" Type="float3">1, 1, 1</Param>
+        <Param Name="BaseTexture" Type="texture"></Param>
+        <Param Name="GlossTexture" Type="texture"></Param>
+    </Material>
+
     <Material Name="MeshBumpColorize" Type="Opaque">
         <Shader>MeshBumpColorize</Shader>
         <Num_Directional_Lights>3</Num_Directional_Lights>
@@ -39,6 +58,17 @@
         <Param Name="BaseTexture" Type="texture"></Param>
     </Material>
 
+    <Material Name="MeshGlossColorize" Type="Opaque">
+        <Shader>MeshGlossColorize</Shader>
+        <Num_Directional_Lights>3</Num_Directional_Lights>
+        <Param Name="Emissive" Type="float3">0, 0, 0</Param>
+        <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
+        <Param Name="Specular" Type="float3">0, 0, 0</Param>
+        <Param Name="Colorization" Type="float3">0, 1, 0</Param>
+        <Param Name="BaseTexture" Type="texture"></Param>
+        <Param Name="GlossTexture" Type="texture"></Param>
+    </Material>
+
     <Material Name="MeshAdditive" Type="Transparent">
         <Shader>MeshAdditive</Shader>
         <Num_Directional_Lights>0</Num_Directional_Lights>
@@ -52,5 +82,37 @@
         <Num_Directional_Lights>0</Num_Directional_Lights>
         <Param Name="UVScrollRate" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
+    </Material>
+
+    <Material Name="MeshSolidColor" Type="Opaque">
+        <Shader>MeshSolidColor</Shader>
+        <Num_Directional_Lights>0</Num_Directional_Lights>
+        <Param Name="Color" Type="float4">0, 0, 1, 0.5</Param>
+    </Material>
+
+    <Material Name="Nebula" Type="Transparent">
+        <Shader>Nebula</Shader>
+        <Num_Directional_Lights>0</Num_Directional_Lights>
+        <Param Name="DistortionScale" Type="float">25.0f</Param>
+        <Param Name="SFreq" Type="float">0.002f</Param>
+        <Param Name="TFreq" Type="float">0.05f</Param>
+        <Param Name="UVScrollRate" Type="float2">0, 0</Param>
+        <Param Name="BaseTexture" Type="texture"></Param>
+    </Material>
+
+    <Material Name="Planet" Type="Opaque">
+        <Shader>Planet</Shader>
+        <Num_Directional_Lights>3</Num_Directional_Lights>
+        <Param Name="Emissive" Type="float3">0, 0, 0</Param>
+        <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
+        <Param Name="Specular" Type="float3">1, 1, 1</Param>
+        <Param Name="Atmosphere" Type="float4">0, 0, 0, 1</Param>
+        <Param Name="CityColor" Type="float3">1, 1, 1</Param>
+        <Param Name="AtmospherePower" Type="float">4.5</Param>
+        <Param Name="CloudScrollRate" Type="float">0.0025</Param>
+        <Param Name="BaseTexture" Type="texture"></Param>
+        <Param Name="NormalTexture" Type="texture"></Param>
+        <Param Name="CloudTexture" Type="texture"></Param>
+        <Param Name="CloudNormalTexture" Type="texture"></Param>
     </Material>
 </Materials>

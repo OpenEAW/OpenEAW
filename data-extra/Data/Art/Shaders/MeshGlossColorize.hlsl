@@ -7,10 +7,14 @@ cbuffer Material
     float3 Emissive;
     float3 Diffuse;
     float3 Specular;
+    float3 Colorization;
 };
 
 Texture2D BaseTexture;
 SamplerState BaseTextureSampler;
+
+Texture2D GlossTexture;
+SamplerState GlossTextureSampler;
 
 ////////////////////////////////////////////////
 
@@ -55,7 +59,10 @@ VS_OUTPUT vs_main(VS_INPUT_MESH In)
 float4 ps_main(VS_OUTPUT In) : SV_Target
 {
     float4 base_texel = BaseTexture.Sample(BaseTextureSampler, In.UV);
-    float3 diffuse = In.Diffuse * base_texel.rgb * 2;
-    float3 specular = In.Spec * base_texel.a;
+    float4 gloss_texel = GlossTexture.Sample(GlossTextureSampler, In.UV);
+
+    float3 surface_color = lerp(base_texel.rgb, Colorization * base_texel.rgb, base_texel.a);
+    float3 diffuse = In.Diffuse.rgb * surface_color * 2;
+    float3 specular = In.Spec * gloss_texel.r;
     return float4(diffuse + specular, 1);
 }

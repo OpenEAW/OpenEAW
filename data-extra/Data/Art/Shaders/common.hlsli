@@ -23,6 +23,8 @@ cbuffer InstanceConstants
 
 cbuffer ViewConstants
 {
+    float4x4 View;
+
     // mul(View, Projection)
     float4x4 ViewProj;
 
@@ -44,9 +46,11 @@ cbuffer EnvironmentConstants
 
     int NumPointLights;
 
-	// In-world time, in seconds
+    // In-world time, in seconds
     float Time;
 };
+
+static const float PI = 3.14159265;
 
 // Returns the camera position, in world space
 float3 camera_position() {
