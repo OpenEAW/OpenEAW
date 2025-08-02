@@ -4,8 +4,11 @@
 // Material
 cbuffer Material
 {
-	float3 Colorization;
+	float3 Emissive;
 	float3 Diffuse;
+	float3 Specular;
+	float3 Colorization;
+	float2 UVOffset;
 };
 
 Texture2D BaseTexture;
@@ -30,13 +33,17 @@ struct VS_OUTPUT
 	float4 Pos : SV_Position; // Position (camera space)
 	float2 UV : TEXCOORD0; // Texture coordinates (tangent space)
 	float3 LightDir : TEXCOORD1; // Light direction (tangent space)
+	float3 HalfAngleVector: TEXCOORD2; // Half Angle light vector (tangent space)
 	float3 Diff : COLOR0; // Per-vertex diffuse color
 };
 
 VS_OUTPUT vs_main(VS_INPUT_MESH In)
 {
+    float4 world_pos = mul(float4(In.Pos, 1), World);
+    float3 camera_pos = camera_position();
+
     VS_OUTPUT Out;
-   	Out.Pos = mul(float4(In.Pos, 1), mul(World, ViewProj));
+    Out.Pos = mul(world_pos, ViewProj);
 
 	// Store the light direction in tangent space
 	float3x3 local_to_tangent = to_tangent_matrix(In.Tangent,In.Binormal,In.Normal);
@@ -50,25 +57,32 @@ VS_OUTPUT vs_main(VS_INPUT_MESH In)
 	// Note that the light directions are in tangent space, so dot(N,L) is just L.z, since the normal vector
 	// is always 0,0,1 in tangent space.
 	Out.LightDir = encode_vector(light0_dir);
-	Out.Diff = DirectionalLights[1].intensity * DirectionalLights[1].diffuse_color * saturate(light1_dir.z) +
-	           DirectionalLights[2].intensity * DirectionalLights[2].diffuse_color * saturate(light2_dir.z);
+	Out.Diff = Diffuse.rgb *
+	           (DirectionalLights[1].intensity * DirectionalLights[1].diffuse_color * saturate(light1_dir.z) +
+	            DirectionalLights[2].intensity * DirectionalLights[2].diffuse_color * saturate(light2_dir.z)) +
+			   Emissive;
 
-	Out.UV = In.UV;
+	Out.HalfAngleVector = encode_vector(normalize(mul(light_half_angle((float3)world_pos, camera_pos, -DirectionalLights[0].direction), world_to_tangent)));
+
+	Out.UV = In.UV + UVOffset;
     return Out;
 }
 
 float4 ps_main(VS_OUTPUT In) : SV_Target
 {
+	float4 base_texel = BaseTexture.Sample(BaseTextureSampler, In.UV);
+	float4 normal_texel = NormalTexture.Sample(NormalTextureSampler, In.UV);
+
+	// base_texel alpha contains colorization channel
+	float3 surface_color = lerp(base_texel.rgb, Colorization * base_texel.rgb, base_texel.a);
+
 	// Normal vector and light direction (both in tangent space)
-	float3 normal = decode_vector(NormalTexture.Sample(NormalTextureSampler, In.UV).rgb);
+	float3 normal = decode_vector(normal_texel.rgb);
+	float3 light_dir = decode_vector(In.LightDir);
+	float3 half_vec = decode_vector(In.HalfAngleVector);
 
 	// Calculate main light in pixel shader to use normal map
-	float3 light_dir = decode_vector(In.LightDir);
-	float3 diffuse = In.Diff + DirectionalLights[0].intensity * DirectionalLights[0].diffuse_color * saturate(dot(normal, light_dir));
-
-	// Texel alpha contains colorization channel
-	float4 texel = BaseTexture.Sample(BaseTextureSampler, In.UV);
-	float3 tex_color = lerp(texel.rgb, Colorization * texel.rgb, texel.a);
-
-	return float4(tex_color * Diffuse * diffuse, 1);
+	float3 diffuse = surface_color * (In.Diff + DirectionalLights[0].intensity * DirectionalLights[0].diffuse_color * saturate(dot(normal, light_dir)));
+	float3 spec = normal_texel.a * Specular * DirectionalLights[0].intensity * DirectionalLights[0].specular_color * pow(saturate(dot(normal, half_vec)), 16);
+	return float4(diffuse + spec, 1);
 }
