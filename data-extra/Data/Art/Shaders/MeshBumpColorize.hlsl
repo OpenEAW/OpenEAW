@@ -82,7 +82,7 @@ float4 ps_main(VS_OUTPUT In) : SV_Target
 	float3 half_vec = decode_vector(In.HalfAngleVector);
 
 	// Calculate main light in pixel shader to use normal map
-	float3 diffuse = surface_color * (In.Diff + DirectionalLights[0].intensity * DirectionalLights[0].diffuse_color * saturate(dot(normal, light_dir)));
+	float3 diffuse = surface_color * (In.Diff + DirectionalLights[0].intensity * DirectionalLights[0].diffuse_color * saturate(dot(normal, light_dir))) * 2;
 	float3 spec = normal_texel.a * Specular * DirectionalLights[0].intensity * DirectionalLights[0].specular_color * pow(saturate(dot(normal, half_vec)), 16);
 	return float4(diffuse + spec, 1);
 }

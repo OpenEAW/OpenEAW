@@ -192,9 +192,15 @@ int main(int argc, const char* argv[])
 
         openglyph::AssetLoader asset_loader(std::move(data_paths));
 
-        khepri::application::Window          window(APPLICATION_NAME);
-        khepri::renderer::diligent::Renderer renderer(window.native_handle());
-        khepri::renderer::Camera             camera = create_camera(window.render_size());
+        khepri::application::Window window(APPLICATION_NAME);
+
+        // Note: Empire at War was written for DX9 and does not natively support sRGB mode. Textures
+        // are read & modified in linear space and (roughly) gamma-corrected in the shader. Thus,
+        // the output format should be in linear space.
+        khepri::renderer::diligent::Renderer renderer(window.native_handle(),
+                                                      khepri::renderer::ColorSpace::linear);
+
+        khepri::renderer::Camera camera = create_camera(window.render_size());
         window.add_size_listener([&] {
             const auto render_size = window.render_size();
             renderer.render_size(render_size);

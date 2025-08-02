@@ -1,5 +1,6 @@
 #include <khepri/io/exceptions.hpp>
 #include <khepri/io/stream.hpp>
+#include <khepri/renderer/io/texture.hpp>
 #include <khepri/renderer/texture_desc.hpp>
 
 #include <gsl/gsl-lite.hpp>
@@ -353,7 +354,7 @@ auto create_subresources(unsigned long width, unsigned long height, unsigned lon
     return subresources;
 }
 
-TextureDesc load_texture_dds(khepri::io::Stream& stream)
+TextureDesc load_texture_dds(khepri::io::Stream& stream, const TextureLoadOptions& options)
 {
     assert(stream.readable() && stream.seekable());
     TextureDimension dimension = TextureDimension::texture_2d;
@@ -441,12 +442,19 @@ TextureDesc load_texture_dds(khepri::io::Stream& stream)
 
     const unsigned long depth_array_size = (dimension == TextureDimension::texture_3d) ? depth : 0;
 
+    auto pixel_format = format_handler->output_format();
+    if (!dx10_header) {
+        // Without a DX10 header, we don't know the color space, so we use the default from the
+        // provided options.
+        pixel_format = to_color_space(pixel_format, options.default_color_space);
+    }
+
     return {dimension,
             width,
             height,
             depth_array_size,
             mip_levels,
-            format_handler->output_format(),
+            pixel_format,
             std::move(subresources),
             std::move(data)};
 }

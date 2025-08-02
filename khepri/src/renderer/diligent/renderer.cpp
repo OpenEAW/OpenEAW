@@ -115,14 +115,24 @@ RESOURCE_DIMENSION to_resource_dimension(TextureDimension dimension, bool is_arr
 TEXTURE_FORMAT to_texture_format(PixelFormat format)
 {
     switch (format) {
+    case PixelFormat::r8g8b8a8_unorm:
+        return TEX_FORMAT_RGBA8_UNORM;
     case PixelFormat::r8g8b8a8_unorm_srgb:
         return TEX_FORMAT_RGBA8_UNORM_SRGB;
+    case PixelFormat::b8g8r8a8_unorm:
+        return TEX_FORMAT_BGRA8_UNORM;
     case PixelFormat::b8g8r8a8_unorm_srgb:
         return TEX_FORMAT_BGRA8_UNORM_SRGB;
+    case PixelFormat::bc1_unorm:
+        return TEX_FORMAT_BC1_UNORM;
     case PixelFormat::bc1_unorm_srgb:
         return TEX_FORMAT_BC1_UNORM_SRGB;
+    case PixelFormat::bc2_unorm:
+        return TEX_FORMAT_BC2_UNORM;
     case PixelFormat::bc2_unorm_srgb:
         return TEX_FORMAT_BC2_UNORM_SRGB;
+    case PixelFormat::bc3_unorm:
+        return TEX_FORMAT_BC3_UNORM;
     case PixelFormat::bc3_unorm_srgb:
         return TEX_FORMAT_BC3_UNORM_SRGB;
     }
@@ -574,7 +584,7 @@ class Renderer::Impl
     };
 
 public:
-    Impl(const std::any& window)
+    Impl(const std::any& window, ColorSpace color_space)
     {
         SetDebugMessageCallback(diligent_debug_message_callback);
         const auto native_window = get_native_window(window);
@@ -588,7 +598,9 @@ public:
 #endif
         factory->CreateDeviceAndContextsD3D11(engine_ci, &m_device, &m_context);
 
-        SwapChainDesc      swapchain_desc;
+        SwapChainDesc swapchain_desc;
+        swapchain_desc.ColorBufferFormat =
+            to_texture_format(to_color_space(PixelFormat::r8g8b8a8_unorm_srgb, color_space));
         FullScreenModeDesc fullscreenmode_desc;
         factory->CreateSwapChainD3D11(m_device, m_context, swapchain_desc, fullscreenmode_desc,
                                       native_window, &m_swapchain);
@@ -1381,7 +1393,10 @@ private:
     DynamicLightDesc m_dynamic_light_desc{};
 };
 
-Renderer::Renderer(const std::any& window) : m_impl(std::make_unique<Impl>(window)) {}
+Renderer::Renderer(const std::any& window, ColorSpace color_space)
+    : m_impl(std::make_unique<Impl>(window, color_space))
+{
+}
 
 Renderer::~Renderer() = default;
 

@@ -4,6 +4,8 @@
 
 namespace khepri {
 
+class ColorSRGBA;
+
 /**
  * \brief An RGBA color
  *
@@ -49,6 +51,14 @@ public:
         : r(c.r), g(c.g), b(c.b), a(fa)
     {
     }
+
+    /**
+     * Constructs a ColorRGBA from a ColorSRGBA by performing sRGB-to-linear conversion (except for
+     * the alpha component).
+     *
+     * \note the components of the resulting color are in the domain [0,1].
+     */
+    explicit constexpr ColorRGBA(const ColorSRGBA& c) noexcept;
 
     /// Adds color \a c to the vector
     ColorRGBA& operator+=(const ColorRGBA& c) noexcept
