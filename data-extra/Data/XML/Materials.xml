@@ -21,8 +21,11 @@
     <Material Name="MeshBumpColorize" Type="Opaque">
         <Shader>MeshBumpColorize</Shader>
         <Num_Directional_Lights>3</Num_Directional_Lights>
-        <Param Name="Colorization" Type="float3">1, 1, 1</Param>
+        <Param Name="Emissive" Type="float3">0, 0, 0</Param>
         <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
+        <Param Name="Specular" Type="float3">1, 1, 1</Param>
+        <Param Name="Colorization" Type="float3">0, 1, 0</Param>
+        <Param Name="UVOffset" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
         <Param Name="NormalTexture" Type="texture"></Param>
     </Material>
@@ -33,7 +36,6 @@
         <Param Name="Emissive" Type="float3">0, 0, 0</Param>
         <Param Name="Diffuse" Type="float3">1, 1, 1</Param>
         <Param Name="Specular" Type="float3">0, 0, 0</Param>
-        <Param Name="Shininess" Type="float">1</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
     </Material>
 

@@ -48,6 +48,12 @@ cbuffer EnvironmentConstants
     float Time;
 };
 
+// Returns the camera position, in world space
+float3 camera_position() {
+    // The line below basically does "ViewProjInv.transform_coord({0,0,0})"
+    return ViewProjInv[3].xyz / ViewProjInv[3].w;
+}
+
 // Encodes a (assumed normalized) vector for storage in a TEXCOORD attribute
 float3 encode_vector(float3 vec)
 {
@@ -89,9 +95,9 @@ float3x3 to_tangent_matrix(float3 tangent, float3 binormal, float3 normal)
 }
 
 // Compute the light half-angle vector (for specular calculation).
-float3 light_half_angle(float3 vertex_pos, float3 eye_pos, float3 light_pos)
+// All vectors must be in the same space.
+float3 light_half_angle(float3 vertex_pos, float3 eye_pos, float3 light_dir)
 {
     float3 V = normalize(eye_pos - vertex_pos); // vector from vertex to eye
-    float3 L = normalize(light_pos - vertex_pos); // vector from vertex to light source
-    return normalize(V + L);
+    return normalize(V + light_dir);
 }
