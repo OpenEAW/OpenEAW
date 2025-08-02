@@ -50,10 +50,11 @@ static_assert(sizeof(InstanceConstantBuffer) == 8 * 16); // Validate packing
 
 struct ViewConstantBuffer
 {
+    Matrixf view;
     Matrixf view_proj;
     Matrixf view_proj_inv;
 };
-static_assert(sizeof(ViewConstantBuffer) == 8 * 16); // Validate packing
+static_assert(sizeof(ViewConstantBuffer) == 12 * 16); // Validate packing
 
 struct DirectionalLight
 {
@@ -980,6 +981,7 @@ public:
         {
             MapHelper<ViewConstantBuffer> constants(m_context, m_constants.view, MAP_WRITE,
                                                     MAP_FLAG_DISCARD);
+            constants->view          = camera_matrices.view;
             constants->view_proj     = camera_matrices.view_proj;
             constants->view_proj_inv = camera_matrices.view_proj_inv;
         }

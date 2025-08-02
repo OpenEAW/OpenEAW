@@ -5,12 +5,15 @@
 cbuffer Material
 {
     float3 Emissive;
-    float3 Diffuse;
+    float4 Diffuse;
     float3 Specular;
 };
 
 Texture2D BaseTexture;
 SamplerState BaseTextureSampler;
+
+Texture2D GlossTexture;
+SamplerState GlossTextureSampler;
 
 ////////////////////////////////////////////////
 
@@ -25,9 +28,10 @@ struct VS_OUTPUT
 {
     float4 Pos : SV_Position; // Position (camera space)
     float2 UV : TEXCOORD1; // Texture coordinates (tangent space)
-    float3 Diffuse: COLOR0;
+    float4 Diffuse: COLOR0;
     float3 Spec: COLOR1;
 };
+
 
 VS_OUTPUT vs_main(VS_INPUT_MESH In)
 {
@@ -47,7 +51,7 @@ VS_OUTPUT vs_main(VS_INPUT_MESH In)
 
     Out.Pos = mul(world_pos, ViewProj);
     Out.UV = In.UV;
-    Out.Diffuse = Diffuse * diff_light + Emissive;
+    Out.Diffuse = float4(Diffuse.rgb * diff_light + Emissive, Diffuse.a);
     Out.Spec = Specular * DirectionalLights[0].intensity * DirectionalLights[0].specular_color * pow(max(0, dot(world_normal, light_half_vec)), 16);
     return Out;
 }
@@ -55,7 +59,8 @@ VS_OUTPUT vs_main(VS_INPUT_MESH In)
 float4 ps_main(VS_OUTPUT In) : SV_Target
 {
     float4 base_texel = BaseTexture.Sample(BaseTextureSampler, In.UV);
-    float3 diffuse = In.Diffuse * base_texel.rgb * 2;
-    float3 specular = In.Spec * base_texel.a;
-    return float4(diffuse + specular, 1);
+    float4 gloss_texel = GlossTexture.Sample(GlossTextureSampler, In.UV);
+    float4 diffuse = base_texel * In.Diffuse;
+    float3 spec = In.Spec.rgb * gloss_texel.r;
+    return float4(diffuse.rgb * 2 + spec, diffuse.a);
 }
