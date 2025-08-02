@@ -247,23 +247,26 @@ class Renderer::Impl
                 throw ArgumentError();
             }
 
-            const auto& property_size = [](const MaterialDesc::PropertyValue& value) -> Uint32 {
-                // Every type has its own size, except for textures, which don't take up space.
-                return std::visit(
-                    Overloaded{[&](khepri::renderer::Texture* /*texture*/) -> Uint32 { return 0; },
-                               [&](const auto& value) -> Uint32 { return sizeof(value); }},
-                    value);
-            };
-
             Uint32 buffer_size = 0;
             m_params.reserve(desc.properties.size());
             for (const auto& p : desc.properties) {
-                m_params.push_back({p.name, p.default_value, buffer_size});
-                buffer_size += property_size(p.default_value);
-                // Align next parameter to 16 bytes
+                // Every type has its own size, except for textures, which don't take up space.
+                const auto property_size = std::visit(
+                    Overloaded{[&](const khepri::renderer::Texture*) -> Uint32 { return 0; },
+                               [&](const auto& value) -> Uint32 { return sizeof(value); }},
+                    p.default_value);
+
                 constexpr auto param_alignment = 16;
-                buffer_size =
-                    (buffer_size + param_alignment - 1) / param_alignment * param_alignment;
+                const auto     remaining_size  = param_alignment - (buffer_size % param_alignment);
+                if (property_size > remaining_size) {
+                    // The next property doesn't fit in the remaining space in this alignment
+                    // 'block'. Align parameter to multiple of 16 bytes.
+                    buffer_size =
+                        (buffer_size + param_alignment - 1) / param_alignment * param_alignment;
+                }
+
+                m_params.push_back({p.name, p.default_value, buffer_size});
+                buffer_size += property_size;
             }
 
             // Create the material properties buffer
