@@ -45,7 +45,7 @@ Scene::Scene(AssetCache& asset_cache, const GameObjectTypeStore& game_object_typ
     m_dynamic_lights.directional_lights.reserve(m_environment.lights.size());
     for (const auto& light : m_environment.lights) {
         m_dynamic_lights.directional_lights.push_back(
-            {-light.from_direction, 1.0, light.color, light.specular_color});
+            {-light.from_direction, light.intensity, light.color, light.specular_color});
     }
 }
 
