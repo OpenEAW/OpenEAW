@@ -19,6 +19,7 @@ public:
      * Constructs the Diligent-based renderer.
      *
      * \param[in] window the native window to create the renderer in
+     * \param[in] color_space the color space for the output buffer.
      *
      * \throws khepri::ArgumentError if \a window does not contain the expected type
      * \throws khepri::renderer::Error if the renderer could not be created
@@ -27,8 +28,12 @@ public:
      * - Windows: a HWND is expected.
      * - Linux:   a std::tuple<void*, std::uint32_t> is expected where the first element is
      *            the X11 display pointer and the second element is the X11 window ID.
+     *
+     * The \a color_space argument matters to determine if gamma conversion is to be performed on
+     * the rendered pixels. If the color space is srgb, gamma conversion will be performed. In
+     * linear mode, the shader logic has to make sure the pixels are suitably converted for display.
      */
-    Renderer(const std::any& window);
+    Renderer(const std::any& window, ColorSpace color_space);
     ~Renderer() override;
 
     Renderer(const Renderer&)            = delete;

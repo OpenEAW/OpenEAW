@@ -1,5 +1,8 @@
 #pragma once
 
+#include <khepri/math/color_rgba.hpp>
+#include <khepri/math/color_srgba.hpp>
+
 #include <gsl/gsl-lite.hpp>
 
 #include <cassert>
@@ -45,34 +48,37 @@ enum class TextureDimension : std::uint8_t
 enum class PixelFormat : std::uint8_t
 {
     /**
-     * Four-component unsigned-normalized-integer format with 8 bits for R, G, B and A. Color data
-     * is in sRGB space.
+     * Four-component unsigned-normalized-integer format with 8 bits for R, G, B and A.
      */
+    r8g8b8a8_unorm,
     r8g8b8a8_unorm_srgb,
+    b8g8r8a8_unorm,
     b8g8r8a8_unorm_srgb,
 
     /**
      * Four-component unsigned-normalized-integer block-compression format with 5 bits for R, 6 bits
      * for G, 5 bits for B, and 0 or 1 bit for A channel. The pixel data is encoded using 8 bytes
-     * per 4x4 block (4 bits per pixel) providing 1:8 compression ratio against RGBA8 format. Color
-     * data is in sRGB space.
+     * per 4x4 block (4 bits per pixel) providing 1:8 compression ratio against RGBA8 format.
      */
+    bc1_unorm,
     bc1_unorm_srgb,
 
     /**
      * Four-component unsigned-normalized-integer block-compression format with 5 bits for R, 6 bits
      * for G, 5 bits for B, and 4 bits for low-coherent separate A channel. The pixel data is
      * encoded using 16 bytes per 4x4 block (8 bits per pixel) providing 1:4 compression ratio
-     * against RGBA8 format. Color data is in sRGB space.
+     * against RGBA8 format.
      */
+    bc2_unorm,
     bc2_unorm_srgb,
 
     /**
      * Four-component unsigned-normalized-integer block-compression format with 5 bits for R, 6 bits
      * for G, 5 bits for B, and 8 bits for highly-coherent A channel. The pixel data is encoded
      * using 16 bytes per 4x4 block (8 bits per pixel) providing 1:4 compression ratio against RGBA8
-     * format. Color data is in sRGB space.
+     * format.
      */
+    bc3_unorm,
     bc3_unorm_srgb,
 };
 
@@ -229,7 +235,26 @@ public:
         return mip_level + (array_index * m_mip_levels);
     }
 
+    /**
+     * Unpacks the texture and returns the pixel data in linear space for a given subresource.
+     *
+     * The subresource index can be calculated with #subresource_index().
+     * If the texture stores data in sRGB space, the pixel data is converted.
+     */
+    std::vector<ColorRGBA> pixels_linear(int subresource_index) const noexcept;
+
+    /**
+     * Unpacks the texture and returns the pixel data in srgb space for a given subresource.
+     *
+     * The subresource index can be calculated with #subresource_index().
+     * If the texture stores data in linear space, the pixel data is converted.
+     */
+    std::vector<ColorSRGBA> pixels_srgb(int subresource_index) const noexcept;
+
 private:
+    template <typename T>
+    std::vector<T> pixels_generic(int subresource_index) const noexcept;
+
     TextureDimension          m_dimension;
     unsigned long             m_width;
     unsigned long             m_height;
@@ -239,5 +264,27 @@ private:
     std::vector<Subresource>  m_subresources;
     std::vector<std::uint8_t> m_data;
 };
+
+/// Color space
+enum class ColorSpace
+{
+    /// sRGB color space (gamma compressed)
+    srgb,
+
+    /// Linear color space (not gamma compressed)
+    linear,
+};
+
+/**
+ * Returns the color space of the pixel format.
+ */
+ColorSpace color_space(PixelFormat format);
+
+/**
+ * Converts the pixel format to the equivalent format in the specified color space.
+ *
+ * If the format is already in that color space, just returns the input.
+ */
+PixelFormat to_color_space(PixelFormat format, ColorSpace color_space);
 
 } // namespace khepri::renderer

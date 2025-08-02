@@ -32,7 +32,11 @@ auto create_texture_loader(AssetLoader& asset_loader, khepri::renderer::Renderer
 {
     return [&](std::string_view name) -> std::unique_ptr<khepri::renderer::Texture> {
         if (auto stream = asset_loader.open_texture(name)) {
-            auto texture_desc = khepri::renderer::io::load_texture(*stream);
+            // Older games that do not support extended pixel format information are generally read
+            // in linear space, because their graphics APIs (e.g. DX9) lacked the notion of sRGB
+            // textures.
+            auto texture_desc =
+                khepri::renderer::io::load_texture(*stream, {khepri::renderer::ColorSpace::linear});
             return renderer.create_texture(texture_desc);
         }
         return {};

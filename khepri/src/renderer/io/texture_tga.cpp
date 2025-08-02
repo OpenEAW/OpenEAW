@@ -127,7 +127,7 @@ bool is_texture_tga(khepri::io::Stream& stream)
     }
 }
 
-TextureDesc load_texture_tga(khepri::io::Stream& stream)
+TextureDesc load_texture_tga(khepri::io::Stream& stream, const TextureLoadOptions& options)
 {
     assert(stream.readable() && stream.seekable());
 
@@ -193,8 +193,13 @@ TextureDesc load_texture_tga(khepri::io::Stream& stream)
     std::vector<TextureDesc::Subresource> subresources{
         {0, data.size(), header.image_width * header.image_bpp / 8U, data.size()}};
 
-    return {TextureDimension::texture_2d,     header.image_width,      header.image_height, 0, 1,
-            PixelFormat::r8g8b8a8_unorm_srgb, std::move(subresources), std::move(data)};
+    // Targa doesn't store color space information, so we use the default from the provided options.
+    const auto pixel_format =
+        to_color_space(PixelFormat::r8g8b8a8_unorm_srgb, options.default_color_space);
+
+    return {
+        TextureDimension::texture_2d, header.image_width, header.image_height, 0, 1, pixel_format,
+        std::move(subresources),      std::move(data)};
 }
 
 void save_texture_tga(khepri::io::Stream& stream, const TextureDesc& texture_desc,

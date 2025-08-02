@@ -57,7 +57,7 @@ VS_OUTPUT vs_main(VS_INPUT_MESH In)
 float4 ps_main(VS_OUTPUT In) : SV_Target
 {
 	float4 base_texel = BaseTexture.Sample(BaseTextureSampler, In.UV);
-	float3 diffuse = In.Diffuse * base_texel.rgb;
+	float3 diffuse = In.Diffuse * base_texel.rgb * 2;
 	float3 specular = In.Spec * base_texel.a;
 	return float4(diffuse + specular, 1);
 }

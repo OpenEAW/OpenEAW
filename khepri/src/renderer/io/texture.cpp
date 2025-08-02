@@ -5,11 +5,11 @@ namespace khepri::renderer::io {
 
 // DirectDraw surface
 extern bool        is_texture_dds(khepri::io::Stream& stream);
-extern TextureDesc load_texture_dds(khepri::io::Stream& stream);
+extern TextureDesc load_texture_dds(khepri::io::Stream& stream, const TextureLoadOptions& options);
 
 // TrueVision TGA
 extern bool        is_texture_tga(khepri::io::Stream& stream);
-extern TextureDesc load_texture_tga(khepri::io::Stream& stream);
+extern TextureDesc load_texture_tga(khepri::io::Stream& stream, const TextureLoadOptions& options);
 extern void        save_texture_tga(khepri::io::Stream& stream, const TextureDesc& texture_desc,
                                     const TextureSaveOptions& options);
 
@@ -21,12 +21,12 @@ struct FormatFuncs
     bool (*check_func)(khepri::io::Stream&);
 
     // Loads a texture in this format from stream
-    TextureDesc (*load_func)(khepri::io::Stream&);
+    TextureDesc (*load_func)(khepri::io::Stream&, const TextureLoadOptions& options);
 };
 
 } // namespace
 
-TextureDesc load_texture(khepri::io::Stream& stream)
+TextureDesc load_texture(khepri::io::Stream& stream, const TextureLoadOptions& options)
 {
     if (!stream.readable() || !stream.seekable()) {
         throw ArgumentError();
@@ -39,7 +39,7 @@ TextureDesc load_texture(khepri::io::Stream& stream)
         stream.seek(0, khepri::io::SeekOrigin::begin);
         if (format.check_func(stream)) {
             stream.seek(0, khepri::io::SeekOrigin::begin);
-            return format.load_func(stream);
+            return format.load_func(stream, options);
         }
     }
     throw khepri::io::InvalidFormatError();
