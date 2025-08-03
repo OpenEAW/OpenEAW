@@ -1,3 +1,5 @@
+#include "graphics_pipeline_options.hpp"
+
 #include <khepri/log/log.hpp>
 
 #include <openglyph/parser/parsers.hpp>
@@ -60,6 +62,7 @@ auto load_material(const openglyph::XmlParser::Node& node)
     material_desc.num_directional_lights =
         parse<int>(optional_child(node, "Num_Directional_Lights", "0"));
     material_desc.num_point_lights = parse<int>(optional_child(node, "Num_Point_Lights", "0"));
+    material_desc.graphics_pipeline_options = parse_graphics_pipeline_options(node);
 
     for (const auto& propnode : node.nodes()) {
         if (propnode.name() == "Param") {

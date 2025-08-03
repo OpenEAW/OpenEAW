@@ -43,6 +43,9 @@ struct MaterialDesc
 
     /// Shader properties of this material
     std::vector<Property> properties;
+
+    /// Graphics pipeline options for this material.
+    khepri::renderer::GraphicsPipelineOptions graphics_pipeline_options;
 };
 
 } // namespace openglyph::renderer

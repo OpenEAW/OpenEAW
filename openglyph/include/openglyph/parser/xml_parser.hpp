@@ -348,7 +348,27 @@ inline std::string_view require_child(const openglyph::XmlParser::Node& node, st
 }
 
 /**
- * Returns the contents of an optional child node with default.
+ * Returns the contents of an optional child node or std::nullopt if it's missing.
+ *
+ * Returns the contents of the node's child that has the specified name. If multiple
+ * children match, returns the first. If no children match, or if the child has children of its own,
+ * returns @a std::nullopt.
+ *
+ * @note the name lookup is case-insensitive.
+ */
+inline std::optional<std::string_view> optional_child(const openglyph::XmlParser::Node& node,
+                                                      std::string_view                  name)
+{
+    if (auto child = node.child(name)) {
+        if (child->nodes().empty()) {
+            return child->value();
+        }
+    }
+    return {};
+}
+
+/**
+ * Returns the contents of an optional child node, or a default value if its missing.
  *
  * Returns the contents of the node's child that has the specified name. If multiple
  * children match, returns the first. If no children match, or if the child has children of its own,
