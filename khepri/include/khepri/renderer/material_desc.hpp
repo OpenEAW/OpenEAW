@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render_pipeline_desc.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
 
@@ -70,6 +71,14 @@ struct MaterialDesc
 
     /// Shader properties of this material
     std::vector<Property> properties;
+
+    /**
+     * Graphics pipeline options for this material.
+     *
+     * This field is used as an override on the options in the #RenderPipelineDesc. See
+     * #GraphicsPipelineOptions for more information.
+     */
+    GraphicsPipelineOptions graphics_pipeline_options;
 };
 
 } // namespace khepri::renderer

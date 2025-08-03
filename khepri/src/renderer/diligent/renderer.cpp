@@ -79,14 +79,42 @@ struct PointLight
 static_assert(sizeof(PointLight) == 3 * 16); // Validate packing
 #pragma pack(pop)
 
-CULL_MODE to_cull_mode(RenderPassDesc::CullMode cull_mode) noexcept
+// Combine the default and override options into a final set of options.
+// All optional members in the result will be set.
+GraphicsPipelineOptions combine_options(const GraphicsPipelineOptions& default_options,
+                                        const GraphicsPipelineOptions& override_options)
+{
+    // Description of the fields in GraphicsPipelineOptions, and their defaults
+    using GPO = GraphicsPipelineOptions;
+    const std::tuple fields{std::tuple(&GPO::cull_mode, GPO::CullMode::back),
+                            std::tuple(&GPO::front_ccw, false),
+                            std::tuple(&GPO::alpha_blend_mode, GPO::AlphaBlendMode::none),
+                            std::tuple(&GPO::depth_enable, true),
+                            std::tuple(&GPO::depth_comparison_func, GPO::ComparisonFunc::less),
+                            std::tuple(&GPO::depth_write_enable, true)};
+
+    GraphicsPipelineOptions combined_options;
+
+    const auto& combine_field = [&](auto& field) {
+        const auto& field_ptr     = std::get<0>(field);
+        const auto& default_value = std::get<1>(field);
+        combined_options.*field_ptr =
+            (override_options.*field_ptr)
+                .value_or((default_options.*field_ptr).value_or(default_value));
+    };
+
+    std::apply([&](const auto&... f) { (combine_field(f), ...); }, fields);
+    return combined_options;
+}
+
+CULL_MODE to_cull_mode(GraphicsPipelineOptions::CullMode cull_mode) noexcept
 {
     switch (cull_mode) {
-    case RenderPassDesc::CullMode::none:
+    case GraphicsPipelineOptions::CullMode::none:
         return CULL_MODE_NONE;
-    case RenderPassDesc::CullMode::back:
+    case GraphicsPipelineOptions::CullMode::back:
         return CULL_MODE_BACK;
-    case RenderPassDesc::CullMode::front:
+    case GraphicsPipelineOptions::CullMode::front:
         return CULL_MODE_FRONT;
     default:
         break;
@@ -141,24 +169,24 @@ TEXTURE_FORMAT to_texture_format(PixelFormat format)
     return TEX_FORMAT_UNKNOWN;
 }
 
-COMPARISON_FUNCTION to_comparison_func(RenderPassDesc::ComparisonFunc func)
+COMPARISON_FUNCTION to_comparison_func(GraphicsPipelineOptions::ComparisonFunc func)
 {
     switch (func) {
-    case RenderPassDesc::ComparisonFunc::never:
+    case GraphicsPipelineOptions::ComparisonFunc::never:
         return COMPARISON_FUNC_NEVER;
-    case RenderPassDesc::ComparisonFunc::less:
+    case GraphicsPipelineOptions::ComparisonFunc::less:
         return COMPARISON_FUNC_LESS;
-    case RenderPassDesc::ComparisonFunc::equal:
+    case GraphicsPipelineOptions::ComparisonFunc::equal:
         return COMPARISON_FUNC_EQUAL;
-    case RenderPassDesc::ComparisonFunc::less_equal:
+    case GraphicsPipelineOptions::ComparisonFunc::less_equal:
         return COMPARISON_FUNC_LESS_EQUAL;
-    case RenderPassDesc::ComparisonFunc::greater:
+    case GraphicsPipelineOptions::ComparisonFunc::greater:
         return COMPARISON_FUNC_GREATER;
-    case RenderPassDesc::ComparisonFunc::not_equal:
+    case GraphicsPipelineOptions::ComparisonFunc::not_equal:
         return COMPARISON_FUNC_NOT_EQUAL;
-    case RenderPassDesc::ComparisonFunc::greater_equal:
+    case GraphicsPipelineOptions::ComparisonFunc::greater_equal:
         return COMPARISON_FUNC_GREATER_EQUAL;
-    case RenderPassDesc::ComparisonFunc::always:
+    case GraphicsPipelineOptions::ComparisonFunc::always:
         return COMPARISON_FUNC_ALWAYS;
     }
     assert(false);
@@ -251,6 +279,7 @@ class Renderer::Impl
             , m_type(desc.type)
             , m_num_directional_lights(desc.num_directional_lights)
             , m_num_point_lights(desc.num_point_lights)
+            , m_graphics_pipeline_options(desc.graphics_pipeline_options)
             , m_shader(copy_shader(desc.shader))
             , m_dynamic_variables(determine_dynamic_material_variables(m_shader, desc.properties))
         {
@@ -326,34 +355,35 @@ class Renderer::Impl
             ci.GraphicsPipeline.RTVFormats[0]    = m_swapchain.GetDesc().ColorBufferFormat;
             ci.GraphicsPipeline.DSVFormat        = m_swapchain.GetDesc().DepthBufferFormat;
 
-            switch (desc.alpha_blend_mode) {
-            case RenderPassDesc::AlphaBlendMode::additive:
+            const auto combined_options = combine_options(desc.default_graphics_pipeline_options,
+                                                          m_graphics_pipeline_options);
+
+            switch (*combined_options.alpha_blend_mode) {
+            case GraphicsPipelineOptions::AlphaBlendMode::additive:
                 ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = true;
                 ci.GraphicsPipeline.BlendDesc.RenderTargets[0].SrcBlend    = BLEND_FACTOR_ONE;
                 ci.GraphicsPipeline.BlendDesc.RenderTargets[0].DestBlend   = BLEND_FACTOR_ONE;
                 ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendOp     = BLEND_OPERATION_ADD;
                 break;
-            case RenderPassDesc::AlphaBlendMode::blend_src:
+            case GraphicsPipelineOptions::AlphaBlendMode::blend_src:
                 ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = true;
                 ci.GraphicsPipeline.BlendDesc.RenderTargets[0].SrcBlend    = BLEND_FACTOR_SRC_ALPHA;
                 ci.GraphicsPipeline.BlendDesc.RenderTargets[0].DestBlend =
                     BLEND_FACTOR_INV_SRC_ALPHA;
                 ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendOp = BLEND_OPERATION_ADD;
                 break;
-            case RenderPassDesc::AlphaBlendMode::none:
+            case GraphicsPipelineOptions::AlphaBlendMode::none:
                 ci.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = false;
                 break;
             }
-            if (desc.depth_buffer) {
-                ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = true;
-                ci.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable =
-                    desc.depth_buffer->write_enable;
-                ci.GraphicsPipeline.DepthStencilDesc.DepthFunc =
-                    to_comparison_func(desc.depth_buffer->comparison_func);
-            } else {
-                ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = false;
-            }
-            ci.GraphicsPipeline.RasterizerDesc.CullMode = to_cull_mode(desc.cull_mode);
+
+            ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = *combined_options.depth_enable;
+            ci.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable =
+                *combined_options.depth_write_enable;
+            ci.GraphicsPipeline.DepthStencilDesc.DepthFunc =
+                to_comparison_func(*combined_options.depth_comparison_func);
+            ci.GraphicsPipeline.RasterizerDesc.CullMode = to_cull_mode(*combined_options.cull_mode);
+            ci.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
 
             static_assert(sizeof(MeshDesc::Vertex) < std::numeric_limits<Uint32>::max(),
                           "Vertex is too large");
@@ -537,6 +567,9 @@ class Renderer::Impl
         // The material light count
         int m_num_directional_lights;
         int m_num_point_lights;
+
+        // The material's graphics pipeline options
+        GraphicsPipelineOptions m_graphics_pipeline_options;
 
         // The material's original shader
         Shader m_shader;

@@ -1,31 +1,23 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace khepri::renderer {
 
 /**
- * Description of a render pass in a pipeline.
+ * Options to configure the graphics pipeline with.
  *
- * A render pass renders meshes in a certain way.
+ * All properties are optional because this type is re-used by #RenderPipelineDesc and
+ * #MaterialDesc, where the latter's options can override the former's.
+ *
+ * The renderer has built-in defaults if both the render pipeline and material don't specify the
+ * option. The defaults are specified in the comments for each property.
  */
-struct RenderPassDesc
+struct GraphicsPipelineOptions
 {
-    /// How to sort objects by depth during this render pass
-    enum class DepthSorting : std::uint8_t
-    {
-        /// Objects are rendered in arbitrary order.
-        none,
-
-        /// Objects are rendered front-to-back, i.e. those closer to the camera are rendered first.
-        front_to_back,
-
-        /// Objects are rendered back-to-front, i.e. those closer to the camera are rendered last.
-        back_to_front,
-    };
-
     /// The type of face culling
     enum class CullMode : std::uint8_t
     {
@@ -60,31 +52,55 @@ struct RenderPassDesc
         additive,
     };
 
-    struct DepthBufferDesc
-    {
-        /// Depth test comparison function, if any.
-        /// Set to \a std::nullopt to disable depth testing.
-        ComparisonFunc comparison_func{ComparisonFunc::less};
+    /// Face culling mode of this render pass (default=back).
+    std::optional<CullMode> cull_mode;
 
-        /// Enable depth-buffer writing
-        bool write_enable{true};
+    /// Do front-faces have counter-clockwise winding order? If not, they have clock-wise winding
+    /// order (default=false)
+    std::optional<bool> front_ccw;
+
+    /// Type of alpha blending to use for this render pass (default=none).
+    std::optional<AlphaBlendMode> alpha_blend_mode;
+
+    /// Whether depth buffer interactions are enabled (default=true).
+    std::optional<bool> depth_enable;
+
+    /// Depth-buffer test comparison function (default=less). Ignored if \a depth_enable is false.
+    std::optional<ComparisonFunc> depth_comparison_func;
+
+    /// Whether to enable depth-buffer writing (default=true). Ignored if \a depth_enable is false.
+    std::optional<bool> depth_write_enable;
+};
+
+/**
+ * Description of a render pass in a pipeline.
+ *
+ * A render pass renders meshes in a certain way.
+ */
+struct RenderPassDesc
+{
+    /// How to sort objects by depth during this render pass
+    enum class DepthSorting : std::uint8_t
+    {
+        /// Objects are rendered in arbitrary order.
+        none,
+
+        /// Objects are rendered front-to-back, i.e. those closer to the camera are rendered first.
+        front_to_back,
+
+        /// Objects are rendered back-to-front, i.e. those closer to the camera are rendered last.
+        back_to_front,
     };
 
     /// The type of materials to render in this pass. Must match
     /// #khepri::renderer::MaterialDesc::type.
     std::string material_type;
 
-    /// Face culling mode of this render pass.
-    CullMode cull_mode{CullMode::none};
-
     /// How to depth-sort the objects assigned to this render pass.
     DepthSorting depth_sorting{DepthSorting::none};
 
-    /// Type of alpha blending to use for this render pass.
-    AlphaBlendMode alpha_blend_mode{AlphaBlendMode::none};
-
-    /// Depth-buffer settings to use for this render pass.
-    std::optional<DepthBufferDesc> depth_buffer;
+    /// Default values for the graphics pipeline options. Materials can override these.
+    GraphicsPipelineOptions default_graphics_pipeline_options;
 };
 
 /**

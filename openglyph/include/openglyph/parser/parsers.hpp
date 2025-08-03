@@ -51,12 +51,36 @@ struct Parser
     static std::optional<T> parse(std::string_view) = delete;
 };
 
+/**
+ * Attempts to parse @a str as type @a T.
+ *
+ * Returns @a std::nullopt if @a str cannot be parsed as @a T.
+ */
 template <typename T>
 std::optional<T> try_parse(std::string_view str)
 {
     return Parser<T>::parse(khepri::trim(str));
 }
 
+/**
+ * Attempts to parse @a *str as type @a T, if @a str has a value.
+ *
+ * Returns @a std::nullopt if @a str does not have a value, or cannot be parsed as @a T.
+ */
+template <typename T>
+std::optional<T> try_parse(const std::optional<std::string_view>& str)
+{
+    if (str) {
+        return try_parse<T>(*str);
+    }
+    return {};
+}
+
+/**
+ * Parse @a str as type @a T.
+ *
+ * Throws openglyph::ParseError if @str cannot be parsed as @a T.
+ */
 template <typename T>
 T parse(std::string_view str)
 {
@@ -65,6 +89,21 @@ T parse(std::string_view str)
         throw ParseError("\"" + std::string(str) + "\" is not a valid value");
     }
     return *val;
+}
+
+/**
+ * Parse @a *str as type @a T, if @a str has a value.
+ *
+ * Returns @a std::nullopt if @a str does not have a value, or openglyph::ParseError if it does but
+ * cannot be parsed as @a T.
+ */
+template <typename T>
+std::optional<T> parse(const std::optional<std::string_view>& str)
+{
+    if (str) {
+        return parse<T>(*str);
+    }
+    return {};
 }
 
 //

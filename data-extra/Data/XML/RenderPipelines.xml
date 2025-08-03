@@ -6,8 +6,12 @@
             <Material_Type>Opaque</Material_Type>
             <!-- Sort front-to-back to minimize overdraw -->
             <Depth_Sort>front_to_back</Depth_Sort>
-            <AlphaBlend>blend_src</AlphaBlend>
-            <DepthFunc>less_equal</DepthFunc>
+
+            <!-- Default pipeline properties. Materials can override these. -->
+            <Front_CCW>true</Front_CCW>
+            <Cull_Mode>back</Cull_Mode>
+            <Alpha_Blend>blend_src</Alpha_Blend>
+            <Depth_Func>less_equal</Depth_Func>
         </RenderPass>
 
         <!-- Render phase for all transparent objects. This is rendered after the solids to allow alpha-blending effects to work -->
@@ -15,9 +19,13 @@
             <Material_Type>Transparent</Material_Type>
             <!-- Sort back-to-front to ensure alpha blending works correctly -->
             <Depth_Sort>back_to_front</Depth_Sort>
-            <AlphaBlend>additive</AlphaBlend>
-            <DepthFunc>less_equal</DepthFunc>
-            <DepthWriteEnable>false</DepthWriteEnable>
+
+            <!-- Default pipeline properties. Materials can override these. -->
+            <Front_CCW>true</Front_CCW>
+            <Cull_Mode>back</Cull_Mode>
+            <Alpha_Blend>blend_src</Alpha_Blend>
+            <Depth_Func>less_equal</Depth_Func>
+            <Depth_Write_Enable>false</Depth_Write_Enable>
         </RenderPass>
     </RenderPipeline>
 </RenderPipelines>

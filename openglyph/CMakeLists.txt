@@ -18,6 +18,7 @@ add_library(${PROJECT_NAME}
     src/io/chunk_reader.cpp
     src/io/mega_filesystem.cpp
     src/io/mega_file.cpp
+    src/renderer/io/graphics_pipeline_options.cpp
     src/renderer/io/material.cpp
     src/renderer/io/model.cpp
     src/renderer/io/render_pipeline.cpp

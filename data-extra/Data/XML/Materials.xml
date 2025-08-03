@@ -75,6 +75,9 @@
         <Param Name="Color" Type="float3">1, 0, 1</Param>
         <Param Name="UVScrollRate" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
+
+        <!-- Override default pipeline properties -->
+        <Alpha_Blend>additive</Alpha_Blend>
     </Material>
 
     <Material Name="MeshAdditiveVColor" Type="Transparent">
@@ -82,6 +85,9 @@
         <Num_Directional_Lights>0</Num_Directional_Lights>
         <Param Name="UVScrollRate" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
+
+        <!-- Override default pipeline properties -->
+        <Alpha_Blend>additive</Alpha_Blend>
     </Material>
 
     <Material Name="MeshSolidColor" Type="Opaque">
@@ -98,6 +104,9 @@
         <Param Name="TFreq" Type="float">0.05f</Param>
         <Param Name="UVScrollRate" Type="float2">0, 0</Param>
         <Param Name="BaseTexture" Type="texture"></Param>
+
+        <!-- Override default pipeline properties -->
+        <Alpha_Blend>additive</Alpha_Blend>
     </Material>
 
     <Material Name="Planet" Type="Opaque">
