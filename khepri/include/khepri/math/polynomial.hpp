@@ -2,6 +2,8 @@
 
 #include "point.hpp"
 
+#include <khepri/math/math.hpp>
+
 #include <gsl/gsl-lite.hpp>
 
 #include <array>
@@ -9,6 +11,9 @@
 #include <vector>
 
 namespace khepri {
+namespace detail {
+std::vector<double> solve_polynomial(double y, gsl::span<const double> coefficients);
+}
 
 /**
  * \brief A generic N-degree polynomial
@@ -35,6 +40,19 @@ struct Polynomial
             y = coefficients[i - 1] + x * y;
         }
         return y;
+    }
+
+    /**
+     * @brief Returns all real x values (sorted ascending) that, when passed to #sample(), results
+     * in the given @a y.
+     *
+     * @note this method only works for polynomials of degree less than five (see the Abel-Ruffini
+     * theorem).
+     */
+    [[nodiscard]] constexpr std::vector<double> solve(double y) const
+    {
+        static_assert(Degree < 5);
+        return detail::solve_polynomial(y, coefficients);
     }
 
     /**
@@ -82,6 +100,14 @@ struct QuadraticPolynomial : public Polynomial<2>
  * Cubic polynomials are defined as y = a + b·x + c·x² + d·x³.
  */
 struct CubicPolynomial : public Polynomial<3>
+{};
+
+/**
+ * @brief A fourth-degree (quartic) polynomial
+ *
+ * Quartic polynomials are defined as y = a + b·x + c·x² + d·x³ + e·x⁴.
+ */
+struct QuarticPolynomial : public Polynomial<4>
 {};
 
 } // namespace khepri

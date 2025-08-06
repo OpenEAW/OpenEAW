@@ -2,6 +2,7 @@
 #include <khepri/utility/string.hpp>
 
 #include <gsl/gsl-lite.hpp>
+#include <openglyph/game/behaviors/marker_behavior.hpp>
 #include <openglyph/game/game_object_type_store.hpp>
 #include <openglyph/parser/parsers.hpp>
 
@@ -35,6 +36,14 @@ GameObjectType* GameObjectTypeStore::read_game_object_type(const XmlParser::Node
     type->space_model_name = copy_string(optional_child(node, "Space_Model_Name", ""sv));
     type->scale_factor     = optional_child(node, "Scale_Factor", 1.0);
     type->is_in_background = optional_child(node, "In_Background", false);
+
+    if (auto behavior_str = optional_child(node, "Behavior")) {
+        for (const auto behavior : khepri::split(*behavior_str, ", \t\r\n")) {
+            if (khepri::case_insensitive_equals(behavior, "MARKER")) {
+                type->is_marker = true;
+            }
+        }
+    }
     return type;
 }
 

@@ -18,6 +18,7 @@
 #include <openglyph/assets/asset_cache.hpp>
 #include <openglyph/assets/asset_loader.hpp>
 #include <openglyph/assets/io/map.hpp>
+#include <openglyph/game/behaviors/marker_behavior.hpp>
 #include <openglyph/game/behaviors/render_behavior.hpp>
 #include <openglyph/game/game_object_type_store.hpp>
 #include <openglyph/game/scene.hpp>
@@ -117,7 +118,8 @@ auto create_camera(const khepri::Size& render_size)
 std::unique_ptr<openglyph::Scene>
 CreateScene(std::string_view map_name, openglyph::AssetLoader& asset_loader,
             openglyph::AssetCache&                asset_cache,
-            const openglyph::GameObjectTypeStore& game_object_types)
+            const openglyph::GameObjectTypeStore& game_object_types,
+            khepri::game::RtsCameraController&    camera)
 {
     if (auto stream = asset_loader.open_map(map_name)) {
         const auto             map = openglyph::io::read_map(*stream);
@@ -131,8 +133,12 @@ CreateScene(std::string_view map_name, openglyph::AssetLoader& asset_loader,
             std::make_unique<openglyph::Scene>(asset_cache, game_object_types, environment);
 
         for (const auto& obj : map.objects) {
-            if (auto type = game_object_types.get(obj.type_crc)) {
+            if (const auto* type = game_object_types.get(obj.type_crc)) {
                 auto object = std::make_shared<khepri::scene::SceneObject>();
+
+                // Store a (dumb, non-owning) reference to the GameObjectType
+                object->user_data(type);
+
                 if (const auto* render_model =
                         asset_cache.get_render_model(type->space_model_name)) {
                     auto& behavior =
@@ -142,11 +148,28 @@ CreateScene(std::string_view map_name, openglyph::AssetLoader& asset_loader,
                         behavior.render_layer(openglyph::RenderBehavior::RenderLayer::background);
                     }
                 }
+
+                if (type->is_marker) {
+                    object->create_behavior<openglyph::MarkerBehavior>();
+                }
+
                 object->rotation(obj.facing);
                 object->position(obj.position);
                 scene->add_object(std::move(object));
             }
         }
+
+        // Find the first "player 0" marker to place the camera at.
+        for (const auto& object : scene->objects<openglyph::MarkerBehavior>()) {
+            if (const auto** type_ptr = object->user_data<const openglyph::GameObjectType*>()) {
+                if (khepri::case_insensitive_equals((*type_ptr)->name,
+                                                    "Player_0_Spawn_Point_Marker")) {
+                    camera.target({object->position().x, object->position().y});
+                    break;
+                }
+            }
+        }
+
         return scene;
     }
     return {};
@@ -223,8 +246,8 @@ int main(int argc, const char* argv[])
         openglyph::ui::TacticalModeInputHandler tactical_mode_input_handler(rts_camera, window);
         input_event_generator.AddEventHandler(&tactical_mode_input_handler);
 
-        std::unique_ptr<openglyph::Scene> scene =
-            CreateScene("_MP_SPACE_ALDERAAN", asset_loader, asset_cache, game_object_types);
+        std::unique_ptr<openglyph::Scene> scene = CreateScene(
+            "_MP_SPACE_ALDERAAN", asset_loader, asset_cache, game_object_types, rts_camera);
 
         auto render_pipeline = asset_cache.get_render_pipeline("Default");
         if (!render_pipeline) {

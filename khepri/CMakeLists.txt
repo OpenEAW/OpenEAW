@@ -28,6 +28,7 @@ add_library(${PROJECT_NAME}
     src/io/stream.cpp
     src/log/log.cpp
     src/math/interpolator.cpp
+    src/math/polynomial.cpp
     src/math/spline.cpp
     src/physics/collision_mesh.cpp
     src/renderer/io/kmf.cpp
