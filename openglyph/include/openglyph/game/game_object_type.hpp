@@ -25,6 +25,9 @@ struct GameObjectType final
 
     /// Should this object be rendered in the background layer?
     bool is_in_background;
+
+    /// Is this type a marker?
+    bool is_marker{false};
 };
 
 } // namespace openglyph

@@ -155,6 +155,9 @@ public:
      * This effectively changes the yaw and pitch of the camera, but keeps the distance to the
      * target the same. The camera's new yaw and pitch are bound by their configured constraints.
      *
+     * The arguments to this method are scaled by the \a sensitivity field of the yaw and pitch
+     * property, respectively.
+     *
      * @note the @a pitch_angle_diff parameter is ignored if pitch is controlled via zoom (see \ref
      * pitch_constraint).
      *

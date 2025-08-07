@@ -22,13 +22,6 @@ void check_sorted(const std::vector<Point>& points)
     }
 }
 
-// Checks if two floating-point values are near enough to be considered equal
-bool is_near(double v1, double v2) noexcept
-{
-    static constexpr double MAX_DIFF = 0.00000001;
-    return std::abs(v1 - v2) < MAX_DIFF;
-}
-
 /// Returns the index of the last point that has an \a x member less than \a x.
 std::size_t find_index(const std::vector<Point>& points, double x)
 {
@@ -56,6 +49,11 @@ StepInterpolator::StepInterpolator(std::vector<Point> points) : m_points(std::mo
     check_sorted(m_points);
 }
 
+std::unique_ptr<Interpolator> StepInterpolator::clone() const
+{
+    return std::make_unique<StepInterpolator>(m_points);
+}
+
 double StepInterpolator::interpolate(double x) const noexcept
 {
     x = clamp(x, m_points.front().x, m_points.back().x);
@@ -64,9 +62,30 @@ double StepInterpolator::interpolate(double x) const noexcept
     return m_points[index].y;
 }
 
+std::optional<double> StepInterpolator::lower_bound(double y) const noexcept
+{
+    double                min_dy = 0;
+    std::optional<double> min_x;
+
+    // Find the 'step' that has the lowest difference with y (and is greater or equal).
+    for (const auto& point : m_points) {
+        const auto dy = y - point.y;
+        if (dy >= 0 && (!min_x || dy < min_dy)) {
+            min_dy = dy;
+            min_x  = point.x;
+        }
+    }
+    return min_x;
+}
+
 LinearInterpolator::LinearInterpolator(std::vector<Point> points) : m_points(std::move(points))
 {
     check_sorted(m_points);
+}
+
+std::unique_ptr<Interpolator> LinearInterpolator::clone() const
+{
+    return std::make_unique<LinearInterpolator>(m_points);
 }
 
 double LinearInterpolator::interpolate(double x) const noexcept
@@ -75,6 +94,12 @@ double LinearInterpolator::interpolate(double x) const noexcept
 
     const auto index = find_index(m_points, x);
 
+    //
+    // For the consecutive pair of points (xᵢ; yᵢ), (xᵢ₊₁; yᵢ₊₁), where x in [xᵢ, xᵢ₊₁] (with
+    // dx = xᵢ₊₁ - xᵢ and dy = yᵢ₊₁ - yᵢ), return:
+    //
+    //   y = dy/dx · (x-xᵢ) + yᵢ
+    //
     x = x - m_points[index].x;
     if ((index == m_points.size() - 1) || is_near(x, 0.0)) {
         return m_points[index].y;
@@ -90,9 +115,34 @@ double LinearInterpolator::interpolate(double x) const noexcept
     return m_points[index].y + dy * x;
 }
 
+std::optional<double> LinearInterpolator::lower_bound(double y) const noexcept
+{
+    for (std::size_t i = 0; i < m_points.size() - 1; ++i) {
+        //
+        // For each consecutive pair of points (xᵢ; yᵢ), (xᵢ₊₁; yᵢ₊₁) with dx = xᵢ₊₁ - xᵢ and
+        // dy = yᵢ₊₁ - yᵢ, we have to solve for x:
+        //
+        //   y = dy/dx · (x - xᵢ) + yᵢ, where x in [xᵢ, xᵢ₊₁]:
+        //   x = dx/dy · (y - yᵢ) + xᵢ, where x in [xᵢ, xᵢ₊₁]:
+        //
+        const auto dx = m_points[i + 1].x - m_points[i].x;
+        const auto dy = m_points[i + 1].y - m_points[i].y;
+        const auto x  = (y - m_points[i].y) / dy;
+        if (x >= 0 && x <= 1) {
+            return m_points[i].x + x * dx;
+        }
+    }
+    return {};
+}
+
 CosineInterpolator::CosineInterpolator(std::vector<Point> points) : m_points(std::move(points))
 {
     check_sorted(m_points);
+}
+
+std::unique_ptr<Interpolator> CosineInterpolator::clone() const
+{
+    return std::make_unique<CosineInterpolator>(m_points);
 }
 
 double CosineInterpolator::interpolate(double x) const noexcept
@@ -101,6 +151,12 @@ double CosineInterpolator::interpolate(double x) const noexcept
 
     const auto index = find_index(m_points, x);
 
+    //
+    // For the consecutive pair of points (xᵢ; yᵢ), (xᵢ₊₁; yᵢ₊₁), where x in [xᵢ, xᵢ₊₁] (with
+    // dx = xᵢ₊₁ - xᵢ and dy = yᵢ₊₁ - yᵢ), return:
+    //
+    //   y = dy · ½(1 - cos π(x-xᵢ)/dx) + yᵢ
+    //
     x = x - m_points[index].x;
     if ((index == m_points.size() - 1) || is_near(x, 0.0)) {
         return m_points[index].y;
@@ -113,6 +169,27 @@ double CosineInterpolator::interpolate(double x) const noexcept
     x = x / dx;
     x = (1 - std::cos(x * PI)) / 2;
     return m_points[index].y + dy * x;
+}
+
+std::optional<double> CosineInterpolator::lower_bound(double y) const noexcept
+{
+    for (std::size_t i = 0; i < m_points.size() - 1; ++i) {
+        //
+        // For each consecutive pair of points (xᵢ; yᵢ), (xᵢ₊₁; yᵢ₊₁) with dx = xᵢ₊₁ - xᵢ and
+        // dy = yᵢ₊₁ - yᵢ, we have to solve for x:
+        //
+        //   y = dy · ½(1 - cos π(x-xᵢ)/dx) + yᵢ,    where x in [xᵢ, xᵢ₊₁]
+        //   x = cos⁻¹(1 - 2(y - yᵢ)/dy)·dx/π + xᵢ,  where x in [xᵢ, xᵢ₊₁]
+        //
+        const auto dx = m_points[i + 1].x - m_points[i].x;
+        const auto dy = m_points[i + 1].y - m_points[i].y;
+
+        const auto x = std::acos(1 - 2 * (y - m_points[i].y) / dy) / PI;
+        if (x >= 0 && x <= 1) {
+            return m_points[i].x + x * dx;
+        }
+    }
+    return {};
 }
 
 CubicInterpolator::CubicInterpolator(std::vector<Point> points) : m_points(std::move(points))
@@ -253,6 +330,11 @@ CubicInterpolator::create_segments(const std::vector<Point>& points)
     return segments;
 }
 
+std::unique_ptr<Interpolator> CubicInterpolator::clone() const
+{
+    return std::make_unique<CubicInterpolator>(m_points);
+}
+
 double CubicInterpolator::interpolate(double x) const noexcept
 {
     x = clamp(x, m_points.front().x, m_points.back().x);
@@ -265,6 +347,21 @@ double CubicInterpolator::interpolate(double x) const noexcept
     const auto& segment = m_segments[index];
 
     return segment.polynomial.sample(x - segment.min_x);
+}
+
+std::optional<double> CubicInterpolator::lower_bound(double y) const noexcept
+{
+    assert(m_points.size() == m_segments.size() + 1);
+    for (std::size_t i = 0; i < m_segments.size(); ++i) {
+        // Check if there's a solution for x for the polynomial to equal y
+        for (const auto x : m_segments[i].polynomial.solve(y)) {
+            // There's a solution, now check if x is in bounds
+            if (x >= m_points[i].x && x <= m_points[i + 1].x) {
+                return x;
+            }
+        }
+    }
+    return {};
 }
 
 } // namespace khepri

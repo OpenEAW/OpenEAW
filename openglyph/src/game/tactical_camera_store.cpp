@@ -43,12 +43,13 @@ struct TacticalCameraStore::TacticalCamera
         khepri::Range constraint;
         double        sensitivity;
         double        smooth_time;
+        double        initial_value;
     };
 
     struct ZoomProperty
     {
-        std::vector<khepri::Point> points; // Points for the interpolator
-        double                     smooth_time;
+        std::unique_ptr<khepri::Interpolator> interpolator;
+        double                                smooth_time;
     };
 
     using PitchProperty = std::variant<FreeProperty, ZoomProperty>;
@@ -62,6 +63,7 @@ struct TacticalCameraStore::TacticalCamera
     FreeProperty  yaw;
 
     double zoom_sensitivity{0.1};
+    double default_zoom{0.0};
 
     // Near clip plane distance, in world units in front of the camera position
     double near_clip{10.0};
@@ -76,13 +78,14 @@ TacticalCameraStore::read_tactical_camera(const XmlParser::Node& node)
     using RtsCameraController = khepri::game::RtsCameraController;
 
     const auto read_free_property = [&](const std::string& name, const auto& unit_converter) {
-        auto min = unit_converter(parse<double>(optional_child(node, name + "_Min", "0")));
-        auto max = unit_converter(parse<double>(optional_child(node, name + "_Max", "0")));
-        auto pmu = parse<double>(optional_child(node, name + "_Per_Mouse_Unit", "1"));
+        auto min     = unit_converter(parse<double>(optional_child(node, name + "_Min", "0")));
+        auto max     = unit_converter(parse<double>(optional_child(node, name + "_Max", "0")));
+        auto pmu     = parse<double>(optional_child(node, name + "_Per_Mouse_Unit", "1"));
+        auto initial = unit_converter(parse<double>(optional_child(node, name + "_Default", "0")));
         if (min > max) {
             std::swap(min, max);
         }
-        return TacticalCamera::FreeProperty{{min, max}, pmu};
+        return TacticalCamera::FreeProperty{{min, max}, pmu, 0.1, initial};
     };
 
     const auto read_zoom_property = [&](const std::string& name, bool use_spline,
@@ -91,10 +94,10 @@ TacticalCameraStore::read_tactical_camera(const XmlParser::Node& node)
         property.smooth_time = parse<double>(optional_child(node, name + "_Smooth_Time", "0.1"));
         if (use_spline) {
             // Property uses zoom-based splines.
-            property.points = convert_unit(
+            property.interpolator = std::make_unique<khepri::CubicInterpolator>(convert_unit(
                 parse<khepri::CubicInterpolator>(optional_child(node, name + "_Spline", ""))
                     .points(),
-                unit_converter);
+                unit_converter));
         } else {
             // Property is a range (but has no sensitivity or default value, because it depends on
             // zoom). We can create a linear interpolator from the min and max values.
@@ -103,7 +106,8 @@ TacticalCameraStore::read_tactical_camera(const XmlParser::Node& node)
             if (min > max) {
                 std::swap(min, max);
             }
-            property.points = {{0, min}, {1, max}};
+            property.interpolator = std::make_unique<khepri::LinearInterpolator>(
+                std::vector<khepri::Point>{{0, min}, {1, max}});
         }
         return property;
     };
@@ -134,6 +138,17 @@ TacticalCameraStore::read_tactical_camera(const XmlParser::Node& node)
     camera.yaw       = read_free_property("Yaw", &khepri::to_radians<double>);
     camera.near_clip = parse<double>(optional_child(node, "Near_Clip", "0.1"));
     camera.far_clip  = parse<double>(optional_child(node, "Far_Clip", "0.1"));
+
+    // Many properties are zoom-controlled, but we don't have a default zoom level. So we calculate
+    // it from the default distance by reverse lookup in the interpolator.
+    camera.default_zoom = 0.0;
+    if (const auto default_distance = parse<double>(optional_child(node, "Distance_Default"))) {
+        if (const auto default_zoom =
+                camera.distance.interpolator->lower_bound(*default_distance)) {
+            camera.default_zoom = *default_zoom;
+            ;
+        }
+    }
 
     // Yaw isn't smoothed in the Glyph engine.
     camera.yaw.smooth_time = 0.0;
@@ -171,23 +186,35 @@ TacticalCameraStore::create(std::string_view name, khepri::renderer::Camera& cam
     if (const auto it = m_tactical_cameras.find(name); it != m_tactical_cameras.end()) {
         const auto&                       settings = it->second;
         khepri::game::RtsCameraController rts_camera(camera, {0, 0});
+
         rts_camera.distance_property(
-            {create_interpolator(settings.distance.points), settings.distance.smooth_time});
-        rts_camera.fov_property(
-            {create_interpolator(settings.fov.points), settings.fov.smooth_time});
+            {settings.distance.interpolator->clone(), settings.distance.smooth_time});
+        rts_camera.fov_property({settings.fov.interpolator->clone(), settings.fov.smooth_time});
         rts_camera.yaw_property(
             {settings.yaw.constraint, settings.yaw.sensitivity, settings.yaw.smooth_time});
 
+        // The camera yaw in GlyphX differs from Khepri in two ways:
+        // 1. It describes the *relative position* of the camera, and Khepri uses the *look-at
+        // direction*.
+        // 2. It has 0° at -Y. Khepri has 0° at +X.
+        //
+        // This mean that a GlyphX yaw of 0 means "camera is at -Y relative to target (looking at
+        // +Y)". This needs to be turned into 90° for Khepri.
+        const auto initial_yaw = settings.yaw.initial_value + khepri::PI / 2;
+
         if (const auto* zoom_pitch = std::get_if<TacticalCamera::ZoomProperty>(&settings.pitch)) {
             rts_camera.pitch_property(khepri::game::RtsCameraController::ZoomProperty{
-                create_interpolator(zoom_pitch->points), zoom_pitch->smooth_time});
+                zoom_pitch->interpolator->clone(), zoom_pitch->smooth_time});
+            rts_camera.rotation(initial_yaw, 0); // Pitch will be ignored
         } else if (const auto* free_pitch =
                        std::get_if<TacticalCamera::FreeProperty>(&settings.pitch)) {
             rts_camera.pitch_property(khepri::game::RtsCameraController::FreeProperty{
                 free_pitch->constraint, free_pitch->sensitivity, free_pitch->smooth_time});
+            rts_camera.rotation(initial_yaw, free_pitch->initial_value);
         } else {
             assert(false && "Unknown pitch property type");
         }
+        rts_camera.zoom_level(settings.default_zoom);
 
         camera.znear(settings.near_clip);
         camera.zfar(settings.far_clip);

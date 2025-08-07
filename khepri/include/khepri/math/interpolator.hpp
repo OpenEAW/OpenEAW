@@ -2,6 +2,8 @@
 
 #include "polynomial.hpp"
 
+#include <memory>
+#include <optional>
 #include <vector>
 
 namespace khepri {
@@ -18,11 +20,22 @@ public:
     virtual ~Interpolator() = default;
 
     /**
+     * \brief Returns a copy of the interpolator.
+     */
+    [[nodiscard]] virtual std::unique_ptr<Interpolator> clone() const = 0;
+
+    /**
      * \brief Return interpolated y value for a given x value.
      *
      * \note x is clamped to the input range for the interpolator.
      */
     [[nodiscard]] virtual double interpolate(double x) const noexcept = 0;
+
+    /**
+     * \brief Returns the smallest x value (if any) that, when passed to #interpolate(), results in
+     * a value greater than or equal to y.
+     */
+    [[nodiscard]] virtual std::optional<double> lower_bound(double y) const noexcept = 0;
 };
 
 /**
@@ -46,8 +59,14 @@ public:
      */
     explicit StepInterpolator(std::vector<Point> points);
 
+    /// \see Interpolator::clone
+    [[nodiscard]] std::unique_ptr<Interpolator> clone() const override;
+
     /// \see Interpolator::interpolate
     [[nodiscard]] double interpolate(double x) const noexcept override;
+
+    /// \see Interpolator::lower_bound
+    [[nodiscard]] std::optional<double> lower_bound(double y) const noexcept override;
 
 private:
     std::vector<Point> m_points;
@@ -74,8 +93,14 @@ public:
      */
     explicit LinearInterpolator(std::vector<Point> points);
 
+    /// \see Interpolator::clone
+    [[nodiscard]] std::unique_ptr<Interpolator> clone() const override;
+
     /// \see Interpolator::interpolate
     [[nodiscard]] double interpolate(double x) const noexcept override;
+
+    /// \see Interpolator::lower_bound
+    [[nodiscard]] std::optional<double> lower_bound(double y) const noexcept override;
 
 private:
     std::vector<Point> m_points;
@@ -104,8 +129,14 @@ public:
      */
     explicit CosineInterpolator(std::vector<Point> points);
 
+    /// \see Interpolator::clone
+    [[nodiscard]] std::unique_ptr<Interpolator> clone() const override;
+
     /// \see Interpolator::interpolate
     [[nodiscard]] double interpolate(double x) const noexcept override;
+
+    /// \see Interpolator::lower_bound
+    [[nodiscard]] std::optional<double> lower_bound(double y) const noexcept override;
 
 private:
     std::vector<Point> m_points;
@@ -134,8 +165,14 @@ public:
      */
     explicit CubicInterpolator(std::vector<Point> points);
 
+    /// \see Interpolator::clone
+    [[nodiscard]] std::unique_ptr<Interpolator> clone() const override;
+
     /// \see Interpolator::interpolate
     [[nodiscard]] double interpolate(double x) const noexcept override;
+
+    /// \see Interpolator::lower_bound
+    [[nodiscard]] std::optional<double> lower_bound(double y) const noexcept override;
 
     /// Returns the points used to construct this interpolator
     [[nodiscard]] gsl::span<const Point> points() const noexcept

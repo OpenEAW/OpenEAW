@@ -68,6 +68,16 @@ public:
      */
     void remove_object(const std::shared_ptr<khepri::scene::SceneObject>& object);
 
+    template <typename BehaviorType>
+    std::vector<std::shared_ptr<khepri::scene::SceneObject>> objects() const
+    {
+        // Combine the objects from the foreground and background scenes
+        auto result    = m_foreground_scene.objects<BehaviorType>();
+        auto bg_result = m_background_scene.objects<BehaviorType>();
+        result.insert(result.end(), bg_result.begin(), bg_result.end());
+        return result;
+    }
+
 private:
     // Returns a reference to the scene the object should be placed into
     khepri::scene::Scene& target_scene(const khepri::scene::SceneObject& object);

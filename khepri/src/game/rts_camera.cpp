@@ -17,8 +17,7 @@ T apply_constraint(const khepri::Constraint<T>& constraint, const T& old_value, 
 double update_free_property(const RtsCameraController::FreeProperty& property, double old_value,
                             double diff)
 {
-    return khepri::clamp(old_value + diff * property.sensitivity, property.constraint.min,
-                         property.constraint.max);
+    return khepri::clamp(old_value + diff, property.constraint.min, property.constraint.max);
 }
 
 } // namespace
@@ -55,9 +54,11 @@ void RtsCameraController::target_constraint(const khepri::Constraint<Point>& con
 
 void RtsCameraController::rotate(double yaw_angle_diff, double pitch_angle_diff)
 {
-    m_yaw.target(update_free_property(m_yaw_property, m_yaw.target(), yaw_angle_diff));
+    m_yaw.target(update_free_property(m_yaw_property, m_yaw.target(),
+                                      yaw_angle_diff * m_yaw_property.sensitivity));
     if (const auto* free_pitch = std::get_if<FreeProperty>(&m_pitch_property)) {
-        m_pitch.target(update_free_property(*free_pitch, m_pitch.target(), pitch_angle_diff));
+        m_pitch.target(update_free_property(*free_pitch, m_pitch.target(),
+                                            pitch_angle_diff * free_pitch->sensitivity));
     }
 }
 
@@ -94,7 +95,12 @@ void RtsCameraController::target(const Point& target)
 
 void RtsCameraController::zoom(double amount)
 {
-    m_zoom_level = clamp(m_zoom_level - amount * m_zoom_sensitivity, 0.0, 1.0);
+    zoom_level(clamp(m_zoom_level - amount * m_zoom_sensitivity, 0.0, 1.0));
+}
+
+void RtsCameraController::zoom_level(double zoom_level)
+{
+    m_zoom_level = zoom_level;
 
     // Update zoom-dependent properties
     m_distance.target(m_distance_property.interpolator->interpolate(m_zoom_level));

@@ -40,13 +40,28 @@ public:
     }
 
     /**
-     * Remvoes an object from the scene.
+     * Removes an object from the scene.
      *
      * Does nothing if the object is not in the scene.
      */
     void remove_object(const std::shared_ptr<SceneObject>& object)
     {
         m_objects.erase(object);
+    }
+
+    /**
+     * Returns all objects in the scene that have a specified behavior.
+     */
+    template <typename BehaviorType>
+    std::vector<std::shared_ptr<SceneObject>> objects() const
+    {
+        std::vector<std::shared_ptr<SceneObject>> result;
+        for (const auto& object : m_objects) {
+            if (object->behavior<BehaviorType>()) {
+                result.push_back(object);
+            }
+        }
+        return result;
     }
 
 private:

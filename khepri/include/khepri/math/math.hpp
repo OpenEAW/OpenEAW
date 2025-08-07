@@ -21,6 +21,14 @@ inline T lerp(const T& v0, const T& v1, double t) noexcept
 }
 
 /**
+ * Checks if two floating-point values are near enough to be considered equal.
+ */
+inline bool is_near(double v1, double v2, double max_diff = 0.00000001) noexcept
+{
+    return std::abs(v1 - v2) < max_diff;
+}
+
+/**
  * \brief Clamps a value between two extremes
  *
  * Returns \a min if \a val < \a min.
