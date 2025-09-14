@@ -2,9 +2,9 @@
 #include <cstdint>
 namespace openglyph::steam {
 /**
- * @brief this class groups alls steam functions
+ * @brief this class groups alls steam path functions
  */
-class Steam
+class SteamPaths
 {
 private:
 

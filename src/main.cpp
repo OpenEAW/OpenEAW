@@ -185,7 +185,8 @@ int main(int argc, const char* argv[])
     const khepri::application::ConsoleLogger console_logger;
 #endif
 
-    openglyph::steam::Steam::get_steam_app_location(32470);
+    std::filesystem::path path = openglyph::steam::Steam::get_steam_app_location(32470);
+    LOG.info(path.string());
     khepri::application::ExceptionHandler exception_handler("main");
 
     auto result = exception_handler.invoke([&]() {
