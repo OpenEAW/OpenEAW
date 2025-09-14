@@ -1,4 +1,5 @@
 #include "version.hpp"
+#include "./io/path_manager.hpp"
 
 #include <fmt/format.h>
 #include <khepri/adapters/window_input.hpp>
@@ -29,7 +30,7 @@
 #include <openglyph/renderer/io/model.hpp>
 #include <openglyph/renderer/material_store.hpp>
 #include <openglyph/renderer/model_creator.hpp>
-#include <openglyph/steam/steam.hpp>
+#include <openglyph/steam/steam_paths.hpp>
 #include <openglyph/ui/input.hpp>
 
 #include <cstdlib>
@@ -185,8 +186,6 @@ int main(int argc, const char* argv[])
     const khepri::application::ConsoleLogger console_logger;
 #endif
 
-    std::filesystem::path path = openglyph::steam::Steam::get_steam_app_location(32470);
-    LOG.info(path.string());
     khepri::application::ExceptionHandler exception_handler("main");
 
     auto result = exception_handler.invoke([&]() {
@@ -209,6 +208,7 @@ int main(int argc, const char* argv[])
 
         const auto curdir     = khepri::application::get_current_directory();
         auto       data_paths = args->modpaths;
+        data_paths.push_back(openeaw::io::PathManager::get_install_path(openeaw::io::steam) / "GameData");
         data_paths.push_back(curdir);
 
         LOG.info("Starting up in \"{}\" with {} data path(s):", curdir.string(), data_paths.size());
