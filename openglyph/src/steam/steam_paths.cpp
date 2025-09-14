@@ -67,7 +67,7 @@ std::filesystem::path openglyph::steam::SteamPaths::get_steam_app_location(std::
             break;
         }
 
-        if(i == libraryFolders.size() - 1){
+        if (i == libraryFolders.size() - 1) {
             throw khepri::io::FileNotFoundError();
         }
     }
@@ -79,5 +79,5 @@ std::filesystem::path openglyph::steam::SteamPaths::get_steam_app_location(std::
     if (ROOT.name != "AppState") {
         throw khepri::io::InvalidFormatError();
     }
-    return folderPath / "steamapps"/ "common" / ROOT.attribs["installdir"];
+    return folderPath / "steamapps" / "common" / ROOT.attribs["installdir"];
 }
