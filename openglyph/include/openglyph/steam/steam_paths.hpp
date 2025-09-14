@@ -1,5 +1,5 @@
-#include <filesystem>
 #include <cstdint>
+#include <filesystem>
 namespace openglyph::steam {
 /**
  * @brief this class groups alls steam path functions
@@ -7,7 +7,6 @@ namespace openglyph::steam {
 class SteamPaths
 {
 private:
-
 public:
     /// @brief Returns the usual Steam root installation path for the current platform.
     /// @return The root Steam installation directory as a std::filesystem::path.
@@ -22,10 +21,9 @@ public:
     /// @return The full path to the 'libraryfolders.vdf' file as a std::filesystem::path.
     static std::filesystem::path get_steam_library_folders_path();
 
-    
     static std::vector<std::filesystem::path> get_steam_library_folders();
 
     static std::filesystem::path get_steam_app_location(std::uint64_t appId);
 };
 
-} // namespace openeaw::steam
+} // namespace openglyph::steam
