@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <filesystem>
+#include <vector>
 namespace openglyph::steam {
 /**
  * @brief this class groups alls steam path functions
