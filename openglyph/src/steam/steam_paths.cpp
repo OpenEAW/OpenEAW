@@ -50,9 +50,8 @@ std::vector<std::filesystem::path> SteamPaths::get_steam_library_folders()
     }
     return folders;
 }
-} // namespace openglyph::steam
 
-std::filesystem::path openglyph::steam::SteamPaths::get_steam_app_location(std::uint64_t appId)
+std::filesystem::path SteamPaths::get_steam_app_location(std::uint64_t appId)
 {
     std::vector<std::filesystem::path> libraryFolders = get_steam_library_folders();
 
@@ -81,3 +80,5 @@ std::filesystem::path openglyph::steam::SteamPaths::get_steam_app_location(std::
     }
     return folderPath / "steamapps" / "common" / ROOT.attribs["installdir"];
 }
+
+} // namespace openglyph::steam
