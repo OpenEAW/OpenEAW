@@ -75,7 +75,6 @@ std::optional<CmdlineArgs> parse_cmdline_arguments(int argc, const char* argv[])
 {
     try {
         auto options = create_cmdline_options();
-        options.parse_positional({"input", "output"});
         auto result = options.parse(argc, argv);
 
         CmdlineArgs args;
