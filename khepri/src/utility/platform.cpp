@@ -17,7 +17,8 @@ std::string get_registry_key(std::int64_t key, std::string_view subkey, std::str
     RegCloseKey((HKEY)key);
     return std::string(result);
 #else
-    throw Khepri::Error("Registry access is only supported on Windows.");
+    throw khepri::Error("Registry access is only supported on Windows.");
+    return "";
 #endif
 }
 
