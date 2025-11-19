@@ -12,6 +12,7 @@ find_package(glfw3 REQUIRED)
 find_package(gsl-lite REQUIRED)
 
 add_library(${PROJECT_NAME}
+    src/adapters/ui_renderer.cpp
     src/adapters/window_input.cpp
     src/application/console_logger.cpp
     src/application/current_directory.cpp
@@ -42,6 +43,8 @@ add_library(${PROJECT_NAME}
     src/renderer/diligent/native_window.cpp
     src/renderer/diligent/renderer.cpp
     src/scene/scene_object.cpp
+    src/ui/canvas.cpp
+    src/ui/widget.cpp
     src/utility/crc.cpp
     src/utility/string.cpp
     src/version_info.cpp

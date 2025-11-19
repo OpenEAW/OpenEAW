@@ -95,4 +95,42 @@ public:
     virtual bool HandleEvent(const InputEvent& event) = 0;
 };
 
+/// Event: mouse cursor leaves a widget
+struct MouseLeaveEvent
+{
+    /// The cursor position
+    MousePosition cursor_position;
+};
+
+/// Event: mouse cursor enters a widget
+struct MouseEnterEvent
+{
+    /// The cursor position
+    MousePosition cursor_position;
+};
+
+/// Event: mouse button is pressed
+struct MousePressEvent
+{
+    /// The cursor position
+    MousePosition cursor_position;
+
+    /// The mouse button that was pressed
+    MouseButton button;
+};
+
+/// Event mouse button is released
+struct MouseReleaseEvent
+{
+    /// The cursor position
+    MousePosition cursor_position;
+
+    /// The mouse button that was released
+    MouseButton button;
+};
+
+/// A UI event
+using Event = std::variant<MouseMoveEvent, MouseEnterEvent, MouseLeaveEvent, MousePressEvent,
+                           MouseReleaseEvent, MouseScrollEvent>;
+
 } // namespace khepri::ui

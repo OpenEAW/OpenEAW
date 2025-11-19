@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GUIDialogs>
+	<!-- Default style per GUI widget type -->
+	<Default_Styles>
+		<!-- Global applies to everything unless overridden  -->
+		<Global>
+			<Font>
+				<Name>EmpireAtWar-Medium</Name>
+				<Size>12</Size>
+				<Top_Color>195,171,202</Top_Color>
+				<Bottom_Color>195,171,202</Bottom_Color>
+			</Font>
+		</Global>
+
+		<Dialog>
+			<Textures Margins="14, 14, 14, 14">
+				<Top_Left>i_dialogue_00.tga</Top_Left>
+				<Top_Transition_Left>i_dialogue_01.tga</Top_Transition_Left>
+				<Top>i_dialogue_02.tga</Top>
+				<Top_Transition_Right>i_dialogue_03.tga</Top_Transition_Right>
+				<Top_Right>i_dialogue_04.tga</Top_Right>
+				<Right_Transition_Top>i_dialogue_05.tga</Right_Transition_Top>
+				<Right>i_dialogue_06.tga</Right>
+				<Right_Transition_Bottom>i_dialogue_07.tga</Right_Transition_Bottom>
+				<Bottom_Right>i_dialogue_08.tga</Bottom_Right>
+				<Bottom_Transition_Right>i_dialogue_09.tga</Bottom_Transition_Right>
+				<Bottom>i_dialogue_10.tga</Bottom>
+				<Bottom_Transition_Left>i_dialogue_11.tga</Bottom_Transition_Left>
+				<Bottom_Left>i_dialogue_12.tga</Bottom_Left>
+				<Left_Transition_Bottom>i_dialogue_13.tga</Left_Transition_Bottom>
+				<Left>i_dialogue_14.tga</Left>
+				<Left_Transition_Top>i_dialogue_15.tga</Left_Transition_Top>
+				<Middle>i_dialogue_frame_middle.tga</Middle>
+			</Textures>
+		</Dialog>
+
+		<Frame>
+			<Textures Margins="2, 2, 2, 2">
+				<Bottom>i_dialogue_frame_small_bottom.tga</Bottom>
+				<Bottom_Left>i_dialogue_frame_small_bottom_left.tga</Bottom_Left>
+				<Bottom_Right>i_dialogue_frame_small_bottom_right.tga</Bottom_Right>
+				<Left>i_dialogue_frame_small_left.tga</Left>
+				<Right>i_dialogue_frame_small_right.tga</Right>
+				<Top>i_dialogue_frame_small_top.tga</Top>
+				<Top_Left>i_dialogue_frame_small_top_left.tga</Top_Left>
+				<Top_Right>i_dialogue_frame_small_top_right.tga</Top_Right>
+			</Textures>
+		</Frame>
+
+		<Label>
+			<Font>
+				<Stretch_Factor>1.3</Stretch_Factor>
+			</Font>
+		</Label>
+
+		<Button>
+			<Font>
+				<Name>EmpireAtWar-Bold</Name>
+				<Size>13</Size>
+				<Top_Color>0,22,60</Top_Color>
+				<Bottom_Color>68,106,212</Bottom_Color>
+				<Embossed>True</Embossed>
+			</Font>
+			<Textures Margins="32, 0, 32, 0">>
+				<Left>i_dialogue_button_large_left.tga</Left>
+				<Middle>i_dialogue_button_large_middle.tga</Middle>
+				<Right>i_dialogue_button_large_right.tga</Button_Right>
+			</Textures>
+			<State Name="MouseOver">
+				<Textures>
+					<Left>i_dialogue_button_large_left_mouse_over.tga</Left>
+					<Middle>i_dialogue_button_large_middle_mouse_over.tga</Middle>
+					<Right>i_dialogue_button_large_right_mouse_over.tga</Right>
+				</Textures>
+			</State>
+			<State Name="Pressed">
+				<Textures>
+					<Left>i_dialogue_button_large_left_pressed.tga</Left>
+					<Middle>i_dialogue_button_large_middle_pressed.tga</Middle>
+					<Right>i_dialogue_button_large_right_pressed.tga</Right>
+				</Textures>
+			</State>
+			<State Name="Disabled">
+				<Font>
+					<Top_Color>32, 32, 32</Top_Color>
+					<Bottom_Color>32, 32, 32</Bottom_Color>
+				</Font>
+				<Textures>
+					<Left>i_dialogue_button_large_left_off.tga</Left>
+					<Middle>i_dialogue_button_large_middle_off.tga</Middle>
+					<Right>i_dialogue_button_large_right_off.tga</Right>
+				</Textures>
+			</State>
+		</Button>
+
+		<RadioButton>
+			<Textures>
+				<Background>i_dialogue_radio_off.tga</Background>
+			</Textures>
+			<State Name="Selected">
+				<Textures>
+					<Background>i_dialogue_radio_on.tga</Background>
+				</Textures>
+			</State>
+		</RadioButton>
+
+		<Listbox>
+			<Textures Margins="2, 2, 2, 2">
+				<Background>i_dialogue_frame_small_middle.tga</Background>
+				<Bottom>i_dialogue_frame_small_bottom.tga</Bottom>
+				<Bottom_Left>i_dialogue_frame_small_bottom_left.tga</Bottom_Left>
+				<Bottom_Right>i_dialogue_frame_small_bottom_right.tga</Bottom_Right>
+				<Left>i_dialogue_frame_small_left.tga</Left>
+				<Right>i_dialogue_frame_small_right.tga</Right>
+				<Top>i_dialogue_frame_small_top.tga</Top>
+				<Top_Left>i_dialogue_frame_small_top_left.tga</Top_Left>
+				<Top_Right>i_dialogue_frame_small_top_right.tga</Top_Right>
+			</Textures>
+			<Selection_Color>0,0,255</Selection_Color>
+			<Selection_Alpha>0.3</Selection_Alpha>
+			<Scrollbar>
+				<Up_Button>
+					<Textures>
+						<Background>i_dialogue_scroll_up.tga</Background>
+					</Textures>
+					<State Name="MouseOver">
+						<Textures>
+							<Background>i_dialogue_scroll_up_mouse_over.tga</Background>
+						</Textures>
+					</State>
+					<State Name="Pressed">
+						<Textures>
+							<Background>i_dialogue_scroll_up_pressed.tga</Background>
+						</Textures>
+					</State>
+					<State Name="Disabled">
+						<Textures>
+							<Background>i_dialogue_blank.tga</Background>
+						</Textures>
+					</State>
+				</Up_Button>
+				<Down_Button>
+					<Textures>
+						<Background>i_dialogue_scroll_down.tga</Background>
+					</Textures>
+					<State Name="MouseOver">
+						<Textures>
+							<Background>i_dialogue_scroll_down_mouse_over.tga</Background>
+						</Textures>
+					</State>
+					<State Name="Pressed">
+						<Textures>
+							<Background>i_dialogue_scroll_down_pressed.tga</Background>
+						</Textures>
+					</State>
+					<State Name="Disabled">
+						<Textures>
+							<Background>i_dialogue_blank.tga</Background>
+						</Textures>
+					</State>
+				</Down_Button>
+				<Track>
+					<Textures>
+						<Background>i_dialogue_scroll_middle.tga</Background>
+					</Textures>
+					<State Name="Disabled">
+						<Textures>
+							<Background>i_dialogue_blank.tga</Background>
+						</Textures>
+					</State>
+				</Track>
+				<Track_Button>
+					<Textures>
+						<Background>i_dialogue_scroll_tab.tga</Background>
+					</Textures>
+					<State Name="Disabled">
+						<Textures>
+							<Background>i_dialogue_blank.tga</Background>
+						</Textures>
+					</State>
+				</Track_Button>
+			</Scrollbar>
+		</Listbox>
+
+<!--
+		<Editbox Inherit="Frame">
+		</Editbox>
+
+		<CustomImage Inherit="Frame">
+			<Scanlines>
+				<Textures>
+					<Background>i_scan_lines.tga</Background>
+				</Textures>
+			</Scanlines>
+		</CustomImage>
+
+		<Checkbox>
+			<Textures>
+				<Background>i_dialogue_check_off.tga</Background>
+			</Textures>
+		</Checkbox>
+		<Checkbox State="Pressed">
+			<Textures>
+				<Background>i_dialogue_check_on.tga</Background>
+			</Textures>
+		</Checkbox>
+
+		<Trackbar>
+			<Track>
+				<Textures>
+					<Left>i_dialogue_dial_left.tga</Left>
+					<Middle>i_dialogue_dial_middle.tga</Middle>
+					<Right>i_dialogue_dial_right.tga</Right>
+				</Textures>
+			</Track>
+			<Tab>
+				<Dial_Tab>i_dialogue_dial_tab.tga</Dial_Tab>
+			</Tab>
+			<Button_Plus>
+				<Textures>
+					<Background>i_dialogue_dial_plus.tga</Background>
+				</Textures>
+			</Button_Plus>
+			<Button_Plus State="MouseOver">
+				<Textures>
+					<Background>i_dialogue_dial_plus_mouse_over.tga</Background>
+				</Textures>
+			</Button_Plus>
+			<Button_Plus State="Pressed">
+				<Textures>
+					<Background>i_dialogue_dial_plus_pressed.tga</Background>
+				</Textures>
+			</Button_Plus>
+			<Button_Minus>
+				<Textures>
+					<Background>i_dialogue_dial_minus.tga</Background>
+				</Textures>
+			</Button_Minus State="MouseOver">
+			<Button_Minus>
+				<Textures>
+					<Background>i_dialogue_dial_minus_mouse_over.tga</Background>
+				</Textures>
+			</Button_Minus>
+			<Button_Minus State="Pressed">
+				<Textures>
+					<Background>i_dialogue_dial_minus_pressed.tga</Background>
+				</Textures>
+			</Button_Minus>
+		</Trackbar>
+
+		<Vertical_Scrollbar>
+			<Track>
+				<Textures>
+					<Background>i_dialogue_scroll_middle.tga</Background>
+				</Textures>
+			</Track>
+			<Track State="Disabled">
+				<Textures>
+					<Background>i_dialogue_blank.tga</Background>
+				</Textures>
+			</Track>
+			<Tab>
+				<Textures>
+					<Background>i_dialogue_scroll_tab.tga</Background>
+				</Textures>
+			</Tab>
+			<Tab State="Disabled">
+				<Textures>
+					<Background>i_dialogue_blank.tga</Background>
+				</Textures>
+			</Tab>
+			<Button_Up>
+				<Textures>
+					<Background>i_dialogue_scroll_up.tga</Background>
+				</Textures>
+			</Button_Up>
+			<Button_Up State="Pressed">
+				<Textures>
+					<Background>i_dialogue_scroll_up_pressed.tga</Background>
+				</Textures>
+			</Button_Up>
+			<Button_Up State="MouseOver">
+				<Textures>
+					<Background>i_dialogue_scroll_up_mouse_over.tga</Background>
+				</Textures>
+			</Button_Up>
+			<Button_Up State="Disabled">
+				<Textures>
+					<Background>i_dialogue_blank.tga</Background>
+				</Textures>
+			</Button_Up>
+			<Button_Down>
+				<Textures>
+					<Background>i_dialogue_scroll_down.tga</Background>
+				</Textures>
+			</Button_Down>
+			<Button_Down State="Pressed">
+				<Textures>
+					<Background>i_dialogue_scroll_down_pressed.tga</Background>
+				</Textures>
+			</Button_Down>
+			<Button_Down State="MouseOver">
+				<Textures>
+					<Background>i_dialogue_scroll_down_mouse_over.tga</Background>
+				</Textures>
+			</Button_Down>
+			<Button_Down State="Disabled">
+				<Textures>
+					<Background>i_dialogue_blank.tga</Background>
+				</Textures>
+			</Button_Down>
+		</Vertical_Scrollbar>
+
+		<Combobox Inherit="Frame">
+			<Button_Popdown>
+				<Textures>
+					<Background>i_dialogue_scroll_small_down.tga</Background>
+				</Textures>
+			</Button_Popdown>
+			<Button_Popdown State="MouseOver">
+				<Textures>
+					<Background>i_dialogue_scroll_small_down_mouse_over.tga</Background>
+				</Textures>
+			</Button_Popdown>
+			<Button_Popdown State="Pressed">
+				<Textures>
+					<Background>i_dialogue_scroll_small_down_pressed.tga</Background>
+				</Textures>
+			</Button_Popdown>
+			<Listbox Inherit="Listbox"></Listbox>
+		</Combobox>
+
+		<ProgressBar>
+			<Textures>
+				<Left>i_dialogue_progress_left.tga</Left>
+				<Middle>i_dialogue_progress_middle_on.tga</Middle>
+				<Right>i_dialogue_progress_right.tga</Right>
+			</Textures>
+		</ProgressBar>-->
+	</Default_Styles>
+
+	<!-- Named style overrides -->
+	<Styles>
+		<Style Name="NoFrame">
+			<Textures>
+				<Top_Left></Top_Left>
+				<Top_Transition_Left></Top_Transition_Left>
+				<Top></Top>
+				<Top_Transition_Right></Top_Transition_Right>
+				<Top_Right></Top_Right>
+				<Right_Transition_Top></Right_Transition_Top>
+				<Right></Right>
+				<Right_Transition_Bottom></Right_Transition_Bottom>
+				<Bottom_Right></Bottom_Right>
+				<Bottom_Transition_Right></Bottom_Transition_Right>
+				<Bottom></Bottom>
+				<Bottom_Transition_Left></Bottom_Transition_Left>
+				<Bottom_Left></Bottom_Left>
+				<Left_Transition_Bottom></Left_Transition_Bottom>
+				<Left></Left>
+				<Left_Transition_Top></Left_Transition_Top>
+				<Background></Background>
+				<Middle></Middle>
+			</Textures>
+		</Style>
+
+		<Style Name="MainMenuDialog" Inherit="NoFrame">
+			<Textures>
+				<Background>menuback_overlay_panel_6button.tga</Background>
+			</Textures>
+		</Style>
+
+		<Style Name="MainMenuButton">
+			<Font>
+				<Name>EmpireAtWar-Bold</Name>
+				<Size>15</Size>
+				<Top_Color>37,124,187</Top_Color>
+				<Bottom_Color>90,186,255</Bottom_Color>
+				<Embossed>False</Embossed>
+			</Font>
+
+			<Textures>
+				<Left>i_dialogue_button_huge_blank.tga</Left>
+				<Middle>i_dialogue_button_huge_blank.tga</Middle>
+				<Right>i_dialogue_button_huge_blank.tga</Right>
+			</Textures>
+
+			<State Name="Pressed">
+				<Font>
+					<Top_Color>18,62,93</Top_Color>
+					<Bottom_Color>45,93,127</Bottom_Color>
+				</Font>
+				<Textures>
+					<Left>i_dialogue_button_large_left_mouse_over_subtle.tga</Left>
+					<Middle>i_dialogue_button_large_middle_mouse_over_subtle.tga</Middle>
+					<Right>i_dialogue_button_large_right_mouse_over_subtle.tga</Right>
+				</Textures>
+			</State>
+
+			<State Name="Disabled">
+				<Textures>
+					<Left>i_dialogue_button_large_left_disabled_subtle.tga</Left>
+					<Middle>i_dialogue_button_large_middle_disabled_subtle.tga</Middle>
+					<Right>i_dialogue_button_large_right_disabled_subtle.tga</Right>
+				</Textures>
+			</State>
+		</Style>
+
+		<Style Name="MainMenuButton-Top" Inherit="MainMenuButton">
+			<State Name="MouseOver">
+				<Textures Margins="49, 0, 50, 0">
+					<Left>i_dialogue_button_tl.tga</Left>
+					<Middle>i_dialogue_button_tm.tga</Middle>
+					<Right>i_dialogue_button_tr.tga</Right>
+				</Textures>
+			</State>
+		</Style>
+
+		<Style Name="MainMenuButton-Bottom" Inherit="MainMenuButton">
+			<State Name="MouseOver">
+				<Textures Margins="49, 0, 50, 0">
+					<Left>i_dialogue_button_bl.tga</Left>
+					<Middle>i_dialogue_button_bm.tga</Middle>
+					<Right>i_dialogue_button_br.tga</Right>
+				</Textures>
+			</State>
+		</Style>
+
+		<Style Name="MainMenuTitle">
+			<Font>
+				<Name>EmpireAtWar-Bold</Name>
+				<Size>17</Size>
+				<Vert_Scale>1.5</Vert_Scale>
+				<Top_Color>83,125,225</Top_Color>
+				<Bottom_Color>179,205,232</Bottom_Color>
+				<Embossed>True</Embossed>
+			</Font>
+		</Style>
+
+		<Style Name="MainMenuCreditsButton">
+			<Textures Margins="0,0,0,0">
+				<Middle>i_button_credits.tga</Middle>
+			</Textures>
+			<State Name="MouseOver">
+				<Textures>
+					<Middle>i_button_credits_mouse_over.tga</Middle>
+				</Textures>
+			</State>
+			<State Name="Pressed">
+				<Textures>
+					<Middle>i_button_credits_mouse_over.tga</Middle>
+				</Textures>
+			</State>
+		</Style>
+
+		<Style Name="Header">
+			<Font>
+				<Name>EmpireAtWar-Bold</Name>
+				<Size>15</Size>
+				<Stretch_Factor>1</Stretch_Factor>
+				<Top_Color>83,125,225</Top_Color>
+				<Bottom_Color>150,187,227</Bottom_Color>
+			</Font>
+		</Style>
+
+		<Style Name="DialogHeader" Inherit="Header">
+			<Font>
+				<Size>20</Size>
+			</Font>
+		</Style>
+
+		<Style Name="Label-Difficulty">
+			<Font>
+				<Name>EmpireAtWar-Bold</Name>
+				<Size>14</Size>
+				<Top_Color>255,255,200</Top_Color>
+				<Bottom_Color>255,255,200</Bottom_Color>
+			</Font>
+		</Style>
+
+		<Style Name="RadioButton-Difficulty">
+			<Textures>
+				<Background>i_button_difficulty_off.tga</Background>
+			</Textures>
+			<State Name="Selected">
+				<Textures>
+					<Background>i_button_difficulty.tga</Background>
+				</Textures>
+			</State>
+			<State Name="MouseOver">
+				<Textures>
+					<Background>i_button_difficulty_over.tga</Background>
+				</Textures>
+			</State>
+		</Style>
+
+
+	</Styles>
+
+	<!--- Dialogs -->
+
+	<Dialog Name="MAIN_MENU" Styles="MainMenuDialog" Layout="top_right:-512,0,512,1024">
+		<Label Text="TEXT_MAIN_MENU" Styles="MainMenuTitle" Layout="top_left:248,305,236,17"></Label>
+		<Button Layout="top_left:239,337,236,40" Styles="MainMenuButton-Top" Name="TUTORIAL" Text="TEXT_BUTTON_TUTORIAL"></Button>
+		<Button Layout="top_left:221,381,236,40" Styles="MainMenuButton-Top" Name="SINGLE_PLAYER" Text="TEXT_BUTTON_SINGLE_PLAYER_GAMES"></Button>
+		<Button Layout="top_left:203,425,236,40" Styles="MainMenuButton-Top" Name="MULTIPLAYER" Text="TEXT_BUTTON_MULTIPLAYER"></Button>
+		<Button Layout="top_left:205,469,237,40" Styles="MainMenuButton-Bottom" Name="LOAD_GAME" Text="TEXT_BUTTON_LOAD_GAME"></Button>
+		<Button Layout="top_left:228,513,238,40" Styles="MainMenuButton-Bottom" Name="OPTIONS" Text="TEXT_BUTTON_OPTIONS"></Button>
+		<Button Layout="top_left:250,557,238,40" Styles="MainMenuButton-Bottom" Name="EXIT" Text="TEXT_BUTTON_EXIT_GAME"></Button>
+		<Button Layout="top_right:-45,406,45,116" Styles="MainMenuCreditsButton" Name="IDC_MENU_CREDITS"></Button>
+	</Dialog>
+
+	<Dialog Name="SINGLE_PLAYER_MENU" Styles="MainMenuDialog" Layout="top_right:-512,0,512,1024">
+		<Label Text="TEXT_SINGLE_PLAYER_GAMES_MENU_TITLE" Styles="MainMenuTitle" Layout="top_left:245,305,254,17"></Label>
+		<Button Layout="top_left:239,337,236,40" Styles="MainMenuButton-Top" Name="NEW_CAMPAIGN" Text="TEXT_BUTTON_NEW_CAMPAIGN"></Button>
+		<Button Layout="top_left:221,381,236,40" Styles="MainMenuButton-Top" Name="CUSTOM_CAMPAIGN" Text="TEXT_BUTTON_CUSTOM_CAMPAIGN"></Button>
+		<Button Layout="top_left:203,425,236,40" Styles="MainMenuButton-Top" Name="SKIRMISH_GAMES" Text="TEXT_BUTTON_SKIRMISH"></Button>
+		<Button Layout="top_left:205,469,237,40" Styles="MainMenuButton-Bottom" Name="BACK" Text="TEXT_BUTTON_BACK"></Button>
+		<Button Layout="top_right:-45,406,45,116" Styles="MainMenuCreditsButton" Name="IDC_MENU_CREDITS"></Button>
+	</Dialog>
+
+	<Dialog Name="CUSTOM_CAMPAIGN" Layout="center:648,547">
+		<Label Layout="top_left:29,30,576,18" Styles="DialogHeader" Text_Align="Left" Text="TEXT_BUTTON_CUSTOM_CAMPAIGN"></Label>
+		<Label Layout="top_left:379,273,208,173" Name="CAMPAIGN_DESCRIPTION"></Label>
+		<Button Layout="top_left:46,68,285,32" Name="SELECT_OFFICIAL_MAPS" Text="TEXT_BUTTON_SELECT_OFFICIAL_MAPS"></Button>
+		<Button Layout="top_left:46,97,285,32" Name="SELECT_CUSTOM_MAPS" Text="TEXT_BUTTON_SELECT_CUSTOM_MAPS"></Button>
+
+		<Listbox Layout="top_left:47,132,283,153" Name="MAP_LIST"></Listbox>
+
+		<Frame Layout="top_left:47,288,283,172"></Frame>
+		<Label Layout="top_left:50,294,280,24" Styles="Header" Text="TEXT_CAMPAIGN_DIFFICULTY"></Label>
+		<RadioButton Layout="top_left:124,316,175,23" Styles="RadioButton-Difficulty" Name="DIFFICULTY_EASY"></RadioButton>
+		<RadioButton Layout="top_left:124,340,175,23" Styles="RadioButton-Difficulty" Name="DIFFICULTY_NORMAL"></RadioButton>
+		<RadioButton Layout="top_left:124,364,175,23" Styles="RadioButton-Difficulty" Name="DIFFICULTY_HARD"></RadioButton>
+		<Label Layout="top_left:165,316,224,23" Styles="Label-Difficulty" Text_Align="Left" Text="TEXT_DIFFICULTY_EASY_NAME"></Label>
+		<Label Layout="top_left:165,340,224,23" Styles="Label-Difficulty" Text_Align="Left" Text="TEXT_DIFFICULTY_NORMAL_NAME"></Label>
+		<Label Layout="top_left:165,364,224,23" Styles="Label-Difficulty" Text_Align="Left" Text="TEXT_DIFFICULTY_HARD_NAME"></Label>
+		<Label Layout="top_left:14,400,340,17" Styles="Header" Text="TEXT_CAMPAIGN_SELECT_FACTION">
+			<Font>
+			  	<Size>12</Size>
+			</Font>
+		</Label>
+
+    	<Frame Layout="top_left:365,259,231,201"></Frame>
+
+		<Button Layout="top_left:46,488,175,32" Name="CANCEL" Text="TEXT_BUTTON_CANCEL"></Button>
+		<Button Layout="top_left:234,488,175,32" Name="SELECT_OPTIONS" Text="TEXT_SELECT_OPTIONS"></Button>
+		<Button Layout="top_left:422,488,175,32" Name="PLAY_BUTTON" Text="TEXT_BUTTON_START_GAME"></Button>
+	</Dialog>
+	<!--
+    COMBOBOX        IDC_FACTION_COMBO,72,410,196,74,CBS_DROPDOWN | CBS_SORT |
+                    WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_STAGING_MAP_LIST,33,119,309,153,LBS_SORT |
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Custom2",IDC_IMAGE,"PETROGLYPH_DIALOG_IMAGE",WS_TABSTOP,
+                    351,52,231,190
+	-->
+</GUIDialogs>
