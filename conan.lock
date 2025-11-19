@@ -49,6 +49,7 @@
         "cmake/3.30.0",
         "expat/2.6.2",
         "flex/2.6.4",
+        "gnu-config/cci.20210814",
         "libffi/3.4.4",
         "libiconv/1.17",
         "libxml2/2.12.5",
