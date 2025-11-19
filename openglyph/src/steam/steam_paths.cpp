@@ -9,8 +9,9 @@
 namespace openglyph::steam {
 std::filesystem::path SteamPaths::get_steam_root_path()
 {
-    switch (khepri::utility::get_current_platform()) {
+    switch (khepri::utility::get_current_platform())
     case khepri::utility::windows: {
+#ifdef _MSC_VER
         std::filesystem::path steampath =
             khepri::utility::get_registry_key((std::uint64_t)HKEY_LOCAL_MACHINE,
                                               "SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath");
@@ -26,11 +27,14 @@ std::filesystem::path SteamPaths::get_steam_root_path()
             throw khepri::io::FileNotFoundError();
         }
         return steampath;
+#else
+        return "C:\\Program Files (x86)\\steam";
+#endif
     }
     case khepri::utility::linux:
         return "~/.steam/steam";
-    }
-    return "";
+}
+return "";
 }
 
 std::filesystem::path SteamPaths::get_steam_library_folders_path()
