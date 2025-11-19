@@ -16,7 +16,6 @@ add_library(${PROJECT_NAME}
     src/application/console_logger.cpp
     src/application/current_directory.cpp
     src/application/exceptions.cpp
-    src/application/platform.cpp
     src/application/window.cpp
     src/font/io/font_face.cpp
     src/font/font_cache.cpp
@@ -44,6 +43,7 @@ add_library(${PROJECT_NAME}
     src/renderer/diligent/renderer.cpp
     src/scene/scene_object.cpp
     src/utility/crc.cpp
+    src/utility/platform.cpp
     src/utility/string.cpp
     src/version_info.cpp
 )

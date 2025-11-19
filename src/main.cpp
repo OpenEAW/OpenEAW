@@ -1,4 +1,4 @@
-#include "./io/path_manager.hpp"
+#include "io/path_manager.hpp"
 #include "version.hpp"
 
 #include <fmt/format.h>
@@ -30,7 +30,6 @@
 #include <openglyph/renderer/io/model.hpp>
 #include <openglyph/renderer/material_store.hpp>
 #include <openglyph/renderer/model_creator.hpp>
-#include <openglyph/steam/steam_paths.hpp>
 #include <openglyph/ui/input.hpp>
 
 #include <cstdlib>
@@ -206,11 +205,11 @@ int main(int argc, const char* argv[])
 
         LOG.info("Running {}", full_version_string());
 
-        const auto curdir     = khepri::application::get_current_directory();
-        auto       data_paths = args->modpaths;
+        auto data_paths = args->modpaths;
         data_paths.push_back(openeaw::io::PathManager::get_install_path(openeaw::io::steam) /
                              "GameData");
-        data_paths.push_back(curdir);
+
+        const auto curdir = khepri::application::get_current_directory();
 
         LOG.info("Starting up in \"{}\" with {} data path(s):", curdir.string(), data_paths.size());
         for (const auto& data_path : data_paths) {
