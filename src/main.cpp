@@ -75,7 +75,7 @@ std::optional<CmdlineArgs> parse_cmdline_arguments(int argc, const char* argv[])
 {
     try {
         auto options = create_cmdline_options();
-        auto result = options.parse(argc, argv);
+        auto result  = options.parse(argc, argv);
 
         CmdlineArgs args;
         if (result.count("help") != 0) {
