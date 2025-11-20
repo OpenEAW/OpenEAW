@@ -205,8 +205,11 @@ int main(int argc, const char* argv[])
         LOG.info("Running {}", full_version_string());
 
         auto data_paths = args->modpaths;
-        data_paths.push_back(openeaw::io::PathManager::get_install_path(openeaw::io::steam) /
-                             "GameData");
+        if (auto install_path = openeaw::io::PathManager::get_install_path()) {
+            data_paths.push_back(*install_path / "GameData");
+        } else {
+            LOG.warning("No empire at war installation could be found");
+        }
 
         const auto curdir = khepri::application::get_current_directory();
 

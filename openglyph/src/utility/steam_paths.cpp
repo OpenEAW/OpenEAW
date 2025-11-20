@@ -3,23 +3,23 @@
 #include <khepri/io/exceptions.hpp>
 #include <khepri/utility/platform.hpp>
 
-#include <openglyph/steam/steam_paths.hpp>
+#include <openglyph/utility/steam_paths.hpp>
 
 #include <iostream>
-namespace openglyph::steam {
-std::filesystem::path SteamPaths::get_steam_root_path()
+namespace openglyph::utility {
+
+/// @brief Returns the usual Steam root installation path for the current platform.
+/// @return The root Steam installation directory as a std::filesystem::path.
+std::filesystem::path get_steam_root_path()
 {
     switch (khepri::utility::get_current_platform()) {
-    case khepri::utility::windows:
-#ifdef _MSC_VER
+    case khepri::utility::Platform::windows:
+#if defined(_WIN32) || defined(_WIN64)
     {
         std::filesystem::path steampath =
-            khepri::utility::get_registry_key((std::uint64_t)HKEY_LOCAL_MACHINE,
-                                              "SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath");
-        if (steampath.empty()) {
-            steampath = "C:\\Program Files (x86)\\steam";
-        }
-
+            khepri::utility::get_registry_key(HKEY_LOCAL_MACHINE,
+                                              "SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath")
+                .value_or("C:\\Program Files (x86)\\steam");
         if (!std::filesystem::exists(steampath)) {
             throw khepri::io::FileNotFoundError();
         }
@@ -32,17 +32,33 @@ std::filesystem::path SteamPaths::get_steam_root_path()
 #else
         return "C:\\Program Files (x86)\\steam";
 #endif
-    case khepri::utility::linux:
-        return "~/.steam/steam";
+    case khepri::utility::Platform::linux: {
+        std::filesystem::path steampath = "~/.steam";
+
+        if (!std::filesystem::exists(steampath)) {
+            throw khepri::io::FileNotFoundError();
+        }
+
+        if (!std::filesystem::exists(steampath / "steam")) {
+            throw khepri::io::FileNotFoundError();
+        }
+        return steampath;
+    }
     }
     throw khepri::Error("platform not supported");
 }
 
-std::filesystem::path SteamPaths::get_steam_library_folders_path()
+/// @brief Returns the path to the Steam 'libraryfolders.vdf' file, which contains additional
+/// Steam library locations.
+/// @return The full path to the 'libraryfolders.vdf' file as a std::filesystem::path.
+std::filesystem::path get_steam_library_folders_path()
 {
     return get_steam_root_path() / "steamapps" / "libraryfolders.vdf";
 }
-std::vector<std::filesystem::path> SteamPaths::get_steam_library_folders()
+
+/// @brief Returns the folder locations for all the steam library folders
+/// @return The vector containing all the library folder paths
+std::vector<std::filesystem::path> get_steam_library_folders()
 {
     const std::filesystem::path libraryfolders_path = get_steam_library_folders_path();
 
@@ -100,4 +116,4 @@ std::filesystem::path SteamPaths::get_steam_app_location(std::uint64_t appId)
     throw khepri::io::Error("Unable to read steam file");
 }
 
-} // namespace openglyph::steam
+} // namespace openglyph::utility

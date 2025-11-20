@@ -24,7 +24,7 @@ public:
     NotSupportedError() : khepri::io::Error("operation is not supported") {}
 };
 
-/// A data stream was not found
+/// A file was not found
 class FileNotFoundError : public khepri::io::Error
 {
 public:
