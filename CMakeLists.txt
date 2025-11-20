@@ -11,6 +11,7 @@ find_package(fmt REQUIRED)
 add_executable(${PROJECT_NAME}
     src/main.cpp
     src/version.cpp
+    src/io/path_manager.cpp
 )
 
 set_property(

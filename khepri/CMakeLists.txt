@@ -43,6 +43,7 @@ add_library(${PROJECT_NAME}
     src/renderer/diligent/renderer.cpp
     src/scene/scene_object.cpp
     src/utility/crc.cpp
+    src/utility/platform.cpp
     src/utility/string.cpp
     src/version_info.cpp
 )
