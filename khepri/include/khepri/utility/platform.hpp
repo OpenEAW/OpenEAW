@@ -1,6 +1,6 @@
 #include <cstdint>
-#include <string>
 #include <optional>
+#include <string>
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
@@ -26,6 +26,7 @@ constexpr Platform get_current_platform()
 }
 
 #if defined(_WIN32) || defined(_WIN64)
-std::optional<std::string> get_registry_key(HKEY key, std::string_view subkey, std::string_view value);
+std::optional<std::string> get_registry_key(HKEY key, std::string_view subkey,
+                                            std::string_view value);
 #endif
 } // namespace khepri::utility

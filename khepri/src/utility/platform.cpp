@@ -2,7 +2,8 @@
 #include <khepri/utility/platform.hpp>
 namespace khepri::utility {
 #if defined(_WIN32) || defined(_WIN64)
-std::optional<std::string> get_registry_key(HKEY key, std::string_view subkey, std::string_view value)
+std::optional<std::string> get_registry_key(HKEY key, std::string_view subkey,
+                                            std::string_view value)
 {
     DWORD type = REG_SZ;
     TCHAR result[255];
