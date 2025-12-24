@@ -23,4 +23,11 @@ class NotSupportedError : public khepri::io::Error
 public:
     NotSupportedError() : khepri::io::Error("operation is not supported") {}
 };
+
+/// A file was not found
+class FileNotFoundError : public khepri::io::Error
+{
+public:
+    FileNotFoundError() : khepri::io::Error("file not found") {}
+};
 } // namespace khepri::io
