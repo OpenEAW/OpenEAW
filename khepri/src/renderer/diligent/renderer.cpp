@@ -1205,8 +1205,6 @@ private:
         ci.pShaderSourceStreamFactory = &factory;
         ci.SourceLanguage             = SHADER_SOURCE_LANGUAGE_HLSL;
         ci.EntryPoint                 = entrypoint.c_str();
-        ci.ppCompilerOutput           = &compiler_output;
-        ci.ppConversionStream         = &conversion_stream;
 
         // Note: to support OpenGL, we need to use combined texture samplers.
         // This means HLSL shaders need to define a "Foo" texture and associated "FooSampler"
@@ -1216,7 +1214,7 @@ private:
         ci.Desc.CombinedSamplerSuffix      = "Sampler";
 
         RefCntPtr<IShader> shader;
-        m_device->CreateShader(ci, &shader);
+        m_device->CreateShader(ci, &shader, &compiler_output);
         if (shader == nullptr) {
             LOG.error("Failed to create shader from file: {}, error: {}", path,
                       compiler_output != nullptr
@@ -1244,7 +1242,7 @@ private:
         RefCntPtr<IDataBlob> glsl_source;
         if (conversion_stream != nullptr) {
             conversion_stream->Convert(entrypoint.c_str(), shader_type, true, "Sampler", false,
-                                       &glsl_source);
+                                       false, &glsl_source);
         }
 
         if (glsl_source != nullptr) {

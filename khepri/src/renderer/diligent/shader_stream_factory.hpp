@@ -53,6 +53,39 @@ class ShaderStreamFactory final
             return m_shader.data().size();
         }
 
+        size_t DILIGENT_CALL_TYPE GetPos() override
+        {
+            return m_pos;
+        }
+
+        bool DILIGENT_CALL_TYPE SetPos(size_t Offset, int Origin) override
+        {
+            const size_t size = m_shader.data().size();
+
+            switch (Origin) {
+            case SEEK_SET:
+                if (Offset > size)
+                    return false;
+                m_pos = Offset;
+                return true;
+
+            case SEEK_CUR:
+                if (Offset > size - m_pos)
+                    return false;
+                m_pos += Offset;
+                return true;
+
+            case SEEK_END:
+                if (Offset > size)
+                    return false;
+                m_pos = size - Offset;
+                return true;
+
+            default:
+                return false;
+            }
+        }
+
         bool DILIGENT_CALL_TYPE IsValid() override
         {
             return true;
