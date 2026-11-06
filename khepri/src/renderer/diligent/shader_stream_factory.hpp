@@ -58,27 +58,27 @@ class ShaderStreamFactory final
             return m_pos;
         }
 
-        bool DILIGENT_CALL_TYPE SetPos(size_t Offset, int Origin) override
+        bool DILIGENT_CALL_TYPE SetPos(size_t offset, int origin) override
         {
             const size_t size = m_shader.data().size();
 
-            switch ((Diligent::FilePosOrigin)Origin) {
+            switch (static_cast<Diligent::FilePosOrigin>(origin)) {
             case Diligent::FilePosOrigin::Start:
-                if (Offset > size)
+                if (offset > size)
                     return false;
-                m_pos = Offset;
+                m_pos = offset;
                 return true;
 
             case Diligent::FilePosOrigin::Curr:
-                if (Offset > size - m_pos)
+                if (offset > size - m_pos)
                     return false;
-                m_pos += Offset;
+                m_pos += offset;
                 return true;
 
             case Diligent::FilePosOrigin::End:
-                if (Offset > m_pos + size)
+                if (offset == 0)
                     return false;
-                m_pos = size + Offset;
+                m_pos = size + offset;
                 return true;
 
             default:
