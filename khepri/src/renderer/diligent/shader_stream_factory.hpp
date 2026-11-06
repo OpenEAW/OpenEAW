@@ -62,7 +62,7 @@ class ShaderStreamFactory final
         {
             const size_t size = m_shader.data().size();
 
-            switch (Origin) {
+            switch ((Diligent::FilePosOrigin)Origin) {
             case Diligent::FilePosOrigin::Start:
                 if (Offset > size)
                     return false;
