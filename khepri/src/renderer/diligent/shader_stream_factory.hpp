@@ -2,11 +2,11 @@
 
 #include <khepri/renderer/renderer.hpp>
 
+#include <BasicFileSystem.hpp>
 #include <ObjectBase.hpp>
 #include <Shader.h>
 #include <cassert>
 #include <iterator>
-
 namespace khepri::renderer::diligent {
 
 class ShaderStreamFactory final
@@ -63,22 +63,22 @@ class ShaderStreamFactory final
             const size_t size = m_shader.data().size();
 
             switch (Origin) {
-            case SEEK_SET:
+            case Diligent::FilePosOrigin::Start:
                 if (Offset > size)
                     return false;
                 m_pos = Offset;
                 return true;
 
-            case SEEK_CUR:
+            case Diligent::FilePosOrigin::Curr:
                 if (Offset > size - m_pos)
                     return false;
                 m_pos += Offset;
                 return true;
 
-            case SEEK_END:
-                if (Offset > size)
+            case Diligent::FilePosOrigin::End:
+                if (Offset > m_pos + size)
                     return false;
-                m_pos = size - Offset;
+                m_pos = size + Offset;
                 return true;
 
             default:
