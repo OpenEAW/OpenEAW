@@ -1,3 +1,4 @@
+#include "io/path_manager.hpp"
 #include "version.hpp"
 
 #include <fmt/format.h>
@@ -74,8 +75,7 @@ std::optional<CmdlineArgs> parse_cmdline_arguments(int argc, const char* argv[])
 {
     try {
         auto options = create_cmdline_options();
-        options.parse_positional({"input", "output"});
-        auto result = options.parse(argc, argv);
+        auto result  = options.parse(argc, argv);
 
         CmdlineArgs args;
         if (result.count("help") != 0) {
@@ -204,9 +204,14 @@ int main(int argc, const char* argv[])
 
         LOG.info("Running {}", full_version_string());
 
-        const auto curdir     = khepri::application::get_current_directory();
-        auto       data_paths = args->modpaths;
-        data_paths.push_back(curdir);
+        auto data_paths = args->modpaths;
+        if (auto install_path = openeaw::io::PathManager::get_install_path()) {
+            data_paths.push_back(*install_path / "GameData");
+        } else {
+            LOG.warning("No empire at war installation could be found");
+        }
+
+        const auto curdir = khepri::application::get_current_directory();
 
         LOG.info("Starting up in \"{}\" with {} data path(s):", curdir.string(), data_paths.size());
         for (const auto& data_path : data_paths) {
