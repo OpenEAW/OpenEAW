@@ -2,11 +2,11 @@
 
 #include <khepri/renderer/renderer.hpp>
 
+#include <BasicFileSystem.hpp>
 #include <ObjectBase.hpp>
 #include <Shader.h>
 #include <cassert>
 #include <iterator>
-
 namespace khepri::renderer::diligent {
 
 class ShaderStreamFactory final
@@ -51,6 +51,39 @@ class ShaderStreamFactory final
         size_t DILIGENT_CALL_TYPE GetSize() override
         {
             return m_shader.data().size();
+        }
+
+        size_t DILIGENT_CALL_TYPE GetPos() override
+        {
+            return m_pos;
+        }
+
+        bool DILIGENT_CALL_TYPE SetPos(size_t offset, int origin) override
+        {
+            const size_t size = m_shader.data().size();
+
+            switch (static_cast<Diligent::FilePosOrigin>(origin)) {
+            case Diligent::FilePosOrigin::Start:
+                if (offset > size)
+                    return false;
+                m_pos = offset;
+                return true;
+
+            case Diligent::FilePosOrigin::Curr:
+                if (offset > size - m_pos)
+                    return false;
+                m_pos += offset;
+                return true;
+
+            case Diligent::FilePosOrigin::End:
+                if (offset != 0)
+                    return false;
+                m_pos = size + offset;
+                return true;
+
+            default:
+                return false;
+            }
         }
 
         bool DILIGENT_CALL_TYPE IsValid() override

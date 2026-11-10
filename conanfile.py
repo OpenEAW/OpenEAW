@@ -35,9 +35,9 @@ class OpenEawConan(ConanFile):
     generators = "CMakeDeps"
 
     def requirements(self):
-        self.requires("assimp/[>=5.0 <6.0]")
+        self.requires("assimp/[>=6.0]")
         self.requires("cxxopts/3.0.0")
-        self.requires("diligent-core/api.252009")
+        self.requires("diligent-core/api.256019")
         self.requires("fmt/10.1.0")
         self.requires("freetype/[>=2.0 <3.0]")
         self.requires("glfw/[>=3.0 <4.0]")
@@ -45,6 +45,7 @@ class OpenEawConan(ConanFile):
         self.requires("rapidxml/1.13")
 
     def build_requirements(self):
+        self.tool_requires("cmake/[>=4.0 <5.0]")
         self.test_requires("gtest/[>=1.0 <2.0]")
 
     exports_sources = "CMakeLists.txt", "openglyph/*", "khepri/*", "src/*"
