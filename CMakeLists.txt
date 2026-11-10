@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.15)
 set(CMAKE_CXX_STANDARD 17)
 
 if(MSVC)
+    # Disable MSVC permissive mode to enforce stricter C++ standard conformance.
+    # This helps catch non-standard C++ code on Windows that would otherwise fail to compile on Linux.
     add_compile_options(/permissive-)
 endif()
 
