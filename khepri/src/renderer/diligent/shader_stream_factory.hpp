@@ -76,7 +76,7 @@ class ShaderStreamFactory final
                 return true;
 
             case Diligent::FilePosOrigin::End:
-                if (offset == 0)
+                if (offset != 0)
                     return false;
                 m_pos = size + offset;
                 return true;
