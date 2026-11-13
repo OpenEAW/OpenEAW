@@ -27,8 +27,8 @@ jobs:
       matrix:
         build_type: ['Debug','Release']
         # Use Windows 2022 specifically to get VS2022, which allows downloading pre-built binaries from conan center, rather than rebuilding them in CI.
-        # Use Ubuntu 22.04 to get GCC 11, which allows downloading pre-built binaries from conan center, rather than rebuilding them in CI.
-        os: ['windows-2022', 'ubuntu-22.04']
+        # Use Ubuntu 24.04 to get GCC 13, which allows downloading pre-built binaries from conan center, rather than rebuilding them in CI.
+        os: ['windows-2022', 'ubuntu-24.04']
 
     runs-on: ${{ matrix.os }}
     steps:
