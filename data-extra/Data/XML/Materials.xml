@@ -2,21 +2,24 @@
 <Materials>
     <!-- Note: the order of (non-texture) parameters in a material must be the same as in its shader's constant buffer -->
 
-    <!-- Special material for GUI rendering. See GUIDialogs.xml -->
-    <!--
-    <Material Name="GUI" AlphaBlend="blend_src" DepthEnable="false" ScissorEnable="true">
-        <Shader>GUI</Shader>
+    <!-- Material for rendering GUI sprites (textured quads) -->
+    <Material Name="GUI_Sprite" Type="Transparent">
+        <Shader>GUI/Sprite</Shader>
         <Param Name="BaseTexture" Type="texture"></Param>
-    </Material>
-    -->
 
-    <!-- Special material for Font rendering. See GUIDialogs.xml -->
-    <!--
-    <Material Name="Font" AlphaBlend="blend_src" DepthEnable="false">
-        <Shader>GUI</Shader>
-        <Param Name="BaseTexture" Type="texture"></Param>
+        <!-- Override default pipeline properties -->
+        <Alpha_Blend>blend_src</Alpha_Blend>
+        <Depth_Enable>false</Depth_Enable>
     </Material>
-    -->
+
+    <!-- Material for rendering GUI rectangles (untextured quads) -->
+    <Material Name="GUI_Rect" Type="Transparent">
+        <Shader>GUI/Rect</Shader>
+
+        <!-- Override default pipeline properties -->
+        <Alpha_Blend>blend_src</Alpha_Blend>
+        <Depth_Enable>false</Depth_Enable>
+    </Material>
 
     <Material Name="MeshAlpha" Type="Transparent">
         <Shader>MeshAlpha</Shader>

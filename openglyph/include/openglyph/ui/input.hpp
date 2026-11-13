@@ -9,23 +9,23 @@
 namespace openglyph::ui {
 
 /**
- * \brief Translates raw input events into game-specific actions for tactical mode.
+ * \brief Translates UI events into game-specific actions for tactical mode.
  *
  * This handler processes input events such as mouse movements and button presses and translates
  * them into game-specific actions like camera movement, unit selections, and more.
  */
-class TacticalModeInputHandler final : public khepri::ui::InputEventHandler
+class TacticalModeInputHandler final : public khepri::ui::EventHandler
 {
 public:
     explicit TacticalModeInputHandler(khepri::game::RtsCameraController& camera_controller,
                                       khepri::application::Window&       window);
 
-    bool HandleEvent(const khepri::ui::InputEvent& event) override;
+    bool handle_event(const khepri::ui::Event& event) override;
 
 private:
-    void RotateCamera(double x, double y);
-    void TranslateCamera(double x, double y);
-    void ZoomCamera(double amount);
+    void rotate_camera(double x, double y);
+    void translate_camera(double x, double y);
+    void zoom_camera(double amount);
 
     struct DragState
     {

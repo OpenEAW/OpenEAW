@@ -1,3 +1,4 @@
+#include <khepri/font/io/font_face.hpp>
 #include <khepri/log/log.hpp>
 #include <khepri/renderer/io/shader.hpp>
 #include <khepri/renderer/io/texture.hpp>
@@ -58,7 +59,8 @@ auto create_render_model_loader(AssetLoader&                       asset_loader,
 } // namespace
 
 AssetCache::AssetCache(AssetLoader& asset_loader, khepri::renderer::Renderer& renderer)
-    : m_shader_cache(create_shader_loader(asset_loader, renderer))
+    : m_asset_loader(asset_loader)
+    , m_shader_cache(create_shader_loader(asset_loader, renderer))
     , m_texture_cache(create_texture_loader(asset_loader, renderer))
     , m_render_pipelines(renderer)
     , m_materials(renderer, m_shader_cache.as_loader(), m_texture_cache.as_loader())
@@ -128,6 +130,26 @@ const openglyph::renderer::RenderModel* AssetCache::get_render_model(std::string
 {
     // Unfindable models are logged from the AssetLoader
     return m_render_model_cache.get(name);
+}
+
+const khepri::font::Font* AssetCache::get_font(const std::string_view           font_face_name,
+                                               const khepri::font::FontOptions& font_options)
+{
+    // Note: the font cache returns shared_ptr, but we're returning raw pointers. This is because
+    // the asset cache is never cleared, so the font cache maintains all fonts forever.
+    if (const auto font = m_font_cache.get(font_face_name, font_options)) {
+        return font.get();
+    }
+
+    // Font not found, add it to the cache
+    if (auto stream = m_asset_loader.open_font(font_face_name)) {
+        const auto font_face_desc = khepri::font::io::load_font_face(*stream);
+        m_font_cache.add_face(font_face_name, font_face_desc);
+        const auto font = m_font_cache.get(font_face_name, font_options);
+        assert(font);
+        return font.get();
+    }
+    return {};
 }
 
 } // namespace openglyph

@@ -6,6 +6,7 @@
 #include <khepri/math/color_srgb.hpp>
 #include <khepri/math/math.hpp>
 
+#include <cmath>
 #include <mutex>
 
 #include FT_STROKER_H
@@ -121,7 +122,7 @@ std::uint8_t find_darkest_below(gsl::span<const std::uint8_t> src, unsigned int 
                                 unsigned int height, unsigned int x, unsigned int y,
                                 unsigned int distance)
 {
-    if (y >= height - distance) {
+    if (distance >= height || y >= height - distance) {
         // Pretend the pixels outside of the source area are dark.
         return 0;
     }
@@ -335,6 +336,23 @@ FontFaceState::~FontFaceState()
     FT_Done_Face(m_face);
 
     LibraryState::get().release();
+}
+
+unsigned long FontFaceState::line_height(const FontOptions& options) const
+{
+    const auto font_width_px = static_cast<FT_UInt>(options.font_size_px);
+    const auto font_height_px =
+        static_cast<FT_UInt>(static_cast<float>(options.font_size_px) * options.vert_scale);
+
+    // Setting the font size modifies the face, so we can only render one string at a time
+    const std::lock_guard lock(m_mutex);
+
+    if (auto error = FT_Set_Pixel_Sizes(m_face, font_width_px, font_height_px)) {
+        LOG.error("cannot set character size: {}", error);
+        throw FontError("unable to create font");
+    }
+
+    return std::lround(m_face->size->metrics.height / FT_26_6_MULTIPLIER);
 }
 
 TextRender FontFaceState::render(std::u16string_view text, const FontOptions& options) const

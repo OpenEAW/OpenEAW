@@ -26,6 +26,7 @@
             <Alpha_Blend>blend_src</Alpha_Blend>
             <Depth_Func>less_equal</Depth_Func>
             <Depth_Write_Enable>false</Depth_Write_Enable>
+            <Scissor_Enable>true</Scissor_Enable>
         </RenderPass>
     </RenderPipeline>
 </RenderPipelines>

@@ -139,4 +139,10 @@ std::string join(const ContainerT& container, std::string_view separator)
     return ss.str();
 }
 
+/**
+ * @brief Checks if the string view begins with the given prefix
+ * @return true if the string view begins with the provided prefix, false otherwise.
+ */
+bool starts_with(std::string_view str, std::string_view prefix) noexcept;
+
 } // namespace khepri

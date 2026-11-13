@@ -49,6 +49,10 @@ public:
     /// \see #khepri::renderer::Renderer::render_size
     [[nodiscard]] Size render_size() const noexcept override;
 
+    /// \see #khepri::renderer::Renderer::add_render_size_listener
+    [[nodiscard]] Connection
+    add_render_size_listener(const Slot<void(const Size&)>& listener) override;
+
     /// \see #khepri::renderer::Renderer::create_shader
     std::unique_ptr<Shader> create_shader(const std::filesystem::path& path,
                                           const ShaderLoader&          loader) override;
@@ -81,7 +85,8 @@ public:
 
     /// \see #khepri::renderer::Renderer::render_sprites
     void render_sprites(const RenderPipeline& render_pipeline, gsl::span<const Sprite> sprites,
-                        const Material& material, gsl::span<const Material::Param> params) override;
+                        const Material& material, gsl::span<const Material::Param> params,
+                        std::optional<Rect> scissor_rect) override;
 
 private:
     class Impl;

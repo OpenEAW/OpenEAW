@@ -3,6 +3,7 @@
 #include "exceptions.hpp"
 
 #include <khepri/math/color_srgb.hpp>
+#include <khepri/math/color_srgba.hpp>
 #include <khepri/math/interpolator.hpp>
 #include <khepri/math/matrix.hpp>
 #include <khepri/math/vector2.hpp>
@@ -207,6 +208,22 @@ struct Parser<khepri::ColorSRGB>
             return khepri::ColorSRGB{openglyph::parse<ComponentType>(res->parts[0]),
                                      openglyph::parse<ComponentType>(res->parts[1]),
                                      openglyph::parse<ComponentType>(res->parts[2])};
+        }
+        return {};
+    }
+};
+
+template <>
+struct Parser<khepri::ColorSRGBA>
+{
+    static std::optional<khepri::ColorSRGBA> parse(std::string_view str) noexcept
+    {
+        using ComponentType = khepri::ColorSRGBA::ComponentType;
+        if (auto res = split<4>(str, ",")) {
+            return khepri::ColorSRGBA{openglyph::parse<ComponentType>(res->parts[0]),
+                                      openglyph::parse<ComponentType>(res->parts[1]),
+                                      openglyph::parse<ComponentType>(res->parts[2]),
+                                      openglyph::parse<ComponentType>(res->parts[3])};
         }
         return {};
     }

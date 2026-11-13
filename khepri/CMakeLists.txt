@@ -12,6 +12,7 @@ find_package(glfw3 REQUIRED)
 find_package(gsl-lite REQUIRED)
 
 add_library(${PROJECT_NAME}
+    src/adapters/ui_renderer.cpp
     src/adapters/window_input.cpp
     src/application/console_logger.cpp
     src/application/current_directory.cpp
@@ -42,6 +43,20 @@ add_library(${PROJECT_NAME}
     src/renderer/diligent/native_window.cpp
     src/renderer/diligent/renderer.cpp
     src/scene/scene_object.cpp
+    src/ui/button.cpp
+    src/ui/canvas.cpp
+    src/ui/checkbox.cpp
+    src/ui/combobox.cpp
+    src/ui/frame.cpp
+    src/ui/image.cpp
+    src/ui/label.cpp
+    src/ui/listbox.cpp
+    src/ui/radio_button.cpp
+    src/ui/radio_group.cpp
+    src/ui/rectangle.cpp
+    src/ui/scroll_panel.cpp
+    src/ui/scrollbar.cpp
+    src/ui/widget.cpp
     src/utility/crc.cpp
     src/utility/string.cpp
     src/version_info.cpp

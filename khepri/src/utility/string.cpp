@@ -88,4 +88,10 @@ std::vector<std::string_view> split(std::string_view str, std::string_view delim
     }
     return result;
 }
+
+bool starts_with(std::string_view str, std::string_view prefix) noexcept
+{
+    return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
+}
+
 } // namespace khepri

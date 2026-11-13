@@ -1,3 +1,7 @@
+#include "game_context.hpp"
+#include "game_data.hpp"
+#include "game_mode_stack.hpp"
+#include "game_modes/main_menu_mode.hpp"
 #include "version.hpp"
 
 #include <fmt/format.h>
@@ -5,34 +9,14 @@
 #include <khepri/application/console_logger.hpp>
 #include <khepri/application/current_directory.hpp>
 #include <khepri/application/exceptions.hpp>
-#include <khepri/application/window.hpp>
-#include <khepri/game/rts_camera.hpp>
 #include <khepri/log/log.hpp>
-#include <khepri/renderer/camera.hpp>
 #include <khepri/renderer/diligent/renderer.hpp>
-#include <khepri/renderer/io/shader.hpp>
-#include <khepri/renderer/io/texture.hpp>
-#include <khepri/scene/scene_object.hpp>
-#include <khepri/utility/cache.hpp>
-#include <khepri/utility/string.hpp>
-#include <openglyph/assets/asset_cache.hpp>
-#include <openglyph/assets/asset_loader.hpp>
-#include <openglyph/assets/io/map.hpp>
-#include <openglyph/game/behaviors/marker_behavior.hpp>
-#include <openglyph/game/behaviors/render_behavior.hpp>
-#include <openglyph/game/game_object_type_store.hpp>
-#include <openglyph/game/scene.hpp>
-#include <openglyph/game/scene_renderer.hpp>
-#include <openglyph/game/tactical_camera_store.hpp>
-#include <openglyph/io/mega_filesystem.hpp>
-#include <openglyph/renderer/io/material.hpp>
-#include <openglyph/renderer/io/model.hpp>
-#include <openglyph/renderer/material_store.hpp>
-#include <openglyph/renderer/model_creator.hpp>
-#include <openglyph/ui/input.hpp>
+#include <openglyph/assets/io/string_database.hpp>
 
 #include <cstdlib>
 #include <cxxopts.hpp>
+#include <filesystem>
+#include <vector>
 
 namespace {
 constexpr auto APPLICATION_NAME = "OpenEAW";
@@ -100,77 +84,43 @@ std::optional<CmdlineArgs> parse_cmdline_arguments(int argc, const char* argv[])
     return {};
 }
 
-auto create_camera(const khepri::Size& render_size)
+enum class Language
 {
-    const struct khepri::renderer::Camera::Properties properties = {
-        khepri::renderer::Camera::Type::perspective,
-        {100, 100, 150},
-        {0, 0, 0},
-        {0, 0, 1},
-        khepri::to_radians(90.0F),
-        0,
-        static_cast<float>(render_size.width) / static_cast<float>(render_size.height),
-        10.0F,
-        100000.0F};
-    return khepri::renderer::Camera{properties};
+    english,
+    german,
+    french,
+    spanish,
+    italian,
+    japanese,
+    korean,
+    chinese,
+    russian,
+    polish,
+    thai,
+};
+
+std::string get_string_database_path(Language language)
+{
+    std::vector<std::string> language_names{"ENGLISH", "GERMAN",   "FRENCH", "SPANISH",
+                                            "ITALIAN", "JAPANESE", "KOREAN", "CHINESE",
+                                            "RUSSIAN", "POLISH",   "THAI"};
+    assert(static_cast<std::size_t>(language) < language_names.size());
+    return fmt::format(FMT_STRING("MasterTextFile_{}.dat"),
+                       language_names[static_cast<std::size_t>(language)]);
 }
 
-std::unique_ptr<openglyph::Scene>
-CreateScene(std::string_view map_name, openglyph::AssetLoader& asset_loader,
-            openglyph::AssetCache&                asset_cache,
-            const openglyph::GameObjectTypeStore& game_object_types,
-            khepri::game::RtsCameraController&    camera)
+openglyph::StringDatabase read_string_database(openglyph::AssetLoader& asset_loader,
+                                               Language                language)
 {
-    if (auto stream = asset_loader.open_map(map_name)) {
-        const auto             map = openglyph::io::read_map(*stream);
-        openglyph::Environment environment{};
-        if (!map.environments.empty()) {
-            assert(map.active_environment < map.environments.size());
-            environment = map.environments[map.active_environment];
-        }
+    const auto filename = get_string_database_path(language);
+    if (auto stream = asset_loader.open_text(filename)) {
+        return openglyph::io::read_string_database(*stream);
+    }
 
-        auto scene =
-            std::make_unique<openglyph::Scene>(asset_cache, game_object_types, environment);
-
-        for (const auto& obj : map.objects) {
-            if (const auto* type = game_object_types.get(obj.type_crc)) {
-                auto object = std::make_shared<khepri::scene::SceneObject>();
-
-                // Store a (dumb, non-owning) reference to the GameObjectType
-                object->user_data(type);
-
-                if (const auto* render_model =
-                        asset_cache.get_render_model(type->space_model_name)) {
-                    auto& behavior =
-                        object->create_behavior<openglyph::RenderBehavior>(*render_model);
-                    behavior.scale(type->scale_factor);
-                    if (type->is_in_background) {
-                        behavior.render_layer(openglyph::RenderBehavior::RenderLayer::background);
-                    }
-                }
-
-                if (type->is_marker) {
-                    object->create_behavior<openglyph::MarkerBehavior>();
-                }
-
-                object->rotation(obj.facing);
-                object->position(obj.position);
-                scene->add_object(std::move(object));
-            }
-        }
-
-        // Find the first "player 0" marker to place the camera at.
-        for (const auto& object : scene->objects<openglyph::MarkerBehavior>()) {
-            if (const auto** type_ptr = object->user_data<const openglyph::GameObjectType*>()) {
-                if (khepri::case_insensitive_equals((*type_ptr)->name,
-                                                    "Player_0_Spawn_Point_Marker")) {
-                    camera.target({object->position().x, object->position().y});
-                    break;
-                }
-            }
-        }
-
-        return scene;
+    // If we can't find the string database for the requested language, fall back to English. If
+    // that fails too, return an empty string database.
+    if (language != Language::english) {
+        return read_string_database(asset_loader, Language::english);
     }
     return {};
 }
@@ -223,43 +173,29 @@ int main(int argc, const char* argv[])
         khepri::renderer::diligent::Renderer renderer(window.native_handle(),
                                                       khepri::renderer::ColorSpace::linear);
 
-        khepri::renderer::Camera camera = create_camera(window.render_size());
-        window.add_size_listener([&] {
-            const auto render_size = window.render_size();
-            renderer.render_size(render_size);
-            camera.aspect(static_cast<float>(render_size.width) / render_size.height);
-        });
+        window.add_size_listener([&] { renderer.render_size(window.render_size()); });
         renderer.render_size(window.render_size());
 
-        openglyph::AssetCache                asset_cache(asset_loader, renderer);
-        const openglyph::GameObjectTypeStore game_object_types(asset_loader, "GameObjectFiles.xml");
-        const openglyph::TacticalCameraStore tactical_camera_store(asset_loader,
-                                                                   "TacticalCameras.xml");
-        khepri::game::RtsCameraController    rts_camera = [&] {
-            if (auto rts_camera = tactical_camera_store.create("Space_Mode", camera)) {
-                return std::move(*rts_camera);
-            }
-            return khepri::game::RtsCameraController(camera, {0, 0});
-        }();
+        openglyph::AssetCache asset_cache(asset_loader, renderer);
 
-        khepri::WindowInputEventGenerator       input_event_generator(window);
-        openglyph::ui::TacticalModeInputHandler tactical_mode_input_handler(rts_camera, window);
-        input_event_generator.AddEventHandler(&tactical_mode_input_handler);
+        const openeaw::GameContext game_context{window, asset_loader, asset_cache, renderer};
 
-        std::unique_ptr<openglyph::Scene> scene = CreateScene(
-            "_MP_SPACE_ALDERAAN", asset_loader, asset_cache, game_object_types, rts_camera);
+        const openeaw::GameData game_data{
+            read_string_database(asset_loader, Language::english),
+            openglyph::GameObjectTypeStore(asset_loader, "GameObjectFiles.xml"),
+            openglyph::TacticalCameraStore(asset_loader, "TacticalCameras.xml")};
 
-        auto render_pipeline = asset_cache.get_render_pipeline("Default");
-        if (!render_pipeline) {
-            // We can't render without a pipeline, so this is a fatal error
-            throw std::runtime_error("Unable to load default render pipeline");
-        }
-        openglyph::SceneRenderer scene_renderer(renderer, *render_pipeline);
+        khepri::WindowInputEventGenerator input_event_generator(window);
+
+        openeaw::GameModeStack game_mode_stack(game_context, game_data);
+        input_event_generator.add_event_handler(&game_mode_stack);
+
+        game_mode_stack.activate_game_mode<openeaw::MainMenuMode>(game_mode_stack);
 
         std::chrono::steady_clock::time_point last_update_time = std::chrono::steady_clock::now();
         double                                unhandled_update_time = 0.0;
 
-        while (!window.should_close()) {
+        while (!window.should_close() && game_mode_stack.has_active_game_mode()) {
             khepri::application::Window::poll_events();
 
             const auto current_time      = std::chrono::steady_clock::now();
@@ -270,16 +206,14 @@ int main(int argc, const char* argv[])
             if (delta_update_time >= UPDATE_STEP_TIME) {
                 unhandled_update_time += delta_update_time;
                 while (unhandled_update_time >= UPDATE_STEP_TIME) {
-                    rts_camera.update(UPDATE_STEP_TIME);
+                    game_mode_stack.update(UPDATE_STEP_TIME);
                     unhandled_update_time -= UPDATE_STEP_TIME;
                 }
                 last_update_time = current_time;
             }
 
             renderer.clear(khepri::renderer::Renderer::clear_all);
-            if (scene) {
-                scene_renderer.render_scene(*scene, camera);
-            }
+            game_mode_stack.render();
 
             // Presenting the rendered content has two different approaches, depending on the
             // rendering system: For OpenGL, the window needs to swap the front and back

@@ -16,8 +16,10 @@
 #include "texture_desc.hpp"
 
 #include <khepri/math/matrix.hpp>
+#include <khepri/math/rect.hpp>
 #include <khepri/math/size.hpp>
 #include <khepri/utility/enum.hpp>
+#include <khepri/utility/signal.hpp>
 
 #include <gsl/gsl-lite.hpp>
 
@@ -25,8 +27,6 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
-#include <string_view>
-#include <vector>
 
 namespace khepri::renderer {
 
@@ -66,6 +66,15 @@ public:
      * Returns the size of the rendering area
      */
     [[nodiscard]] virtual Size render_size() const noexcept = 0;
+
+    /**
+     * Adds a listener that is called when the render size changes.
+     *
+     * \param listener the listener to add.
+     * \return a scoped connection that disconnects the listener when it goes out of scope.
+     */
+    [[nodiscard]] virtual Connection
+    add_render_size_listener(const Slot<void(const Size&)>& listener) = 0;
 
     /**
      * \brief Creates a shader by compiling a shader source file.
@@ -167,13 +176,15 @@ public:
      * \param[in] sprites a collection of sprites to render.
      * \param[in] material the material to render the sprites with.
      * \param[in] params the material parameters to render the sprites with.
+     * \param[in] scissor_rect an optional scissor rectangle to use when rendering the sprites.
      *
      * \throws ArgumentError if the material was created by a different render pipeline, or
      *                       if the render pipeline was not created by this renderer.
      */
     virtual void render_sprites(const RenderPipeline&   render_pipeline,
                                 gsl::span<const Sprite> sprites, const Material& material,
-                                gsl::span<const Material::Param> params) = 0;
+                                gsl::span<const Material::Param> params,
+                                std::optional<Rect>              scissor_rect) = 0;
 };
 
 } // namespace khepri::renderer

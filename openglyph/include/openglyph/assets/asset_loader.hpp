@@ -43,6 +43,11 @@ public:
     std::unique_ptr<khepri::io::Stream> open_texture(std::string_view name);
 
     /**
+     * Opens a mega texture asset
+     */
+    std::unique_ptr<khepri::io::Stream> open_mega_texture(std::string_view name);
+
+    /**
      * Opens a model asset
      */
     std::unique_ptr<khepri::io::Stream> open_model(std::string_view name);
@@ -56,6 +61,21 @@ public:
      * Opens a map asset
      */
     std::unique_ptr<khepri::io::Stream> open_map(std::string_view name);
+
+    /**
+     * Opens a font
+     */
+    std::unique_ptr<khepri::io::Stream> open_font(std::string_view name);
+
+    /**
+     * Opens a resource
+     */
+    std::unique_ptr<khepri::io::Stream> open_resource(std::string_view name);
+
+    /**
+     * Opens a text file
+     */
+    std::unique_ptr<khepri::io::Stream> open_text(std::string_view name);
 
 private:
     class AssetLayer;

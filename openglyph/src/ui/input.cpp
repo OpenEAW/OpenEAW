@@ -25,7 +25,7 @@ TacticalModeInputHandler::TacticalModeInputHandler(
 {
 }
 
-bool TacticalModeInputHandler::HandleEvent(const khepri::ui::InputEvent& event)
+bool TacticalModeInputHandler::handle_event(const khepri::ui::Event& event)
 {
     if (auto* mouse_move = std::get_if<khepri::ui::MouseMoveEvent>(&event)) {
         const auto cursor_screen_pos =
@@ -47,45 +47,45 @@ bool TacticalModeInputHandler::HandleEvent(const khepri::ui::InputEvent& event)
                 if (m_drag_state->modifiers == khepri::ui::KeyModifiers::ctrl) {
                     // Ctrl + middle mouse button: rotate camera
                     constexpr auto rotate_multiplier = 100;
-                    RotateCamera(rotate_multiplier * drag_diff.x, rotate_multiplier * drag_diff.y);
+                    rotate_camera(rotate_multiplier * drag_diff.x, rotate_multiplier * drag_diff.y);
                 } else {
                     // Middle mouse button: translate camera
                     constexpr auto move_multiplier = 400;
-                    TranslateCamera(move_multiplier * drag_diff.x, move_multiplier * drag_diff.y);
+                    translate_camera(move_multiplier * drag_diff.x, move_multiplier * drag_diff.y);
                 }
             }
         }
         m_prev_cursor_screen_pos = cursor_screen_pos;
         return true;
 
-    } else if (auto* mouse_button = std::get_if<khepri::ui::MouseButtonEvent>(&event)) {
-        if (mouse_button->action == khepri::ui::MouseButtonAction::pressed) {
-            if (!m_drag_state) {
-                m_drag_state = {mouse_button->button, mouse_button->modifiers,
-                                to_screen_space(mouse_button->position, m_window.render_size()),
-                                mouse_button->button == khepri::ui::MouseButton::middle};
-                m_window.set_infinite_cursor(true);
-            }
-        } else if (m_drag_state && mouse_button->button == m_drag_state->button) {
+    } else if (auto* mouse_press = std::get_if<khepri::ui::MousePressEvent>(&event)) {
+        if (!m_drag_state) {
+            m_drag_state = {mouse_press->button, mouse_press->modifiers,
+                            to_screen_space(mouse_press->cursor_position, m_window.render_size()),
+                            mouse_press->button == khepri::ui::MouseButton::middle};
+            m_window.set_infinite_cursor(true);
+        }
+    } else if (auto* mouse_button = std::get_if<khepri::ui::MouseReleaseEvent>(&event)) {
+        if (m_drag_state && mouse_button->button == m_drag_state->button) {
             m_drag_state = std::nullopt;
             m_window.set_infinite_cursor(false);
         }
     } else if (auto* mouse_scroll = std::get_if<khepri::ui::MouseScrollEvent>(&event)) {
-        ZoomCamera(mouse_scroll->scroll_y);
+        zoom_camera(mouse_scroll->scroll_y);
         return true;
     }
     // Event not handled
     return false;
 }
 
-void TacticalModeInputHandler::RotateCamera(double x, double y)
+void TacticalModeInputHandler::rotate_camera(double x, double y)
 {
     // Flip X and Y, because rotating left (negative X) should rotate the camera right. And rotating
     // down (negative Y) should rotate the camera up.
     m_camera_controller.rotate(khepri::to_radians(-x), khepri::to_radians(-y));
 }
 
-void TacticalModeInputHandler::TranslateCamera(double x, double y)
+void TacticalModeInputHandler::translate_camera(double x, double y)
 {
     // Scroll faster the higher the camera is
     const auto dist_mult = SCROLL_DISTANCE_MULTIPLIER * m_camera_controller.distance();
@@ -99,7 +99,7 @@ void TacticalModeInputHandler::TranslateCamera(double x, double y)
     m_camera_controller.target(m_camera_controller.target() + right * x + forward * -y);
 }
 
-void TacticalModeInputHandler::ZoomCamera(double amount)
+void TacticalModeInputHandler::zoom_camera(double amount)
 {
     m_camera_controller.zoom(amount);
 }

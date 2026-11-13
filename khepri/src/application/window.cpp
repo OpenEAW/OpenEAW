@@ -50,6 +50,7 @@ public:
         glfwSetCursorPosCallback(m_window, cursor_position_callback);
         glfwSetMouseButtonCallback(m_window, mouse_button_callback);
         glfwSetScrollCallback(m_window, mouse_scroll_callback);
+        glfwSetKeyCallback(m_window, key_callback);
 #ifdef _MSC_VER
         LOG.info("Created window: {}; hWnd: {}", (void*)m_window,
                  (void*)glfwGetWin32Window(m_window));
@@ -132,6 +133,11 @@ public:
         m_mouse_scroll_listeners.push_back(listener);
     }
 
+    void add_key_listener(const KeyListener& listener)
+    {
+        m_key_listeners.push_back(listener);
+    }
+
     void set_cursor_position(const Pointi& position)
     {
         glfwSetCursorPos(m_window, position.x, position.y);
@@ -212,6 +218,23 @@ private:
         }
     }
 
+    static void key_callback(GLFWwindow* w, int key, int scancode, int action, int mods)
+    {
+        if (action == GLFW_REPEAT) {
+            // We don't care about repeat events while a key is held down
+            return;
+        }
+
+        auto* window = get_window(w);
+        if (window != nullptr) {
+            for (const auto& listener : window->m_key_listeners) {
+                const auto ka = (action == GLFW_PRESS) ? KeyAction::pressed : KeyAction::released;
+                const auto km = convert_mods(mods);
+                listener(static_cast<KeyCode>(key), ka, km);
+            }
+        }
+    }
+
     static KeyModifiers convert_mods(int mods)
     {
         KeyModifiers result = KeyModifiers::none;
@@ -232,6 +255,7 @@ private:
     std::vector<CursorPositionListener> m_cursor_position_listeners;
     std::vector<MouseButtonListener>    m_mouse_button_listeners;
     std::vector<MouseScrollListener>    m_mouse_scroll_listeners;
+    std::vector<KeyListener>            m_key_listeners;
 
     khepri::Pointi m_cursor_pos{0, 0};
 };
@@ -273,6 +297,11 @@ void Window::add_size_listener(const SizeListener& listener)
 void Window::add_cursor_position_listener(const CursorPositionListener& listener)
 {
     m_impl->add_cursor_position_listener(listener);
+}
+
+void Window::add_key_listener(const KeyListener& listener)
+{
+    m_impl->add_key_listener(listener);
 }
 
 void Window::set_cursor_position(const Pointi& position)

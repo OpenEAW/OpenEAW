@@ -1,6 +1,7 @@
 #pragma once
 
 #include <khepri/game/rts_camera.hpp>
+#include <khepri/utility/string.hpp>
 
 #include <openglyph/assets/asset_loader.hpp>
 #include <openglyph/parser/xml_parser.hpp>
@@ -52,7 +53,7 @@ private:
 
     TacticalCamera read_tactical_camera(const XmlParser::Node& node);
 
-    std::map<std::string, TacticalCamera, std::less<>> m_tactical_cameras;
+    std::map<std::string, TacticalCamera, khepri::CaseInsensitiveLess> m_tactical_cameras;
 };
 
 } // namespace openglyph

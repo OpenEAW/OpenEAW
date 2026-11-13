@@ -91,7 +91,8 @@ GraphicsPipelineOptions combine_options(const GraphicsPipelineOptions& default_o
                             std::tuple(&GPO::alpha_blend_mode, GPO::AlphaBlendMode::none),
                             std::tuple(&GPO::depth_enable, true),
                             std::tuple(&GPO::depth_comparison_func, GPO::ComparisonFunc::less),
-                            std::tuple(&GPO::depth_write_enable, true)};
+                            std::tuple(&GPO::depth_write_enable, true),
+                            std::tuple(&GPO::scissor_enable, false)};
 
     GraphicsPipelineOptions combined_options;
 
@@ -383,6 +384,7 @@ class Renderer::Impl
             ci.GraphicsPipeline.DepthStencilDesc.DepthFunc =
                 to_comparison_func(*combined_options.depth_comparison_func);
             ci.GraphicsPipeline.RasterizerDesc.CullMode = to_cull_mode(*combined_options.cull_mode);
+            ci.GraphicsPipeline.RasterizerDesc.ScissorEnable = *combined_options.scissor_enable;
             ci.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = true;
 
             static_assert(sizeof(MeshDesc::Vertex) < std::numeric_limits<Uint32>::max(),
@@ -727,13 +729,21 @@ public:
 
     void render_size(const Size& size)
     {
-        m_swapchain->Resize(size.width, size.height);
+        if (size != render_size()) {
+            m_swapchain->Resize(size.width, size.height);
+            m_render_size_changed(size);
+        }
     }
 
     [[nodiscard]] Size render_size() const noexcept
     {
         const auto& desc = m_swapchain->GetDesc();
         return {desc.Width, desc.Height};
+    }
+
+    [[nodiscard]] Connection add_render_size_listener(const Slot<void(const Size&)>& listener)
+    {
+        return m_render_size_changed.connect(listener);
     }
 
     [[nodiscard]] std::unique_ptr<Shader> create_shader(const std::filesystem::path& path,
@@ -1031,6 +1041,8 @@ public:
         std::vector<const MeshInstance*> render_pass_meshes;
         render_pass_meshes.reserve(meshes.size());
 
+        m_context->SetScissorRects(0, nullptr, 0, 0);
+
         // Execute all render passes, in order
         for (const auto render_pass_index : pipeline->render_pass_indices()) {
             // Collect the meshes for this render pass
@@ -1104,7 +1116,8 @@ public:
 
     void render_sprites(const khepri::renderer::RenderPipeline& render_pipeline,
                         gsl::span<const Sprite> sprites, const khepri::renderer::Material& material,
-                        gsl::span<const khepri::renderer::Material::Param> params)
+                        gsl::span<const khepri::renderer::Material::Param> params,
+                        std::optional<Rect>                                scissor_rect)
     {
         const auto* const pipeline = dynamic_cast<const RenderPipeline*>(&render_pipeline);
         if (!pipeline) {
@@ -1114,6 +1127,16 @@ public:
         auto* mat = dynamic_cast<const Material*>(&material);
         if (mat == nullptr) {
             throw ArgumentError();
+        }
+
+        if (scissor_rect) {
+            Diligent::Rect drect{
+                scissor_rect->x, scissor_rect->y,
+                static_cast<Diligent::Int32>(scissor_rect->x + scissor_rect->width),
+                static_cast<Diligent::Int32>(scissor_rect->y + scissor_rect->height)};
+            m_context->SetScissorRects(1, &drect, 0, 0);
+        } else {
+            m_context->SetScissorRects(0, nullptr, 0, 0);
         }
 
         // Execute all render passes, in order
@@ -1396,6 +1419,8 @@ private:
         }
     }
 
+    Signal<void(const Size&)> m_render_size_changed;
+
     RefCntPtr<IRenderDevice>  m_device;
     RefCntPtr<IDeviceContext> m_context;
     RefCntPtr<ISwapChain>     m_swapchain;
@@ -1441,6 +1466,11 @@ void Renderer::render_size(const Size& size)
 Size Renderer::render_size() const noexcept
 {
     return m_impl->render_size();
+}
+
+Connection Renderer::add_render_size_listener(const Slot<void(const Size&)>& listener)
+{
+    return m_impl->add_render_size_listener(listener);
 }
 
 std::unique_ptr<Shader> Renderer::create_shader(const std::filesystem::path& path,
@@ -1494,9 +1524,10 @@ void Renderer::render_meshes(const khepri::renderer::RenderPipeline& render_pipe
 
 void Renderer::render_sprites(const khepri::renderer::RenderPipeline& render_pipeline,
                               gsl::span<const Sprite> sprites, const Material& material,
-                              gsl::span<const Material::Param> params)
+                              gsl::span<const Material::Param> params,
+                              std::optional<Rect>              scissor_rect)
 {
-    m_impl->render_sprites(render_pipeline, sprites, material, params);
+    m_impl->render_sprites(render_pipeline, sprites, material, params, scissor_rect);
 }
 
 } // namespace khepri::renderer::diligent

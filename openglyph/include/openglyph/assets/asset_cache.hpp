@@ -2,6 +2,7 @@
 
 #include "asset_loader.hpp"
 
+#include <khepri/font/font_cache.hpp>
 #include <khepri/renderer/renderer.hpp>
 #include <khepri/utility/cache.hpp>
 
@@ -38,13 +39,19 @@ public:
 
     const openglyph::renderer::RenderModel* get_render_model(std::string_view name);
 
+    const khepri::font::Font* get_font(const std::string_view           font_face_name,
+                                       const khepri::font::FontOptions& font_options);
+
 private:
+    AssetLoader& m_asset_loader;
+
     khepri::OwningCache<const khepri::renderer::Shader>         m_shader_cache;
     khepri::OwningCache<const khepri::renderer::Texture>        m_texture_cache;
     openglyph::renderer::RenderPipelineStore                    m_render_pipelines;
     openglyph::renderer::MaterialStore                          m_materials;
     openglyph::renderer::ModelCreator                           m_model_creator;
     khepri::OwningCache<const openglyph::renderer::RenderModel> m_render_model_cache;
+    khepri::font::FontCache                                     m_font_cache;
 };
 
 } // namespace openglyph

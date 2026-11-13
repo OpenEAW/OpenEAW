@@ -90,6 +90,12 @@ std::unique_ptr<khepri::io::Stream> AssetLoader::open_texture(std::string_view n
     return open_file(base_path() / "Art" / "Textures", name, extensions);
 }
 
+std::unique_ptr<khepri::io::Stream> AssetLoader::open_mega_texture(std::string_view name)
+{
+    const std::array<std::string_view, 1> extensions{"MTD"};
+    return open_file(base_path() / "Art" / "Textures", name, extensions);
+}
+
 std::unique_ptr<khepri::io::Stream> AssetLoader::open_model(std::string_view name)
 {
     const std::array<std::string_view, 1> extensions{"ALO"};
@@ -106,6 +112,22 @@ std::unique_ptr<khepri::io::Stream> AssetLoader::open_map(std::string_view name)
 {
     const std::array<std::string_view, 1> extensions{"TED"};
     return open_file(base_path() / "Art" / "Maps", name, extensions);
+}
+
+std::unique_ptr<khepri::io::Stream> AssetLoader::open_font(std::string_view name)
+{
+    const std::array<std::string_view, 1> extensions{"TTF"};
+    return open_file(base_path() / "Resources", name, extensions);
+}
+
+std::unique_ptr<khepri::io::Stream> AssetLoader::open_resource(std::string_view name)
+{
+    return open_file(base_path() / "Resources", name, {});
+}
+
+std::unique_ptr<khepri::io::Stream> AssetLoader::open_text(std::string_view name)
+{
+    return open_file(base_path() / "Text", name, {});
 }
 
 std::unique_ptr<khepri::io::Stream>

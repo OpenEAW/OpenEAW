@@ -70,6 +70,9 @@ struct GraphicsPipelineOptions
 
     /// Whether to enable depth-buffer writing (default=true). Ignored if \a depth_enable is false.
     std::optional<bool> depth_write_enable;
+
+    /// Whether to enable scissor testing
+    std::optional<bool> scissor_enable;
 };
 
 /**
