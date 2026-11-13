@@ -178,6 +178,7 @@ public:
     {
         disconnect();
         static_cast<Connection&>(*this) = conn;
+        return *this;
     }
 
     /**
@@ -190,6 +191,7 @@ public:
     {
         disconnect();
         static_cast<Connection&>(*this) = std::move(conn);
+        return *this;
     }
 
     /**
@@ -211,6 +213,35 @@ public:
         static_cast<Connection&>(*this) = {};
         return conn;
     }
+};
+
+/**
+ * A collection of ScopedConnections.
+ *
+ * Disconnects from all connections once this collection goes out of scope.
+ */
+class ScopedConnections final
+{
+public:
+    /**
+     * Constructs the collection from a list of ScopedConnections
+     */
+    template <typename... Args, typename = std::enable_if_t<
+                                    std::conjunction_v<std::is_same<ScopedConnection, Args>...>>>
+    explicit ScopedConnections(Args&&... args) : m_connections{std::forward<Args>(args)...}
+    {
+    }
+
+    /**
+     * Adds a ScopedConnection to the collection.
+     */
+    void add(ScopedConnection&& connection)
+    {
+        m_connections.push_back(std::move(connection));
+    }
+
+private:
+    std::vector<ScopedConnection> m_connections;
 };
 
 template <typename>

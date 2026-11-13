@@ -15,6 +15,13 @@ find_package(cxxopts REQUIRED)
 find_package(fmt REQUIRED)
 
 add_executable(${PROJECT_NAME}
+    src/dialogs/game_options_dialog.cpp
+    src/dialogs/main_menu_dialog.cpp
+    src/dialogs/single_player_menu_dialog.cpp
+    src/dialogs/skirmish_staging_dialog.cpp
+    src/game_modes/game_mode.cpp
+    src/game_modes/main_menu_mode.cpp
+    src/game_modes/tactical_game_mode.cpp
     src/main.cpp
     src/version.cpp
 )

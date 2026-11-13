@@ -25,6 +25,8 @@ public:
 
     TextRender render(std::u16string_view text, const FontOptions& options) const;
 
+    unsigned long line_height(const FontOptions& options) const;
+
 private:
     FT_Library m_library;
 

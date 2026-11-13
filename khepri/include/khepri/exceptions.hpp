@@ -18,4 +18,11 @@ public:
     ArgumentError() : Error("invalid argument") {}
 };
 
+/// Thrown when a method call is invalid for the object's current state
+class InvalidOperationException : public Error
+{
+public:
+    InvalidOperationException() : Error("invalid operation") {}
+};
+
 } // namespace khepri

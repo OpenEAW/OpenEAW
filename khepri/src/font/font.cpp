@@ -16,6 +16,11 @@ Font& Font::operator=(Font&& font) noexcept = default;
 
 Font::~Font() = default;
 
+[[nodiscard]] unsigned long Font::line_height() const
+{
+    return m_face->line_height(m_options);
+}
+
 TextRender Font::render(std::u16string_view text) const
 {
     return m_face->render(text, m_options);

@@ -93,6 +93,7 @@ parse_graphics_pipeline_options(const openglyph::XmlParser::Node& node)
         parse<khepri::renderer::GraphicsPipelineOptions::ComparisonFunc>(
             optional_child(node, "Depth_Func"));
     options.depth_write_enable = parse<bool>(optional_child(node, "Depth_Write_Enable"));
+    options.scissor_enable     = parse<bool>(optional_child(node, "Scissor_Enable"));
     return options;
 }
 } // namespace renderer::io

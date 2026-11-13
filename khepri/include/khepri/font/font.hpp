@@ -71,6 +71,19 @@ public:
      */
     [[nodiscard]] TextRender render(std::u16string_view text) const;
 
+    /**
+     * Returns the options with which this font was created.
+     */
+    [[nodiscard]] const FontOptions& options() const noexcept
+    {
+        return m_options;
+    }
+
+    /**
+     * Returns the line height (recommended distance between baselines) of this font, in pixels.
+     */
+    [[nodiscard]] unsigned long line_height() const;
+
 private:
     std::shared_ptr<detail::FontFaceState> m_face;
     FontOptions                            m_options;

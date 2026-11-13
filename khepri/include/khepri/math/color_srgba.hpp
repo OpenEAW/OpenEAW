@@ -1,6 +1,7 @@
 #pragma once
 
 #include "color_rgb.hpp"
+#include "color_rgba.hpp"
 #include "color_srgb.hpp"
 #include "math.hpp"
 
