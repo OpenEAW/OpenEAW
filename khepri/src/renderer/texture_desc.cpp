@@ -1,5 +1,9 @@
 #include <khepri/renderer/texture_desc.hpp>
 
+#include <algorithm>
+#include <array>
+#include <span>
+
 namespace khepri::renderer {
 namespace {
 template <typename T>
@@ -180,7 +184,7 @@ std::array<std::uint8_t, 16> unpack_bc4_block(const std::uint8_t* data)
 }
 
 template <typename OutputT>
-void copy_block(gsl::span<OutputT> pixels, unsigned long width, unsigned long height,
+void copy_block(std::span<OutputT> pixels, unsigned long width, unsigned long height,
                 unsigned long x, unsigned long y, const std::array<ColorSRGBA, 16>& values)
 {
     auto num_rows = std::min(4LU, height - y);

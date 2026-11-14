@@ -1,6 +1,8 @@
 #include <khepri/io/exceptions.hpp>
 #include <khepri/renderer/io/texture.hpp>
 
+#include <array>
+
 namespace khepri::renderer::io {
 
 // DirectDraw surface

@@ -1,9 +1,12 @@
 #pragma once
 
+#include "point.hpp"
 #include "polynomial.hpp"
 
+#include <array>
 #include <memory>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace khepri {
@@ -175,7 +178,7 @@ public:
     [[nodiscard]] std::optional<double> lower_bound(double y) const noexcept override;
 
     /// Returns the points used to construct this interpolator
-    [[nodiscard]] gsl::span<const Point> points() const noexcept
+    [[nodiscard]] std::span<const Point> points() const noexcept
     {
         return m_points;
     }

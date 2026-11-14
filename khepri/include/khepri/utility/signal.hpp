@@ -204,6 +204,7 @@ public:
     {
         disconnect();
         static_cast<Connection&>(*this) = std::move(conn);
+        return *this;
     }
 
     /// Releases the connection so it will not be disconnected on destruction

@@ -4,6 +4,7 @@
 #include <khepri/renderer/renderer.hpp>
 #include <khepri/ui/renderer.hpp>
 
+#include <span>
 #include <unordered_map>
 
 namespace khepri {
@@ -40,9 +41,9 @@ public:
     void begin_render(const Size& canvas_size) override;
     void end_render() override;
 
-    void render_rects(gsl::span<const FilledRect> rects, const Rect& clip_rect) override;
-    void render_quads(gsl::span<const Quad> quads, const Rect& clip_rect) override;
-    void render_texts(gsl::span<const Text> texts, const Rect& clip_rect) override;
+    void render_rects(std::span<const FilledRect> rects, const Rect& clip_rect) override;
+    void render_quads(std::span<const Quad> quads, const Rect& clip_rect) override;
+    void render_texts(std::span<const Text> texts, const Rect& clip_rect) override;
 
     TextureId  register_texture(const khepri::renderer::Texture* texture);
     FontId     register_font(const khepri::font::Font* font);

@@ -3,11 +3,10 @@
 #include <khepri/renderer/io/texture.hpp>
 #include <khepri/renderer/texture_desc.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <algorithm>
 #include <cassert>
 #include <optional>
+#include <span>
 
 namespace khepri::renderer::io {
 namespace {
@@ -114,7 +113,7 @@ public:
 
     [[nodiscard]] virtual std::vector<std::uint8_t>
     read_pixel_data(khepri::io::Stream&                       stream,
-                    gsl::span<const TextureDesc::Subresource> subresources) const
+                    std::span<const TextureDesc::Subresource> subresources) const
     {
         std::size_t data_size = 0;
         for (const auto& subresource : subresources) {
@@ -178,7 +177,7 @@ public:
 
     [[nodiscard]] std::vector<std::uint8_t>
     read_pixel_data(khepri::io::Stream&                       stream,
-                    gsl::span<const TextureDesc::Subresource> subresources) const override
+                    std::span<const TextureDesc::Subresource> subresources) const override
     {
         auto data = PixelFormatHandler::read_pixel_data(stream, subresources);
         if constexpr (Swizzle) {
@@ -215,7 +214,7 @@ public:
 
     [[nodiscard]] std::vector<std::uint8_t>
     read_pixel_data(khepri::io::Stream&                       stream,
-                    gsl::span<const TextureDesc::Subresource> subresources) const override
+                    std::span<const TextureDesc::Subresource> subresources) const override
     {
         std::size_t output_data_size = 0;
         for (const auto& subresource : subresources) {

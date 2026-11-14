@@ -1,12 +1,13 @@
 #include <openglyph/parser/parsers.hpp>
 
 #include <cassert>
+#include <span>
 #include <string_view>
 
 namespace openglyph::detail {
 
 bool split(std::string_view str, const char* separators,
-           gsl::span<std::string_view> result) noexcept
+           std::span<std::string_view> result) noexcept
 {
     assert(separators != nullptr);
     const char* const space_chars = " \t\r\n\v\f";

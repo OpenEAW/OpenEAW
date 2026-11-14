@@ -2,12 +2,10 @@
 
 #include <khepri/io/stream.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <filesystem>
 #include <memory>
+#include <span>
 #include <string_view>
-#include <utility>
 
 namespace openglyph {
 
@@ -82,7 +80,7 @@ private:
 
     std::unique_ptr<khepri::io::Stream> open_file(const std::filesystem::path&      base_path,
                                                   std::string_view                  name,
-                                                  gsl::span<const std::string_view> extensions);
+                                                  std::span<const std::string_view> extensions);
 
     std::vector<std::unique_ptr<AssetLayer>> m_asset_layers;
 };

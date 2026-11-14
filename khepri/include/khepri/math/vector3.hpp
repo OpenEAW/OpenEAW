@@ -5,10 +5,9 @@
 
 #include <khepri/utility/type_traits.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <cassert>
 #include <cmath>
+#include <span>
 #include <type_traits>
 
 namespace khepri {
@@ -148,7 +147,7 @@ public:
     const ComponentType& operator[](std::size_t index) const noexcept
     {
         assert(index < 3);
-        return gsl::span<const ComponentType>(&x, 3)[index];
+        return std::span<const ComponentType>(&x, 3)[index];
     }
 
     /**
@@ -159,7 +158,7 @@ public:
     ComponentType& operator[](std::size_t index) noexcept
     {
         assert(index < 3);
-        return gsl::span<ComponentType>(&x, 3)[index];
+        return std::span<ComponentType>(&x, 3)[index];
     }
 
     /// Calculates the length of the vector

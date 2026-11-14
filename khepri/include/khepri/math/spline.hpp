@@ -2,9 +2,8 @@
 
 #include "vector3.hpp"
 
-#include <gsl/gsl-lite.hpp>
-
 #include <initializer_list>
+#include <span>
 #include <vector>
 
 namespace khepri {
@@ -28,7 +27,7 @@ public:
      *
      * @throws khepri::ArgumentError if points.size() < 2
      */
-    explicit CubicSpline(gsl::span<const Vector3> points);
+    explicit CubicSpline(std::span<const Vector3> points);
 
     /**
      * @brief Construct a new CubicSpline.
@@ -44,7 +43,7 @@ public:
      *
      * @note the returned span is valid until the spline is destroyed.
      */
-    [[nodiscard]] gsl::span<const Vector3> points() const noexcept
+    [[nodiscard]] std::span<const Vector3> points() const noexcept
     {
         return m_points;
     }
@@ -90,7 +89,7 @@ private:
     class Polynomials
     {
     public:
-        explicit Polynomials(gsl::span<const Vector3> points);
+        explicit Polynomials(std::span<const Vector3> points);
 
         [[nodiscard]] auto size() const noexcept
         {
@@ -106,7 +105,7 @@ private:
         [[nodiscard]] Vector3 sample(std::size_t index, double u) const noexcept;
 
     private:
-        static std::vector<Polynomial> calculate_polynomials(gsl::span<const double> points);
+        static std::vector<Polynomial> calculate_polynomials(std::span<const double> points);
 
         // The n-1 parameterized polynomials for each dimension of the spline.
         // The polynomials are uniformly parameterized on [0,1].

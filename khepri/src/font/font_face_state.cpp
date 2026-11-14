@@ -8,6 +8,7 @@
 
 #include <cmath>
 #include <mutex>
+#include <span>
 
 #include FT_STROKER_H
 #include FT_GLYPH_H
@@ -55,8 +56,8 @@ private:
 /**
  * Blend a 8bpp grayscale bitmap into 32bpp RGBA's alpha channel
  */
-void blend_bitmap_alpha(gsl::span<const std::uint8_t> src, unsigned int width, unsigned int height,
-                        unsigned int src_pitch, gsl::span<std::uint8_t> dest,
+void blend_bitmap_alpha(std::span<const std::uint8_t> src, unsigned int width, unsigned int height,
+                        unsigned int src_pitch, std::span<std::uint8_t> dest,
                         unsigned int dest_pitch)
 {
     for (unsigned int y = 0; y < height; ++y) {
@@ -103,7 +104,7 @@ struct StringInfo
     FT_BBox               bbox{0, 0, 0, 0};
 };
 
-std::uint8_t find_darkest_above(gsl::span<const std::uint8_t> src, unsigned int src_pitch,
+std::uint8_t find_darkest_above(std::span<const std::uint8_t> src, unsigned int src_pitch,
                                 unsigned int x, unsigned int y, unsigned int distance)
 {
     if (y < distance) {
@@ -118,7 +119,7 @@ std::uint8_t find_darkest_above(gsl::span<const std::uint8_t> src, unsigned int 
     return darkest;
 }
 
-std::uint8_t find_darkest_below(gsl::span<const std::uint8_t> src, unsigned int src_pitch,
+std::uint8_t find_darkest_below(std::span<const std::uint8_t> src, unsigned int src_pitch,
                                 unsigned int height, unsigned int x, unsigned int y,
                                 unsigned int distance)
 {
@@ -137,8 +138,8 @@ std::uint8_t find_darkest_below(gsl::span<const std::uint8_t> src, unsigned int 
 /**
  * Blends a 8bpp grayscale bitmap into a 32bpp RGB with pre-multiplied Alpha
  */
-void blend_bitmap(gsl::span<const std::uint8_t> src, unsigned int width, unsigned int height,
-                  unsigned int src_pitch, gsl::span<std::uint8_t> dest, unsigned int dest_pitch,
+void blend_bitmap(std::span<const std::uint8_t> src, unsigned int width, unsigned int height,
+                  unsigned int src_pitch, std::span<std::uint8_t> dest, unsigned int dest_pitch,
                   const GradientDesc& gradient, const ColorRGB& dest_color, bool embossed)
 {
     // How much to lighten or darken
@@ -432,9 +433,9 @@ TextRender FontFaceState::render(std::u16string_view text, const FontOptions& op
             // color when calculating the final color. This avoids intermediate RGB -> sRGB ->
             // RGB conversions for the color channel and avoids the need to store the
             // intermediate texture at a higher resolution.
-            const auto src_buffer = gsl::span<const std::uint8_t>(
+            const auto src_buffer = std::span<const std::uint8_t>(
                 bitmap.buffer, bitmap.rows * static_cast<std::size_t>(bitmap.pitch));
-            const auto dst_buffer = gsl::span<std::uint8_t>(data).subspan((y + 1) * tex_pitch +
+            const auto dst_buffer = std::span<std::uint8_t>(data).subspan((y + 1) * tex_pitch +
                                                                           (x + 1) * std::size_t{4});
             blend_bitmap_alpha(src_buffer, bitmap.width, bitmap.rows, bitmap.pitch, dst_buffer,
                                tex_pitch);
@@ -443,7 +444,7 @@ TextRender FontFaceState::render(std::u16string_view text, const FontOptions& op
         // Convert the texture after stroke glyph to sRGB with pre-multiplied alpha
         // We will likely overwrite some parts of this when writing the main glyph, below.
         for (unsigned int y = 0; y < tex_height; ++y) {
-            const auto dst_row = gsl::span<std::uint8_t>(data).subspan(y * tex_pitch);
+            const auto dst_row = std::span<std::uint8_t>(data).subspan(y * tex_pitch);
             for (unsigned int x = 0, d = 0; x < tex_width; ++x, d += 4) {
                 if (dst_row[d + 3] != 0) {
                     const float alpha = static_cast<float>(dst_row[d + 3]) /
@@ -481,10 +482,10 @@ TextRender FontFaceState::render(std::u16string_view text, const FontOptions& op
         gradient.color_bottom   = options.color_bottom;
         gradient.color_bottom_y = static_cast<int>(y_color_bottom - y);
 
-        const auto src_buffer = gsl::span<const std::uint8_t>(
+        const auto src_buffer = std::span<const std::uint8_t>(
             bitmap.buffer, bitmap.rows * static_cast<size_t>(bitmap.pitch));
         const auto dst_buffer =
-            gsl::span<std::uint8_t>(data).subspan((y + 1) * tex_pitch + (x + 1) * std::size_t{4});
+            std::span<std::uint8_t>(data).subspan((y + 1) * tex_pitch + (x + 1) * std::size_t{4});
         blend_bitmap(src_buffer, bitmap.width, bitmap.rows, bitmap.pitch, dst_buffer, tex_pitch,
                      gradient, options.stroke_color, options.embossed);
     }

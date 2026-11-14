@@ -1,16 +1,9 @@
 #pragma once
 
 #include <khepri/io/exceptions.hpp>
-#include <khepri/math/vector2.hpp>
-#include <khepri/math/vector3.hpp>
-#include <khepri/math/vector4.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
-#include <climits>
 #include <cstdint>
-#include <iostream>
-#include <limits>
+#include <span>
 #include <type_traits>
 #include <vector>
 
@@ -45,7 +38,7 @@ public:
     }
 
     /// Returns the buffer with serialized data
-    [[nodiscard]] gsl::span<const std::uint8_t> data() const noexcept
+    [[nodiscard]] std::span<const std::uint8_t> data() const noexcept
     {
         return m_data;
     }
@@ -67,7 +60,7 @@ public:
      * \brief Constructs a deserializer from a buffer with data.
      * \note This object does NOT take ownership of the data.
      */
-    explicit Deserializer(gsl::span<const std::uint8_t> data) noexcept : m_data(data) {}
+    explicit Deserializer(std::span<const std::uint8_t> data) noexcept : m_data(data) {}
 
     /// Deserializes an object from the buffer
     template <typename T>
@@ -83,7 +76,7 @@ public:
     }
 
 private:
-    gsl::span<const std::uint8_t> m_data;
+    std::span<const std::uint8_t> m_data;
     std::size_t                   m_position{0};
 };
 
@@ -219,12 +212,12 @@ struct SerializeTraits<float>
     }
 };
 
-/// Specialization of #khepri::io::SerializeTraits for \c gsl::span
+/// Specialization of #khepri::io::SerializeTraits for \c std::span
 template <typename T>
-struct SerializeTraits<gsl::span<T>>
+struct SerializeTraits<std::span<T>>
 {
     /// \see #khepri::io::SerializeTraits::serialize
-    static void serialize(Serializer& s, const gsl::span<T>& value)
+    static void serialize(Serializer& s, const std::span<T>& value)
     {
         s.write(static_cast<std::uint32_t>(value.size()));
         for (const auto& elem : value) {
@@ -232,7 +225,7 @@ struct SerializeTraits<gsl::span<T>>
         }
     }
 
-    // Note: gsl::span can't be deserialized since it doesn't own its contents
+    // Note: std::span can't be deserialized since it doesn't own its contents
 };
 
 /// Specialization of #khepri::io::SerializeTraits for \c std::vector

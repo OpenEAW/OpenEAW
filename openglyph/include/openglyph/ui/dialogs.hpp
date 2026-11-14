@@ -8,9 +8,8 @@
 #include <khepri/ui/listbox.hpp>
 #include <khepri/ui/widget.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <memory>
+#include <span>
 #include <string>
 #include <variant>
 #include <vector>
@@ -198,7 +197,7 @@ public:
     }
 
     // Sets the items on a multi-item select widget (e.g. combobox or listbox)
-    void items(std::string_view widget_name, gsl::span<const std::u16string> items)
+    void items(std::string_view widget_name, std::span<const std::u16string> items)
     {
         if (auto widget = m_root_widget->find_child(widget_name)) {
             if (auto listbox = std::dynamic_pointer_cast<khepri::ui::Listbox>(widget)) {

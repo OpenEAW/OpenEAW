@@ -19,7 +19,7 @@ void UIRenderer::begin_render(const Size& canvas_size)
     m_render_state.canvas_size = canvas_size;
 }
 
-void UIRenderer::render_rects(gsl::span<const FilledRect> rects, const Rect& clip_rect)
+void UIRenderer::render_rects(std::span<const FilledRect> rects, const Rect& clip_rect)
 {
     assert(m_rendering);
     if (!m_rendering) {
@@ -74,7 +74,7 @@ void UIRenderer::render_rects(gsl::span<const FilledRect> rects, const Rect& cli
     render_sprites();
 }
 
-void UIRenderer::render_quads(gsl::span<const Quad> quads, const Rect& clip_rect)
+void UIRenderer::render_quads(std::span<const Quad> quads, const Rect& clip_rect)
 {
     assert(m_rendering);
     if (!m_rendering) {
@@ -147,7 +147,7 @@ void UIRenderer::render_quads(gsl::span<const Quad> quads, const Rect& clip_rect
     render_sprites();
 }
 
-void UIRenderer::render_texts(gsl::span<const Text> texts, const Rect& clip_rect)
+void UIRenderer::render_texts(std::span<const Text> texts, const Rect& clip_rect)
 {
     assert(m_rendering);
     if (!m_rendering) {

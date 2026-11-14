@@ -3,13 +3,13 @@
 #include <khepri/math/serialize.hpp>
 #include <khepri/utility/string.hpp>
 
-#include <gsl/gsl-lite.hpp>
 #include <openglyph/io/chunk_reader.hpp>
 #include <openglyph/renderer/io/model.hpp>
 
 #include <algorithm>
 #include <charconv>
 #include <limits>
+#include <span>
 #include <tuple>
 
 using Model         = openglyph::renderer::Model;
@@ -161,9 +161,9 @@ void verify(bool condition)
     }
 }
 
-std::string as_string(gsl::span<const uint8_t> data)
+std::string as_string(std::span<const uint8_t> data)
 {
-    const auto* const end = std::find(data.begin(), data.end(), 0);
+    const auto end = std::find(data.begin(), data.end(), 0);
     return {data.begin(), end};
 }
 
@@ -256,19 +256,19 @@ auto read_submesh(ChunkReader& reader)
 }
 
 template <typename T>
-T read_material_param_value(gsl::span<const std::uint8_t> data)
+T read_material_param_value(std::span<const std::uint8_t> data)
 {
     return khepri::io::Deserializer(data).read<T>();
 }
 
 template <>
-std::string read_material_param_value<std::string>(gsl::span<const std::uint8_t> data)
+std::string read_material_param_value<std::string>(std::span<const std::uint8_t> data)
 {
     return as_string(data);
 }
 
 template <typename T>
-Model::Material::Param read_material_param(gsl::span<const std::uint8_t> data)
+Model::Material::Param read_material_param(std::span<const std::uint8_t> data)
 {
     Model::Material::Param param;
     MinichunkReader        reader(data);

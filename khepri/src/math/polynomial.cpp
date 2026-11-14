@@ -1,15 +1,15 @@
-#pragma once
-
 #include <khepri/math/math.hpp>
 #include <khepri/math/polynomial.hpp>
 
+#include <algorithm>
 #include <cassert>
+#include <span>
 
 namespace khepri::detail {
 namespace {
 
 // Solve a constant function: y = c₀
-std::vector<double> solve_constant(double y, gsl::span<const double> coefficients)
+std::vector<double> solve_constant(double y, std::span<const double> coefficients)
 {
     // Solution: x = ℝ (set of all real numbers) iff. y = c₀
     assert(coefficients.size() == 1);
@@ -21,7 +21,7 @@ std::vector<double> solve_constant(double y, gsl::span<const double> coefficient
 }
 
 // Solve a linear polynomial: y = c₀ + c₁·x
-std::vector<double> solve_linear_polynomial(double y, gsl::span<const double> coefficients)
+std::vector<double> solve_linear_polynomial(double y, std::span<const double> coefficients)
 {
     // Solution: x = (y - c₀)/c₁
     assert(coefficients.size() == 2);
@@ -29,7 +29,7 @@ std::vector<double> solve_linear_polynomial(double y, gsl::span<const double> co
 }
 
 // Solve a quadratic polynomial: y = c₀ + c₁·x +  c₂·x²
-std::vector<double> solve_quadratic_polynomial(double y, gsl::span<const double> coefficients)
+std::vector<double> solve_quadratic_polynomial(double y, std::span<const double> coefficients)
 {
     assert(coefficients.size() == 3);
     const auto a = coefficients[2], b = coefficients[1], c = coefficients[0] - y;
@@ -43,7 +43,7 @@ std::vector<double> solve_quadratic_polynomial(double y, gsl::span<const double>
 }
 
 // Solve a cubic polynomial: y = c₀ + c₁·x + c₂·x² + c₃·x³
-std::vector<double> solve_cubic_polynomial(double y, gsl::span<const double> coefficients)
+std::vector<double> solve_cubic_polynomial(double y, std::span<const double> coefficients)
 {
     assert(coefficients.size() == 4);
     // First, rewrite to make c₃ = 1 (without loss of generality):
@@ -116,7 +116,7 @@ std::vector<double> solve_cubic_polynomial(double y, gsl::span<const double> coe
 }
 
 // Solve a quartic polynomial: y = c₀ + c₁·x + c₂·x² + c₃·x³ + c₄·x⁴
-std::vector<double> solve_quartic_polynomial(double y, gsl::span<const double> coefficients)
+std::vector<double> solve_quartic_polynomial(double y, std::span<const double> coefficients)
 {
     assert(coefficients.size() == 5);
 
@@ -173,7 +173,7 @@ std::vector<double> solve_quartic_polynomial(double y, gsl::span<const double> c
 
 } // namespace
 
-std::vector<double> solve_polynomial(double y, gsl::span<const double> coefficients)
+std::vector<double> solve_polynomial(double y, std::span<const double> coefficients)
 {
     // By the Abel-Ruffini theorem, there are only exact solutions for polynomials up to
     // degree 4. Numerical root-finding methods are quite complicated, and can be very sensitive to

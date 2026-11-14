@@ -4,6 +4,7 @@
 
 #include <any>
 #include <memory>
+#include <span>
 
 namespace khepri::renderer::diligent {
 
@@ -80,12 +81,12 @@ public:
     void present() override;
 
     /// \see #khepri::renderer::Renderer::render_meshes
-    void render_meshes(const RenderPipeline& render_pipeline, gsl::span<const MeshInstance> meshes,
+    void render_meshes(const RenderPipeline& render_pipeline, std::span<const MeshInstance> meshes,
                        const Camera& camera) override;
 
     /// \see #khepri::renderer::Renderer::render_sprites
-    void render_sprites(const RenderPipeline& render_pipeline, gsl::span<const Sprite> sprites,
-                        const Material& material, gsl::span<const Material::Param> params,
+    void render_sprites(const RenderPipeline& render_pipeline, std::span<const Sprite> sprites,
+                        const Material& material, std::span<const Material::Param> params,
                         std::optional<Rect> scissor_rect) override;
 
 private:

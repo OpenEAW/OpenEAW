@@ -22,8 +22,10 @@
 #include <Sampler.h>
 #include <SwapChain.h>
 #include <Texture.h>
+#include <algorithm>
 #include <functional>
 #include <iterator>
+#include <span>
 #include <stack>
 #include <unordered_map>
 #include <utility>
@@ -465,7 +467,7 @@ class Renderer::Impl
         // Activates the material for the given render pass on the context with specified
         // parameters.
         void set_active(GlobalRenderPassIndex render_pass_index, IDeviceContext& context,
-                        gsl::span<const khepri::renderer::Material::Param> params,
+                        std::span<const khepri::renderer::Material::Param> params,
                         IBuffer& directional_lights_buffer) const
         {
             if (render_pass_index < m_render_pass_data.size()) {
@@ -503,7 +505,7 @@ class Renderer::Impl
         };
 
         void apply_material_params(const RenderPassData& data, IDeviceContext& context,
-                                   gsl::span<const khepri::renderer::Material::Param> params) const
+                                   std::span<const khepri::renderer::Material::Param> params) const
         {
             std::optional<MapHelper<std::uint8_t>> map_helper;
             if (m_param_buffer != nullptr) {
@@ -514,9 +516,8 @@ class Renderer::Impl
             for (const auto& param : m_params) {
                 // Use the value from the provided params if it exists, otherwise the material's
                 // default
-                const auto* const it =
-                    std::find_if(params.begin(), params.end(),
-                                 [&](const auto& p) { return p.name == param.name; });
+                const auto  it    = std::find_if(params.begin(), params.end(),
+                                                 [&](const auto& p) { return p.name == param.name; });
                 const auto& value = (it != params.end()) ? it->value : param.default_value;
 
                 std::visit(
@@ -779,8 +780,8 @@ public:
                                                static_cast<unsigned int>(mat.num_point_lights()));
         };
 
-        auto material =
-            std::make_unique<Material>(*m_device, *m_swapchain, material_desc, [=](auto& mat) {
+        auto material = std::make_unique<Material>(
+            *m_device, *m_swapchain, material_desc, [=, this](auto& mat) {
                 // Remove the destroyed material from the alive list, and update the max light count
                 // in the process.
                 m_max_directional_light_count = 0;
@@ -1003,7 +1004,7 @@ public:
     }
 
     void render_meshes(const khepri::renderer::RenderPipeline& render_pipeline,
-                       gsl::span<const MeshInstance> meshes, const Camera& camera)
+                       std::span<const MeshInstance> meshes, const Camera& camera)
     {
         // Validate the input first
         const auto* const pipeline = dynamic_cast<const RenderPipeline*>(&render_pipeline);
@@ -1115,8 +1116,8 @@ public:
     }
 
     void render_sprites(const khepri::renderer::RenderPipeline& render_pipeline,
-                        gsl::span<const Sprite> sprites, const khepri::renderer::Material& material,
-                        gsl::span<const khepri::renderer::Material::Param> params,
+                        std::span<const Sprite> sprites, const khepri::renderer::Material& material,
+                        std::span<const khepri::renderer::Material::Param> params,
                         std::optional<Rect>                                scissor_rect)
     {
         const auto* const pipeline = dynamic_cast<const RenderPipeline*>(&render_pipeline);
@@ -1158,8 +1159,8 @@ public:
                     MapHelper<SpriteVertex> vertices_map(m_context, m_sprite_vertex_buffer,
                                                          MAP_WRITE, MAP_FLAG_DISCARD);
 
-                    const auto vertices = gsl::span<SpriteVertex>(
-                        vertices_map,
+                    const auto vertices = std::span<SpriteVertex>(
+                        static_cast<SpriteVertex*>(vertices_map),
                         m_sprite_vertex_buffer->GetDesc().Size / sizeof(SpriteVertex));
 
                     for (std::size_t i = 0; i < sprite_count * VERTICES_PER_SPRITE;
@@ -1366,7 +1367,7 @@ private:
     }
 
     std::vector<GlobalRenderPassIndex>
-    store_render_passes(gsl::span<const RenderPassDesc> render_passes)
+    store_render_passes(std::span<const RenderPassDesc> render_passes)
     {
         std::vector<GlobalRenderPassIndex> indices;
         indices.reserve(render_passes.size());
@@ -1385,7 +1386,7 @@ private:
         return indices;
     }
 
-    void remove_render_passes(gsl::span<const GlobalRenderPassIndex> indices)
+    void remove_render_passes(std::span<const GlobalRenderPassIndex> indices)
     {
         for (const auto& index : indices) {
             m_render_passes[index] = {};
@@ -1394,7 +1395,7 @@ private:
     }
 
     void fill_directional_light_buffer(IBuffer&                              buffer,
-                                       gsl::span<const DirectionalLightDesc> lights) const
+                                       std::span<const DirectionalLightDesc> lights) const
     {
         const std::size_t buffer_count   = buffer.GetDesc().Size / sizeof(DirectionalLight);
         const std::size_t lights_to_copy = std::min(lights.size(), buffer_count);
@@ -1517,14 +1518,14 @@ void Renderer::present()
 }
 
 void Renderer::render_meshes(const khepri::renderer::RenderPipeline& render_pipeline,
-                             gsl::span<const MeshInstance> meshes, const Camera& camera)
+                             std::span<const MeshInstance> meshes, const Camera& camera)
 {
     m_impl->render_meshes(render_pipeline, meshes, camera);
 }
 
 void Renderer::render_sprites(const khepri::renderer::RenderPipeline& render_pipeline,
-                              gsl::span<const Sprite> sprites, const Material& material,
-                              gsl::span<const Material::Param> params,
+                              std::span<const Sprite> sprites, const Material& material,
+                              std::span<const Material::Param> params,
                               std::optional<Rect>              scissor_rect)
 {
     m_impl->render_sprites(render_pipeline, sprites, material, params, scissor_rect);

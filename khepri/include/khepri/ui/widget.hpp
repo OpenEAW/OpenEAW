@@ -6,8 +6,6 @@
 
 #include <khepri/utility/signal.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <memory>
 #include <optional>
 #include <string>

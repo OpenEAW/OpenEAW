@@ -3,6 +3,8 @@
 
 #include <khepri/ui/listbox.hpp>
 
+#include <format>
+
 namespace openeaw {
 
 SkirmishStagingDialog::SkirmishStagingDialog(openglyph::ui::Dialog& dialog_,
@@ -29,9 +31,9 @@ SkirmishStagingDialog::SkirmishStagingDialog(openglyph::ui::Dialog& dialog_,
     const unsigned int num_players = 2;
     const unsigned int max_players = 8;
     for (unsigned int i = 0; i < max_players; ++i) {
-        const auto player_widget_name  = fmt::format(FMT_STRING("IDC_PLAYER_NAME_{}"), i);
-        const auto faction_widget_name = fmt::format(FMT_STRING("IDC_PLAYER_FACTION_{}"), i);
-        const auto color_widget_name   = fmt::format(FMT_STRING("IDC_PLAYER_COLOR_{}"), i);
+        const auto player_widget_name  = std::format("IDC_PLAYER_NAME_{}", i);
+        const auto faction_widget_name = std::format("IDC_PLAYER_FACTION_{}", i);
+        const auto color_widget_name   = std::format("IDC_PLAYER_COLOR_{}", i);
         const bool is_used             = (i < num_players);
 
         dialog().enabled(player_widget_name, is_used);

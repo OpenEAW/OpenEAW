@@ -2,10 +2,9 @@
 
 #include <khepri/io/stream.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <stack>
 #include <vector>
 
@@ -109,7 +108,7 @@ public:
      *
      * \note The caller must ensure that @a data is kept alive while this object is alive.
      */
-    explicit MinichunkReader(gsl::span<const std::uint8_t> data);
+    explicit MinichunkReader(std::span<const std::uint8_t> data);
 
     /**
      * Returns the ID of the current mini-chunk
@@ -121,7 +120,7 @@ public:
      * Reads the current mini-chunk's data.
      * \throws khepri::io::error if #has_chunks() is true
      */
-    gsl::span<const std::uint8_t> read_data() const;
+    std::span<const std::uint8_t> read_data() const;
 
     /**
      * Has the end of the mini-chunks been reached?
@@ -140,10 +139,10 @@ private:
     struct ChunkInfo
     {
         ChunkId                       id;
-        gsl::span<const std::uint8_t> data;
+        std::span<const std::uint8_t> data;
     };
 
-    gsl::span<const std::uint8_t> m_data;
+    std::span<const std::uint8_t> m_data;
     size_t                        m_pos{0};
     std::optional<ChunkInfo>      m_current;
 };

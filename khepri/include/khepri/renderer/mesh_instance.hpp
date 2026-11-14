@@ -1,20 +1,11 @@
 #pragma once
 
 #include "material.hpp"
-#include "material_desc.hpp"
 #include "mesh.hpp"
-#include "texture.hpp"
 
 #include <khepri/math/matrix.hpp>
-#include <khepri/math/vector2.hpp>
-#include <khepri/math/vector3.hpp>
-#include <khepri/math/vector4.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
-#include <cstdint>
-#include <string>
-#include <variant>
+#include <span>
 
 namespace khepri::renderer {
 
@@ -38,7 +29,7 @@ struct MeshInstance
     const Material* material{nullptr};
 
     /// Material parameters for this instance
-    gsl::span<Material::Param> material_params;
+    std::span<Material::Param> material_params;
 };
 
 } // namespace khepri::renderer

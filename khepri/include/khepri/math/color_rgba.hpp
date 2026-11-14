@@ -2,6 +2,8 @@
 
 #include "color_rgb.hpp"
 
+#include <span>
+
 namespace khepri {
 
 class ColorSRGBA;
@@ -104,14 +106,14 @@ public:
     const ComponentType& operator[](int index) const noexcept
     {
         assert(index < 4);
-        return gsl::span<const ComponentType>(&r, 4)[index];
+        return std::span<const ComponentType>(&r, 4)[index];
     }
 
     /// Indexes the color. 0 is Red, 1 is Green, etc
     ComponentType& operator[](int index) noexcept
     {
         assert(index < 4);
-        return gsl::span<ComponentType>(&r, 4)[index];
+        return std::span<ComponentType>(&r, 4)[index];
     }
 };
 #pragma pack(pop)

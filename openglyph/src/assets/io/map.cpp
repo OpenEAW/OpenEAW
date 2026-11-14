@@ -6,7 +6,9 @@
 #include <openglyph/assets/io/map.hpp>
 #include <openglyph/io/chunk_reader.hpp>
 
+#include <algorithm>
 #include <cstdint>
+#include <span>
 
 namespace openglyph::io {
 namespace {
@@ -38,37 +40,37 @@ void verify(bool condition)
     }
 }
 
-auto as_string(gsl::span<const uint8_t> data)
+auto as_string(std::span<const uint8_t> data)
 {
-    const auto* const end = std::find(data.begin(), data.end(), 0);
+    const auto end = std::find(data.begin(), data.end(), 0);
     return std::string{data.begin(), end};
 }
 
-auto as_float(gsl::span<const uint8_t> data)
+auto as_float(std::span<const uint8_t> data)
 {
     verify(data.size() == sizeof(float));
     return khepri::io::Deserializer(data).read<float>();
 }
 
-auto as_uint32(gsl::span<const uint8_t> data)
+auto as_uint32(std::span<const uint8_t> data)
 {
     verify(data.size() == sizeof(std::uint32_t));
     return khepri::io::Deserializer(data).read<std::uint32_t>();
 }
 
-auto as_vector3(gsl::span<const uint8_t> data)
+auto as_vector3(std::span<const uint8_t> data)
 {
     verify(data.size() == sizeof(khepri::Vector3f));
     return khepri::io::Deserializer(data).read<khepri::Vector3f>();
 }
 
-auto as_rgb_color(gsl::span<const uint8_t> data)
+auto as_rgb_color(std::span<const uint8_t> data)
 {
     verify(data.size() == sizeof(khepri::ColorRGB));
     return khepri::io::Deserializer(data).read<khepri::ColorRGB>();
 }
 
-Map::Header read_map_header(gsl::span<const std::uint8_t> data)
+Map::Header read_map_header(std::span<const std::uint8_t> data)
 {
     Map::Header     header;
     MinichunkReader reader(data);
@@ -84,7 +86,7 @@ Map::Header read_map_header(gsl::span<const std::uint8_t> data)
     return header;
 }
 
-auto read_map_environment(gsl::span<const std::uint8_t> data)
+auto read_map_environment(std::span<const std::uint8_t> data)
 {
     Environment     environment;
     MinichunkReader reader(data);
@@ -194,7 +196,7 @@ auto read_map_environment(gsl::span<const std::uint8_t> data)
     return environment;
 }
 
-auto read_active_environment(gsl::span<const std::uint8_t> data)
+auto read_active_environment(std::span<const std::uint8_t> data)
 {
     std::uint32_t   active_environment = 0;
     MinichunkReader reader(data);

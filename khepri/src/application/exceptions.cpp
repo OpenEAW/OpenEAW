@@ -1,10 +1,9 @@
 #include <khepri/application/exceptions.hpp>
 #include <khepri/log/log.hpp>
 
-#include <fmt/ranges.h>
-#include <gsl/gsl-lite.hpp>
-
+#include <array>
 #include <exception>
+#include <span>
 #include <utility>
 
 #if defined(_MSC_VER)
@@ -30,13 +29,13 @@ void print_native_exception(const std::string& context, HANDLE hProcess,
         const auto* exceptr        = exc_ptrs->ExceptionRecord;
         auto*       context_record = exc_ptrs->ContextRecord;
 
-        gsl::span<const ULONG_PTR> params(&exceptr->ExceptionInformation[0],
+        std::span<const ULONG_PTR> params(&exceptr->ExceptionInformation[0],
                                           exceptr->NumberParameters);
 
-        LOG.error(
-            "Caught native exception in '{}': code={:#x}, flags={}, address={:p}, params={{{:#x}}}",
-            context, exceptr->ExceptionCode, exceptr->ExceptionFlags, exceptr->ExceptionAddress,
-            fmt::join(params, ", "));
+        LOG.error("Caught native exception in '{}': code={:#x}, flags={}, address={:p}, "
+                  "params={{{::#x}}}",
+                  context, exceptr->ExceptionCode, exceptr->ExceptionFlags,
+                  exceptr->ExceptionAddress, params);
 #ifndef NDEBUG
         DWORD machine_type = 0;
 #if defined(_M_IX86)

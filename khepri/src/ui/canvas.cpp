@@ -1,7 +1,6 @@
 #include <khepri/exceptions.hpp>
 #include <khepri/ui/canvas.hpp>
-
-#include <gsl/gsl-lite.hpp>
+#include <khepri/utility/scope.hpp>
 
 #include <cassert>
 namespace khepri::ui {
@@ -250,7 +249,7 @@ void Canvas::trickle_event_down(Widget& widget, const Event& event)
             // Store that this widget is handling the mouse event, for mouse capture
             m_mouse_event_widget = widget.weak_from_this();
         }
-        auto _ = gsl::finally([this] { m_mouse_event_widget.reset(); });
+        auto _ = ScopeExit([this] { m_mouse_event_widget.reset(); });
 
         widget.pre_event(event);
     }
@@ -263,7 +262,7 @@ void Canvas::bubble_event_up(Widget& widget, const Event& event)
             // Store that this widget is handling the mouse event, for mouse capture
             m_mouse_event_widget = widget.weak_from_this();
         }
-        auto _ = gsl::finally([this] { m_mouse_event_widget.reset(); });
+        auto _ = ScopeExit([this] { m_mouse_event_widget.reset(); });
 
         widget.on_event(event);
     }

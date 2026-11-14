@@ -2,6 +2,7 @@
 
 #include <khepri/utility/type_traits.hpp>
 
+#include <cassert>
 #include <cmath>
 #include <stdexcept>
 

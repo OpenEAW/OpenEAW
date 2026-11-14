@@ -6,6 +6,7 @@
 #include <openglyph/parser/parsers.hpp>
 
 #include <algorithm>
+#include <span>
 #include <utility>
 
 namespace openglyph {
@@ -19,7 +20,7 @@ T identity(const T& value) noexcept
 }
 
 template <typename UnitConverter>
-std::vector<khepri::Point> convert_unit(gsl::span<const khepri::Point> points,
+std::vector<khepri::Point> convert_unit(std::span<const khepri::Point> points,
                                         const UnitConverter&           unit_converter)
 {
     if (unit_converter == &identity<double>) {

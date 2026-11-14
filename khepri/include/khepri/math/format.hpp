@@ -5,63 +5,69 @@
 #include "vector3.hpp"
 #include "vector4.hpp"
 
-#include <fmt/format.h>
-
 namespace khepri {
 
 template <typename T>
-struct fmt::formatter<BasicVector2<T>>
+struct std::formatter<BasicVector2<T>>
 {
-    constexpr auto parse(fmt::format_parse_context& ctx)
+    template <class ParseContext>
+    constexpr ParseContext::iterator parse(ParseContext& ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const khepri::BasicVector2<T>& v, format_context& ctx) const
+    template <class FmtContext>
+    FmtContext::iterator format(const khepri::BasicVector2<T>& v, FmtContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{{{}, {}}}", v.x, v.y);
+        return std::format_to(ctx.out(), "{{{}, {}}}", v.x, v.y);
     }
 };
 
 template <typename T>
-struct fmt::formatter<BasicVector3<T>>
+struct std::formatter<BasicVector3<T>>
 {
-    constexpr auto parse(fmt::format_parse_context& ctx)
+    template <class ParseContext>
+    constexpr ParseContext::iterator parse(ParseContext& ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const khepri::BasicVector3<T>& v, format_context& ctx) const
+    template <class FmtContext>
+    FmtContext::iterator format(const khepri::BasicVector3<T>& v, FmtContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{{{}, {}, {}}}", v.x, v.y, v.z);
+        return std::format_to(ctx.out(), "{{{}, {}, {}}}", v.x, v.y, v.z);
     }
 };
 
 template <typename T>
-struct fmt::formatter<BasicVector4<T>>
+struct std::formatter<BasicVector4<T>>
 {
-    constexpr auto parse(fmt::format_parse_context& ctx)
+    template <class ParseContext>
+    constexpr ParseContext::iterator parse(ParseContext& ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const khepri::BasicVector4<T>& v, format_context& ctx) const
+    template <class FmtContext>
+    FmtContext::iterator format(const khepri::BasicVector4<T>& v, FmtContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{{{}, {}, {}, {}}}", v.x, v.y, v.z, v.w);
+        return std::format_to(ctx.out(), "{{{}, {}, {}, {}}}", v.x, v.y, v.z, v.w);
     }
 };
 
 template <typename T>
-struct fmt::formatter<BasicQuaternion<T>>
+struct std::formatter<BasicQuaternion<T>>
 {
-    constexpr auto parse(fmt::format_parse_context& ctx)
+    template <class ParseContext>
+    constexpr ParseContext::iterator parse(ParseContext& ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const khepri::BasicQuaternion<T>& q, format_context& ctx) const
+    template <class FmtContext>
+    FmtContext::iterator format(const khepri::BasicQuaternion<T>& q, FmtContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "{{{}, {}, {}, {}}}", q.x, q.y, q.z, q.w);
+        return std::format_to(ctx.out(), "{{{}, {}, {}, {}}}", q.x, q.y, q.z, q.w);
     }
 };
 
