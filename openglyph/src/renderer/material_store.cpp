@@ -22,7 +22,7 @@ MaterialStore::MaterialStore(khepri::renderer::Renderer&             renderer,
 }
 
 void MaterialStore::register_materials(
-    gsl::span<const openglyph::renderer::MaterialDesc> material_descs)
+    std::span<const openglyph::renderer::MaterialDesc> material_descs)
 {
     for (const auto& desc : material_descs) {
         khepri::renderer::MaterialDesc info;

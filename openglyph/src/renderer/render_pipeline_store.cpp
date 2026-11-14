@@ -8,7 +8,7 @@ RenderPipelineStore::RenderPipelineStore(khepri::renderer::Renderer& renderer)
 }
 
 void RenderPipelineStore::register_render_pipelines(
-    gsl::span<const khepri::renderer::RenderPipelineDesc> pipeline_descs)
+    std::span<const khepri::renderer::RenderPipelineDesc> pipeline_descs)
 {
     for (const auto& desc : pipeline_descs) {
         m_render_pipelines.emplace(desc.name, m_renderer.create_render_pipeline(desc));

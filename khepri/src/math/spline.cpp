@@ -17,7 +17,7 @@ double CubicSpline::Polynomial::sample(double x) const noexcept
 }
 
 std::vector<CubicSpline::Polynomial>
-CubicSpline::Polynomials::calculate_polynomials(gsl::span<const double> points)
+CubicSpline::Polynomials::calculate_polynomials(std::span<const double> points)
 {
     if (points.size() < 2) {
         throw khepri::ArgumentError();
@@ -138,7 +138,7 @@ CubicSpline::Polynomials::calculate_polynomials(gsl::span<const double> points)
     return polynomials;
 }
 
-CubicSpline::Polynomials::Polynomials(gsl::span<const Vector3> points)
+CubicSpline::Polynomials::Polynomials(std::span<const Vector3> points)
     : m_polynomials_x(calculate_polynomials(pluck(points, &Vector3::x)))
     , m_polynomials_y(calculate_polynomials(pluck(points, &Vector3::y)))
     , m_polynomials_z(calculate_polynomials(pluck(points, &Vector3::z)))
@@ -158,7 +158,7 @@ Vector3 CubicSpline::Polynomials::sample(std::size_t index, double u) const noex
     return {x, y, z};
 }
 
-CubicSpline::CubicSpline(gsl::span<const Vector3> points)
+CubicSpline::CubicSpline(std::span<const Vector3> points)
     : m_polynomials(points)
     , m_arc_offsets(calculate_arc_offsets(m_polynomials))
     , m_points{points.begin(), points.end()}

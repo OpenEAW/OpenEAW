@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)
     # Disable MSVC permissive mode to enforce stricter C++ standard conformance.
@@ -12,7 +14,6 @@ project(OpenEAW CXX)
 
 # External libraries
 find_package(cxxopts REQUIRED)
-find_package(fmt REQUIRED)
 
 add_executable(${PROJECT_NAME}
     src/dialogs/game_options_dialog.cpp
@@ -45,7 +46,6 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     cxxopts::cxxopts
-    fmt::fmt
     openglyph::openglyph
     khepri::khepri
 )

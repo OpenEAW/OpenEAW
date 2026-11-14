@@ -7,12 +7,10 @@
 #include <khepri/renderer/texture.hpp>
 #include <khepri/utility/string.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <map>
 #include <memory>
+#include <span>
 #include <string>
-#include <utility>
 
 namespace openglyph::renderer {
 
@@ -32,7 +30,7 @@ public:
     MaterialStore& operator=(const MaterialStore&)     = delete;
     MaterialStore& operator=(MaterialStore&&) noexcept = delete;
 
-    void register_materials(gsl::span<const MaterialDesc> material_descs);
+    void register_materials(std::span<const MaterialDesc> material_descs);
 
     [[nodiscard]] khepri::renderer::Material* get(std::string_view name) const noexcept;
 

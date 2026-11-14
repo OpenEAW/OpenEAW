@@ -21,12 +21,11 @@
 #include <khepri/utility/enum.hpp>
 #include <khepri/utility/signal.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <span>
 
 namespace khepri::renderer {
 
@@ -167,7 +166,7 @@ public:
      *                       this renderer.
      */
     virtual void render_meshes(const RenderPipeline&         render_pipeline,
-                               gsl::span<const MeshInstance> meshes, const Camera& camera) = 0;
+                               std::span<const MeshInstance> meshes, const Camera& camera) = 0;
 
     /**
      * Renders a collection of sprites in camera-space
@@ -182,8 +181,8 @@ public:
      *                       if the render pipeline was not created by this renderer.
      */
     virtual void render_sprites(const RenderPipeline&   render_pipeline,
-                                gsl::span<const Sprite> sprites, const Material& material,
-                                gsl::span<const Material::Param> params,
+                                std::span<const Sprite> sprites, const Material& material,
+                                std::span<const Material::Param> params,
                                 std::optional<Rect>              scissor_rect) = 0;
 };
 

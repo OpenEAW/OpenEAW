@@ -2,9 +2,8 @@
 
 #include "math.hpp"
 
-#include <gsl/gsl-lite.hpp>
-
 #include <cassert>
+#include <span>
 
 namespace khepri {
 
@@ -97,14 +96,14 @@ public:
     [[nodiscard]] const ComponentType& operator[](int index) const noexcept
     {
         assert(index < 3);
-        return gsl::span<const ComponentType>(&r, 3)[index];
+        return std::span<const ComponentType>(&r, 3)[index];
     }
 
     /// Indexes the color. 0 is Red, 1 is Green, etc
     ComponentType& operator[](int index) noexcept
     {
         assert(index < 3);
-        return gsl::span<ComponentType>(&r, 3)[index];
+        return std::span<ComponentType>(&r, 3)[index];
     }
 };
 #pragma pack(pop)

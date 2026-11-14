@@ -7,9 +7,7 @@
 #include <khepri/math/rect.hpp>
 #include <khepri/math/size.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
-#include <cstdint>
+#include <span>
 #include <string>
 
 namespace khepri::ui {
@@ -143,7 +141,7 @@ public:
      * \param[in] rects rectangles to render.
      * \param[in] clip_rect the clipping area that the rendered content will be clipped to.
      */
-    virtual void render_rects(gsl::span<const FilledRect> rects, const Rect& clip_rect) = 0;
+    virtual void render_rects(std::span<const FilledRect> rects, const Rect& clip_rect) = 0;
 
     /**
      * Renders a collection of quads.
@@ -156,7 +154,7 @@ public:
      *
      * \throws InvalidOperationException if #begin_render wasn't called.
      */
-    virtual void render_quads(gsl::span<const Quad> quads, const Rect& clip_rect) = 0;
+    virtual void render_quads(std::span<const Quad> quads, const Rect& clip_rect) = 0;
 
     /**
      * Renders a collection of texts.
@@ -169,7 +167,7 @@ public:
      *
      * \throws InvalidOperationException if #begin_render wasn't called.
      */
-    virtual void render_texts(gsl::span<const Text> texts, const Rect& clip_rect) = 0;
+    virtual void render_texts(std::span<const Text> texts, const Rect& clip_rect) = 0;
 };
 
 } // namespace khepri::ui

@@ -5,9 +5,8 @@
 #include <khepri/renderer/renderer.hpp>
 #include <khepri/utility/string.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <map>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -25,7 +24,7 @@ public:
     RenderPipelineStore& operator=(RenderPipelineStore&&) noexcept = delete;
 
     void
-    register_render_pipelines(gsl::span<const khepri::renderer::RenderPipelineDesc> pipeline_descs);
+    register_render_pipelines(std::span<const khepri::renderer::RenderPipelineDesc> pipeline_descs);
 
     [[nodiscard]] khepri::renderer::RenderPipeline* get(std::string_view name) const noexcept;
 

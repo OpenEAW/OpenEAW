@@ -10,6 +10,7 @@
 #include <khepri/utility/signal.hpp>
 
 #include <memory>
+#include <span>
 
 namespace khepri::ui {
 
@@ -72,7 +73,7 @@ public:
      *
      * \param[in] items the new items
      */
-    void items(gsl::span<const std::u16string> items);
+    void items(std::span<const std::u16string> items);
 
     /**
      * Clears the listbox's items and selection.

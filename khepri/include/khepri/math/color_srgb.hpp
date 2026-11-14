@@ -4,6 +4,8 @@
 #include "math.hpp"
 
 #include <cstdint>
+#include <limits>
+#include <span>
 
 namespace khepri {
 
@@ -64,14 +66,14 @@ public:
     const ComponentType& operator[](int index) const noexcept
     {
         assert(index < 3);
-        return gsl::span<const ComponentType>(&r, 3)[index];
+        return std::span<const ComponentType>(&r, 3)[index];
     }
 
     /// Indexes the color. 0 is Red, 1 is Green, etc
     ComponentType& operator[](int index) noexcept
     {
         assert(index < 3);
-        return gsl::span<ComponentType>(&r, 3)[index];
+        return std::span<ComponentType>(&r, 3)[index];
     }
 
     /**

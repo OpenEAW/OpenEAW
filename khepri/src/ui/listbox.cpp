@@ -1,6 +1,8 @@
 #include <khepri/exceptions.hpp>
 #include <khepri/ui/listbox.hpp>
 
+#include <span>
+
 namespace khepri::ui {
 
 Listbox::Listbox(const Layout& layout) noexcept
@@ -24,7 +26,7 @@ void Listbox::style(const Style& style) noexcept
     update_items_layout();
 }
 
-void Listbox::items(gsl::span<const std::u16string> items)
+void Listbox::items(std::span<const std::u16string> items)
 {
     clear();
     m_items = {items.begin(), items.end()};

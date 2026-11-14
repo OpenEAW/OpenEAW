@@ -7,6 +7,8 @@
 
 #include <khepri/utility/signal.hpp>
 
+#include <span>
+
 namespace khepri::ui {
 
 class Combobox : public Widget
@@ -72,7 +74,7 @@ public:
      *
      * \param[in] items the new items
      */
-    void items(gsl::span<const std::u16string> items);
+    void items(std::span<const std::u16string> items);
 
     /**
      * Clears the combobox's items and selection

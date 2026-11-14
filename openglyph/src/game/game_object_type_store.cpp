@@ -1,7 +1,6 @@
 #include <khepri/utility/crc.hpp>
 #include <khepri/utility/string.hpp>
 
-#include <gsl/gsl-lite.hpp>
 #include <openglyph/game/behaviors/marker_behavior.hpp>
 #include <openglyph/game/game_object_type_store.hpp>
 #include <openglyph/parser/parsers.hpp>
@@ -30,7 +29,7 @@ GameObjectType* GameObjectTypeStore::read_game_object_type(const XmlParser::Node
     // Because the memory resource is a monotonic_buffer_resource, tracking the lifetime of the
     // allocated object is not necessary.
     std::pmr::polymorphic_allocator<GameObjectType> allocator(&m_memory_resource);
-    auto* type = gsl::owner<GameObjectType*>(new (allocator.allocate(1)) GameObjectType());
+    auto* type = new (allocator.allocate(1)) GameObjectType();
 
     type->name             = copy_string(require_attribute(node, "Name"));
     type->space_model_name = copy_string(optional_child(node, "Space_Model_Name", ""sv));

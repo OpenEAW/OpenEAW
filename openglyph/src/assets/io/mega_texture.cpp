@@ -1,5 +1,7 @@
 #include <openglyph/assets/io/mega_texture.hpp>
 
+#include <array>
+
 namespace openglyph::io {
 openglyph::MegaTexture read_mega_texture(khepri::io::Stream& stream)
 {

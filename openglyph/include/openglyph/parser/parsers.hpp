@@ -11,11 +11,9 @@
 #include <khepri/math/vector4.hpp>
 #include <khepri/utility/string.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <charconv>
-#include <cstdint>
 #include <optional>
+#include <span>
 #include <string_view>
 #include <type_traits>
 
@@ -23,7 +21,7 @@ namespace openglyph {
 namespace detail {
 
 bool split(std::string_view str, const char* separators,
-           gsl::span<std::string_view> result) noexcept;
+           std::span<std::string_view> result) noexcept;
 
 } // namespace detail
 

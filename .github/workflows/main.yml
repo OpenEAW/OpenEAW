@@ -45,4 +45,4 @@ jobs:
         run: conan profile detect
 
       - name: Build project in ${{ matrix.build_type }} mode
-        run: conan create . -s compiler.cppstd=17 -s "&:build_type=${{ matrix.build_type }}" -s build_type=Release --build=missing --lockfile conan.lock -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True
+        run: conan create . -s compiler.cppstd=23 -s "&:build_type=${{ matrix.build_type }}" -s build_type=Release --build=missing --lockfile conan.lock -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True

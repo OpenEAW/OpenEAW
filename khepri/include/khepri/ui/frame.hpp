@@ -5,6 +5,8 @@
 
 #include <khepri/math/rect.hpp>
 
+#include <array>
+
 namespace khepri::ui {
 
 /**

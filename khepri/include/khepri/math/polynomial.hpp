@@ -1,18 +1,12 @@
 #pragma once
 
-#include "point.hpp"
-
-#include <khepri/math/math.hpp>
-
-#include <gsl/gsl-lite.hpp>
-
 #include <array>
-#include <type_traits>
+#include <span>
 #include <vector>
 
 namespace khepri {
 namespace detail {
-std::vector<double> solve_polynomial(double y, gsl::span<const double> coefficients);
+std::vector<double> solve_polynomial(double y, std::span<const double> coefficients);
 }
 
 /**

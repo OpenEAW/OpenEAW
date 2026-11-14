@@ -6,6 +6,7 @@
 #include <khepri/renderer/mesh.hpp>
 #include <khepri/renderer/mesh_instance.hpp>
 
+#include <memory>
 #include <vector>
 
 namespace openglyph::renderer {

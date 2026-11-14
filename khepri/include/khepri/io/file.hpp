@@ -2,8 +2,6 @@
 
 #include "stream.hpp"
 
-#include <gsl/gsl-lite.hpp>
-
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>

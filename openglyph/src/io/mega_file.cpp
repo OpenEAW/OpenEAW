@@ -4,7 +4,8 @@
 
 #include <openglyph/io/mega_file.hpp>
 
-#include <iostream>
+#include <algorithm>
+
 namespace openglyph::io {
 
 namespace {

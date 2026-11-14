@@ -1,15 +1,9 @@
-cmake_minimum_required(VERSION 3.15)
-
-set(CMAKE_CXX_STANDARD 17)
-
 project(Khepri CXX)
 
 # External libraries
 find_package(diligent-core REQUIRED)
-find_package(fmt REQUIRED)
 find_package(freetype REQUIRED)
 find_package(glfw3 REQUIRED)
-find_package(gsl-lite REQUIRED)
 
 add_library(${PROJECT_NAME}
     src/adapters/ui_renderer.cpp
@@ -81,10 +75,8 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
-    fmt::fmt
     freetype
     glfw
-    gsl::gsl-lite
     diligent-core::diligent-core
 )
 

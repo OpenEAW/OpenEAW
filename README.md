@@ -10,7 +10,7 @@ To be able to run OpenEAW, you must own and have installed a copy of the origina
 
 OpenEAW requires:
 
-* a C++17-capable compiler
+* a C++23-capable compiler
 * [Conan](https://conan.io/) 2.5 or newer.
 * [CMake](https://cmake.org/) 3.15 or newer.
 

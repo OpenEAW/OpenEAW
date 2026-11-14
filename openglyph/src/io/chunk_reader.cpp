@@ -2,7 +2,7 @@
 
 #include <openglyph/io/chunk_reader.hpp>
 
-#include <cassert>
+#include <span>
 
 namespace openglyph::io {
 
@@ -113,7 +113,7 @@ void ChunkReader::read_next()
     m_current = ChunkInfo{id, data, pos, pos + size};
 }
 
-MinichunkReader::MinichunkReader(gsl::span<const std::uint8_t> data) : m_data(data)
+MinichunkReader::MinichunkReader(std::span<const std::uint8_t> data) : m_data(data)
 {
     read_next();
 }
@@ -126,7 +126,7 @@ ChunkId MinichunkReader::id() const
     return m_current->id;
 }
 
-gsl::span<const std::uint8_t> MinichunkReader::read_data() const
+std::span<const std::uint8_t> MinichunkReader::read_data() const
 {
     if (!has_chunk()) {
         throw khepri::io::Error("end of chunk reached");

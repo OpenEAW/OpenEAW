@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdint>
 #include <limits>
+#include <span>
 
 namespace khepri::renderer::io {
 namespace {
@@ -160,10 +161,10 @@ TextureDesc load_texture_tga(khepri::io::Stream& stream, const TextureLoadOption
     std::vector<std::uint8_t> raw_data(pixel_count * header.image_bpp / 8U);
     stream.read(raw_data.data(), raw_data.size());
 
-    const gsl::span<std::uint8_t> src = raw_data;
+    const std::span<std::uint8_t> src = raw_data;
     for (std::size_t y = 1, s = 0; y <= header.image_height; ++y) {
         // Note: targa image data are stored upside-down (bottom scanline first)
-        auto dest = gsl::span<std::uint8_t>(
+        auto dest = std::span<std::uint8_t>(
             &data[(header.image_height - y) * header.image_width * std::size_t{4}],
             header.image_width * std::size_t{4});
 

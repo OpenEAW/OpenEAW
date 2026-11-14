@@ -1,8 +1,6 @@
 #include <khepri/application/console_logger.hpp>
 #include <khepri/log/log.hpp>
 
-#include <fmt/format.h>
-
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
@@ -45,12 +43,12 @@ private:
                 .count();
 
         try {
-            fmt::memory_buffer out;
-            fmt::format_to(std::back_inserter(out), FMT_STRING("+{}.{:#03d} {}/{}: {}\n"),
-                           time_ms / MS_PER_S, time_ms % MS_PER_S, get_char(record.severity),
-                           record.logger, record.message);
+            std::string out;
+            std::format_to(std::back_inserter(out), "+{}.{:#03d} {}/{}: {}\n", time_ms / MS_PER_S,
+                           time_ms % MS_PER_S, get_char(record.severity), record.logger,
+                           record.message);
             do_write({out.data(), out.size()});
-        } catch (const fmt::format_error&) {
+        } catch (const std::format_error&) {
             assert(false);
         }
     }

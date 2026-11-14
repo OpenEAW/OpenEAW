@@ -8,6 +8,7 @@
 #include <openglyph/ui/dialog_store.hpp>
 
 #include <charconv>
+#include <span>
 #include <variant>
 
 using namespace std::literals;
@@ -213,7 +214,7 @@ private:
 class RcParser final
 {
 public:
-    explicit RcParser(khepri::io::Stream& stream, gsl::span<const IdDefinition> id_definitions)
+    explicit RcParser(khepri::io::Stream& stream, std::span<const IdDefinition> id_definitions)
         : m_data(read_stream(stream)), m_lexer(m_data), m_id_definitions(id_definitions)
     {
     }
@@ -611,7 +612,7 @@ private:
 
     std::string                   m_data;
     RcLexer                       m_lexer;
-    gsl::span<const IdDefinition> m_id_definitions;
+    std::span<const IdDefinition> m_id_definitions;
 };
 
 } // namespace

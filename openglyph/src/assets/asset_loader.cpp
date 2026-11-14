@@ -1,4 +1,3 @@
-#include <khepri/io/exceptions.hpp>
 #include <khepri/io/file.hpp>
 #include <khepri/log/log.hpp>
 #include <khepri/utility/string.hpp>
@@ -6,8 +5,8 @@
 #include <openglyph/assets/asset_loader.hpp>
 #include <openglyph/io/mega_filesystem.hpp>
 
-#include <algorithm>
-#include <cctype>
+#include <array>
+#include <span>
 
 namespace fs = std::filesystem;
 
@@ -61,7 +60,7 @@ public:
      * could be opened.
      */
     std::unique_ptr<khepri::io::Stream> open_file(const std::filesystem::path&      path,
-                                                  gsl::span<const std::string_view> extensions);
+                                                  std::span<const std::string_view> extensions);
 
 private:
     std::filesystem::path m_data_path{};
@@ -132,7 +131,7 @@ std::unique_ptr<khepri::io::Stream> AssetLoader::open_text(std::string_view name
 
 std::unique_ptr<khepri::io::Stream>
 AssetLoader::open_file(const fs::path& base_path, std::string_view name_,
-                       gsl::span<const std::string_view> extensions)
+                       std::span<const std::string_view> extensions)
 {
     if (name_.empty()) {
         return {};
@@ -157,7 +156,7 @@ AssetLoader::AssetLayer::AssetLayer(const std::filesystem::path& data_path)
 
 std::unique_ptr<khepri::io::Stream>
 AssetLoader::AssetLayer::open_file(const std::filesystem::path&      path,
-                                   gsl::span<const std::string_view> extensions)
+                                   std::span<const std::string_view> extensions)
 {
     const auto& try_open_physical_file =
         [this](const std::filesystem::path& p) -> std::unique_ptr<khepri::io::Stream> {

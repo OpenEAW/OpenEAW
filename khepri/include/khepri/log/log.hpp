@@ -1,11 +1,8 @@
 #pragma once
 
-#include <fmt/format.h>
-#include <fmt/ranges.h>
-#include <fmt/std.h>
-
 #include <chrono>
 #include <cstdint>
+#include <format>
 #include <functional>
 #include <string_view>
 
@@ -81,7 +78,7 @@ public:
      * \param[in] args the formatted arguments
      */
     template <typename... TArgs>
-    void debug(std::string_view format, TArgs&&... args) const
+    void debug(const std::format_string<TArgs...> format, TArgs&&... args) const
     {
         log(Severity::debug, format, std::forward<TArgs>(args)...);
     }
@@ -92,7 +89,7 @@ public:
      * \param[in] args the formatted arguments
      */
     template <typename... TArgs>
-    void info(std::string_view format, TArgs&&... args) const
+    void info(const std::format_string<TArgs...> format, TArgs&&... args) const
     {
         log(Severity::info, format, std::forward<TArgs>(args)...);
     }
@@ -103,7 +100,7 @@ public:
      * \param[in] args the formatted arguments
      */
     template <typename... TArgs>
-    void warning(std::string_view format, TArgs&&... args) const
+    void warning(const std::format_string<TArgs...> format, TArgs&&... args) const
     {
         log(Severity::warning, format, std::forward<TArgs>(args)...);
     }
@@ -114,7 +111,7 @@ public:
      * \param[in] args the formatted arguments
      */
     template <typename... TArgs>
-    void error(std::string_view format, TArgs&&... args) const
+    void error(const std::format_string<TArgs...> format, TArgs&&... args) const
     {
         log(Severity::error, format, std::forward<TArgs>(args)...);
     }
@@ -125,7 +122,7 @@ public:
      * \param[in] args the formatted arguments
      */
     template <typename... TArgs>
-    void critical(std::string_view format, TArgs&&... args) const
+    void critical(const std::format_string<TArgs...> format, TArgs&&... args) const
     {
         log(Severity::critical, format, std::forward<TArgs>(args)...);
     }
@@ -137,10 +134,10 @@ public:
      * \param[in] args the formatted arguments
      */
     template <typename... TArgs>
-    void log(Severity severity, std::string_view format, TArgs&&... args) const
+    void log(Severity severity, const std::format_string<TArgs...> format, TArgs&&... args) const
     {
-        detail::log(
-            {m_name, Clock::now(), severity, fmt::format(format, std::forward<TArgs>(args)...)});
+        detail::log({m_name, Clock::now(), severity,
+                     std::vformat(format.get(), std::make_format_args(args...))});
     }
 
 private:

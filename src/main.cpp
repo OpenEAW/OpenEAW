@@ -4,7 +4,6 @@
 #include "game_modes/main_menu_mode.hpp"
 #include "version.hpp"
 
-#include <fmt/format.h>
 #include <khepri/adapters/window_input.hpp>
 #include <khepri/application/console_logger.hpp>
 #include <khepri/application/current_directory.hpp>
@@ -29,7 +28,7 @@ constexpr khepri::log::Logger LOG("openeaw");
 
 auto full_version_string()
 {
-    return fmt::format(FMT_STRING("{} {}"), APPLICATION_NAME, to_string(openeaw::version()));
+    return std::format("{} {}", APPLICATION_NAME, to_string(openeaw::version()));
 }
 
 struct CmdlineArgs
@@ -44,7 +43,7 @@ struct CmdlineArgs
 auto create_cmdline_options()
 {
     cxxopts::Options options(PROGRAM_NAME,
-                             fmt::format("{} {}", APPLICATION_NAME, to_string(openeaw::version())));
+                             std::format("{} {}", APPLICATION_NAME, to_string(openeaw::version())));
 
     auto adder = options.add_options();
     adder("h,help", "display this help and exit");
@@ -105,8 +104,7 @@ std::string get_string_database_path(Language language)
                                             "ITALIAN", "JAPANESE", "KOREAN", "CHINESE",
                                             "RUSSIAN", "POLISH",   "THAI"};
     assert(static_cast<std::size_t>(language) < language_names.size());
-    return fmt::format(FMT_STRING("MasterTextFile_{}.dat"),
-                       language_names[static_cast<std::size_t>(language)]);
+    return std::format("MasterTextFile_{}.dat", language_names[static_cast<std::size_t>(language)]);
 }
 
 openglyph::StringDatabase read_string_database(openglyph::AssetLoader& asset_loader,
@@ -160,7 +158,7 @@ int main(int argc, const char* argv[])
 
         LOG.info("Starting up in \"{}\" with {} data path(s):", curdir.string(), data_paths.size());
         for (const auto& data_path : data_paths) {
-            LOG.info(" - {}", data_path);
+            LOG.info(" - {}", data_path.string());
         }
 
         openglyph::AssetLoader asset_loader(std::move(data_paths));

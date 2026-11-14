@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <iostream>
 #include <iterator>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -41,8 +42,8 @@ struct SceneInfo
 
 void collect_scene_info(const aiScene& scene, const aiNode& node, SceneInfo& info)
 {
-    const auto meshes       = gsl::span<aiMesh*>(scene.mMeshes, scene.mNumMeshes);
-    const auto mesh_indices = gsl::span<unsigned int>(node.mMeshes, node.mNumMeshes);
+    const auto meshes       = std::span<aiMesh*>(scene.mMeshes, scene.mNumMeshes);
+    const auto mesh_indices = std::span<unsigned int>(node.mMeshes, node.mNumMeshes);
 
     for (const unsigned int mesh_index : mesh_indices) {
         if (mesh_index < scene.mNumMeshes) {
@@ -51,7 +52,7 @@ void collect_scene_info(const aiScene& scene, const aiNode& node, SceneInfo& inf
     }
 
     // Recurse
-    const auto children = gsl::span<aiNode*>(node.mChildren, node.mNumChildren);
+    const auto children = std::span<aiNode*>(node.mChildren, node.mNumChildren);
     for (const auto* child : children) {
         collect_scene_info(scene, *child, info);
     }
@@ -87,8 +88,8 @@ khepri::renderer::ModelDesc create_model(const aiScene& scene)
 
         mesh.vertices.resize(src.mNumVertices);
 
-        const auto src_vertices = gsl::span<aiVector3D>(src.mVertices, src.mNumVertices);
-        const auto src_normals  = gsl::span<aiVector3D>(src.mNormals, src.mNumVertices);
+        const auto src_vertices = std::span<aiVector3D>(src.mVertices, src.mNumVertices);
+        const auto src_normals  = std::span<aiVector3D>(src.mNormals, src.mNumVertices);
 
         for (std::size_t iv = 0; iv < src_vertices.size(); ++iv) {
             const auto v = transform * src_vertices[iv];
@@ -99,12 +100,12 @@ khepri::renderer::ModelDesc create_model(const aiScene& scene)
             mesh.vertices[iv] = {{v.x, v.y, v.z}, {n.x, n.y, n.z}};
         }
 
-        const auto& src_faces = gsl::span<aiFace>(src.mFaces, src.mNumFaces);
+        const auto& src_faces = std::span<aiFace>(src.mFaces, src.mNumFaces);
 
         mesh.indices.resize(src_faces.size() * 3);
         for (unsigned int x = 0, j = 0; x < src_faces.size(); ++x, j += 3) {
             const auto& face    = src_faces[x];
-            const auto& indices = gsl::span<unsigned int>(face.mIndices, face.mNumIndices);
+            const auto& indices = std::span<unsigned int>(face.mIndices, face.mNumIndices);
 
             mesh.indices[j + 0] = indices[0];
             mesh.indices[j + 1] = indices[1];

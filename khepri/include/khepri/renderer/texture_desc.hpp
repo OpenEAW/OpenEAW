@@ -3,11 +3,10 @@
 #include <khepri/math/color_rgba.hpp>
 #include <khepri/math/color_srgba.hpp>
 
-#include <gsl/gsl-lite.hpp>
-
 #include <cassert>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <vector>
 
 namespace khepri::renderer {
@@ -220,7 +219,7 @@ public:
      * This texture data is indexed by the various subresources and is stored in the format
      * specified by #pixel_format()
      */
-    [[nodiscard]] gsl::span<const std::uint8_t> data() const noexcept
+    [[nodiscard]] std::span<const std::uint8_t> data() const noexcept
     {
         return m_data;
     }
