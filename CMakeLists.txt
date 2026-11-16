@@ -16,6 +16,7 @@ project(OpenEAW CXX)
 find_package(cxxopts REQUIRED)
 
 add_executable(${PROJECT_NAME}
+    src/dialogs/command_bar_dialog.cpp
     src/dialogs/game_options_dialog.cpp
     src/dialogs/main_menu_dialog.cpp
     src/dialogs/single_player_menu_dialog.cpp

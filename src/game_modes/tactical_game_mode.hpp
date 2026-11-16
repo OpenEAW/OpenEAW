@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../dialogs/command_bar_dialog.hpp"
 #include "game_data.hpp"
 #include "game_mode.hpp"
 
@@ -28,6 +29,7 @@ private:
     openglyph::ui::TacticalModeInputHandler m_tactical_mode_input_handler;
     std::unique_ptr<openglyph::Scene>       m_scene;
     openglyph::SceneRenderer                m_scene_renderer;
+    CommandBar                              m_commandbar;
 };
 
 } // namespace openeaw
