@@ -22,7 +22,7 @@ public:
     /// Listener that's called when the game mode is closed.
     using CloseListener = std::function<void()>;
 
-    GameMode(const GameContext& context, const openglyph::StringDatabase& string_database);
+    explicit GameMode(const GameContext& context);
 
     virtual ~GameMode() = default;
 

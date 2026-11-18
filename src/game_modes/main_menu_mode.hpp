@@ -1,8 +1,7 @@
 #pragma once
 
-#include "game_data.hpp"
+#include "game_context.hpp"
 #include "game_mode.hpp"
-#include "game_mode_stack.hpp"
 
 namespace openeaw {
 
@@ -12,8 +11,7 @@ namespace openeaw {
 class MainMenuMode final : public GameMode
 {
 public:
-    MainMenuMode(const GameContext& context, const GameData& game_data,
-                 GameModeStack& game_mode_stack);
+    explicit MainMenuMode(const GameContext& context);
 
     void update(double delta_time) override;
 };

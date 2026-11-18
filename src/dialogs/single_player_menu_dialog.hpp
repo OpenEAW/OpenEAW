@@ -1,6 +1,6 @@
 #pragma once
 
-#include "game_mode_stack.hpp"
+#include "game_context.hpp"
 
 #include <openglyph/ui/context.hpp>
 #include <openglyph/ui/dialogs.hpp>
@@ -18,7 +18,7 @@ public:
     static constexpr openglyph::ui::DialogPosition DIALOG_POSITION =
         openglyph::ui::DialogPosition::top_right;
 
-    explicit SinglePlayerMenuDialog(openglyph::ui::Dialog& dialog_, GameModeStack& game_mode_stack);
+    explicit SinglePlayerMenuDialog(openglyph::ui::Dialog& dialog_, const GameContext& context);
 };
 
 } // namespace openeaw

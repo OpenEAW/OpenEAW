@@ -2,6 +2,7 @@
 #include "exceptions.hpp"
 
 #include <khepri/io/stream.hpp>
+#include <khepri/utility/string.hpp>
 
 #include <optional>
 #include <rapidxml.hpp>
@@ -361,7 +362,7 @@ inline std::optional<std::string_view> optional_child(const openglyph::XmlParser
 {
     if (auto child = node.child(name)) {
         if (child->nodes().empty()) {
-            return child->value();
+            return khepri::trim(child->value());
         }
     }
     return {};
@@ -379,12 +380,7 @@ inline std::optional<std::string_view> optional_child(const openglyph::XmlParser
 inline std::string_view optional_child(const openglyph::XmlParser::Node& node,
                                        std::string_view name, std::string_view default_value)
 {
-    if (auto child = node.child(name)) {
-        if (child->nodes().empty()) {
-            return child->value();
-        }
-    }
-    return default_value;
+    return optional_child(node, name).value_or(default_value);
 }
 
 } // namespace openglyph

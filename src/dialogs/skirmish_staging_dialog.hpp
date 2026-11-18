@@ -1,9 +1,12 @@
 #pragma once
 
-#include "game_mode_stack.hpp"
+#include "game_context.hpp"
 
+#include <openglyph/game/player_list.hpp>
 #include <openglyph/ui/context.hpp>
 #include <openglyph/ui/dialogs.hpp>
+
+#include <optional>
 
 namespace openeaw {
 
@@ -18,7 +21,13 @@ public:
     static constexpr openglyph::ui::DialogPosition DIALOG_POSITION =
         openglyph::ui::DialogPosition::center;
 
-    explicit SkirmishStagingDialog(openglyph::ui::Dialog& dialog_, GameModeStack& game_mode_stack);
+    explicit SkirmishStagingDialog(openglyph::ui::Dialog& dialog_, const GameContext& context);
+
+private:
+    const GameContext&                   m_context;
+    std::optional<openglyph::PlayerList> m_players;
+
+    std::vector<const openglyph::Faction*> m_playable_factions;
 };
 
 } // namespace openeaw

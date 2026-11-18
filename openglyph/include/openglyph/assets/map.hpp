@@ -19,6 +19,9 @@ struct Map
         /// CRC of the uppercased name of the object type
         std::uint32_t type_crc{0};
 
+        /// Index in the global faction list of the faction that owns this object
+        std::uint32_t owner_faction{0};
+
         /// Position of the object on the map
         khepri::Vector3f position{0, 0, 0};
 

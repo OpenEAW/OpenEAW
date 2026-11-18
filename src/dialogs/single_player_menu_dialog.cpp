@@ -6,15 +6,14 @@
 namespace openeaw {
 
 SinglePlayerMenuDialog::SinglePlayerMenuDialog(openglyph::ui::Dialog& dialog_,
-                                               GameModeStack&         game_mode_stack)
+                                               const GameContext&     context)
     : DialogController(dialog_)
 {
     // Hide debug buttons
     dialog_.visible("IDC_DEBUG_LOAD_SKIRMISH_MAP_BUTTON", false);
 
-    dialog_.on_button("IDC_SKIRMISH_GAMES_BUTTON", [&] {
-        dialog().ui().activate_dialog<SkirmishStagingDialog>(game_mode_stack);
-    });
+    dialog_.on_button("IDC_SKIRMISH_GAMES_BUTTON",
+                      [&] { dialog().ui().activate_dialog<SkirmishStagingDialog>(context); });
 
     dialog_.on_button("IDC_BACK_BUTTON_MAIN", [&] { dialog().close(); });
 

@@ -1,6 +1,6 @@
 #include "game_context.hpp"
+#include "game_controller.hpp"
 #include "game_data.hpp"
-#include "game_mode_stack.hpp"
 #include "game_modes/main_menu_mode.hpp"
 #include "version.hpp"
 
@@ -176,24 +176,24 @@ int main(int argc, const char* argv[])
 
         openglyph::AssetCache asset_cache(asset_loader, renderer);
 
-        const openeaw::GameContext game_context{window, asset_loader, asset_cache, renderer};
-
         const openeaw::GameData game_data{
             read_string_database(asset_loader, Language::english),
             openglyph::GameObjectTypeStore(asset_loader, "GameObjectFiles.xml"),
-            openglyph::TacticalCameraStore(asset_loader, "TacticalCameras.xml")};
+            openglyph::TacticalCameraStore(asset_loader, "TacticalCameras.xml"),
+            openglyph::FactionList(asset_loader, "FactionFiles.xml")};
+
+        openeaw::GameController game_controller(window, asset_loader, asset_cache, renderer,
+                                                game_data);
 
         khepri::WindowInputEventGenerator input_event_generator(window);
+        input_event_generator.add_event_handler(&game_controller);
 
-        openeaw::GameModeStack game_mode_stack(game_context, game_data);
-        input_event_generator.add_event_handler(&game_mode_stack);
-
-        game_mode_stack.activate_game_mode<openeaw::MainMenuMode>(game_mode_stack);
+        game_controller.activate_game_mode<openeaw::MainMenuMode>();
 
         std::chrono::steady_clock::time_point last_update_time = std::chrono::steady_clock::now();
         double                                unhandled_update_time = 0.0;
 
-        while (!window.should_close() && game_mode_stack.has_active_game_mode()) {
+        while (!window.should_close() && game_controller.has_active_game_mode()) {
             khepri::application::Window::poll_events();
 
             const auto current_time      = std::chrono::steady_clock::now();
@@ -204,14 +204,14 @@ int main(int argc, const char* argv[])
             if (delta_update_time >= UPDATE_STEP_TIME) {
                 unhandled_update_time += delta_update_time;
                 while (unhandled_update_time >= UPDATE_STEP_TIME) {
-                    game_mode_stack.update(UPDATE_STEP_TIME);
+                    game_controller.update(UPDATE_STEP_TIME);
                     unhandled_update_time -= UPDATE_STEP_TIME;
                 }
                 last_update_time = current_time;
             }
 
             renderer.clear(khepri::renderer::Renderer::clear_all);
-            game_mode_stack.render();
+            game_controller.render();
 
             // Presenting the rendered content has two different approaches, depending on the
             // rendering system: For OpenGL, the window needs to swap the front and back

@@ -1,15 +1,11 @@
 #include "dialogs/main_menu_dialog.hpp"
 #include "main_menu_mode.hpp"
 
-#include <khepri/ui/canvas.hpp>
-
 namespace openeaw {
 
-MainMenuMode::MainMenuMode(const GameContext& context, const GameData& game_data,
-                           GameModeStack& game_mode_stack)
-    : GameMode(context, game_data.string_database)
+MainMenuMode::MainMenuMode(const GameContext& context) : GameMode(context)
 {
-    ui().activate_dialog<openeaw::MainMenuDialog>(game_mode_stack);
+    ui().activate_dialog<openeaw::MainMenuDialog>(context);
 }
 
 void MainMenuMode::update(double delta_time)

@@ -28,8 +28,18 @@ void Listbox::style(const Style& style) noexcept
 
 void Listbox::items(std::span<const std::u16string> items)
 {
+    set_items({items.begin(), items.end()});
+}
+
+void Listbox::items(std::span<const std::u16string_view> items)
+{
+    set_items({items.begin(), items.end()});
+}
+
+void Listbox::set_items(std::vector<std::u16string>&& items)
+{
     clear();
-    m_items = {items.begin(), items.end()};
+    m_items = std::move(items);
 
     for (const auto& text : m_items) {
         auto label = std::make_shared<Label>(

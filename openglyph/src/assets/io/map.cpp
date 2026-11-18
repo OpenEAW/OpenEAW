@@ -283,6 +283,9 @@ Map::Object read_map_object(Map& map, ChunkReader& reader)
                         case 1:
                             object.type_crc = as_uint32(minireader.read_data());
                             break;
+                        case 2:
+                            object.owner_faction = as_uint32(minireader.read_data());
+                            break;
                         case 4:
                             object.position = as_vector3(minireader.read_data());
                             break;
