@@ -51,14 +51,18 @@ public:
 
     /**
      * Returns all objects in the scene that have a specified behavior.
+     * \tparam BehaviorType the behavior that must be present on returned objects.
+     * \tparam ObjectType return the objects as this type (if they are of that derived type).
      */
-    template <typename BehaviorType>
-    std::vector<std::shared_ptr<SceneObject>> objects() const
+    template <typename BehaviorType, typename ObjectType = khepri::scene::SceneObject>
+        requires std::derived_from<ObjectType, khepri::scene::SceneObject>
+    std::vector<std::shared_ptr<ObjectType>> objects() const
     {
-        std::vector<std::shared_ptr<SceneObject>> result;
+        std::vector<std::shared_ptr<ObjectType>> result;
         for (const auto& object : m_objects) {
-            if (object->behavior<BehaviorType>()) {
-                result.push_back(object);
+            if (auto x = std::dynamic_pointer_cast<ObjectType>(object);
+                x && object->behavior<BehaviorType>()) {
+                result.push_back(std::move(x));
             }
         }
         return result;

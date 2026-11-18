@@ -48,7 +48,7 @@ void Combobox::style(const Style& style) noexcept
  *
  * \param[in] items the new items
  */
-void Combobox::items(std::span<const std::u16string> items)
+void Combobox::items(std::span<const std::u16string_view> items)
 {
     m_items = {items.begin(), items.end()};
 }

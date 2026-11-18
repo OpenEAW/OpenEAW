@@ -1,6 +1,7 @@
 #pragma once
 
 #include <openglyph/assets/string_database.hpp>
+#include <openglyph/game/faction_list.hpp>
 #include <openglyph/game/game_object_type_store.hpp>
 #include <openglyph/game/tactical_camera_store.hpp>
 
@@ -12,6 +13,7 @@ struct GameData
     openglyph::StringDatabase      string_database;
     openglyph::GameObjectTypeStore game_object_types;
     openglyph::TacticalCameraStore tactical_camera_store;
+    openglyph::FactionList         factions;
 };
 
 } // namespace openeaw

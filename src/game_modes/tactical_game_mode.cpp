@@ -5,8 +5,10 @@
 #include <openglyph/assets/io/map.hpp>
 #include <openglyph/game/behaviors/marker_behavior.hpp>
 #include <openglyph/game/behaviors/render_behavior.hpp>
+#include <openglyph/game/game_object.hpp>
 #include <openglyph/game/scene.hpp>
 
+#include <cassert>
 #include <memory>
 
 namespace openeaw {
@@ -34,32 +36,42 @@ auto create_rts_camera(const GameData& game_data, khepri::renderer::Camera& came
     return khepri::game::RtsCameraController(camera, {0, 0});
 }
 
-std::unique_ptr<openglyph::Scene>
-create_scene(std::string_view map_name, openglyph::AssetLoader& asset_loader,
-             openglyph::AssetCache&                asset_cache,
-             const openglyph::GameObjectTypeStore& game_object_types,
-             khepri::game::RtsCameraController&    camera)
+openglyph::Map load_map(std::string_view map_name, const GameContext& context)
 {
-    if (auto stream = asset_loader.open_map(map_name)) {
-        const auto             map = openglyph::io::read_map(*stream);
-        openglyph::Environment environment{};
-        if (!map.environments.empty()) {
-            assert(map.active_environment < map.environments.size());
-            environment = map.environments[map.active_environment];
-        }
+    if (auto stream = context.asset_loader.open_map(map_name)) {
+        return openglyph::io::read_map(*stream);
+    }
+    throw khepri::Error("Cannot open map \"" + std::string(map_name) + "\"");
+}
 
-        auto scene =
-            std::make_unique<openglyph::Scene>(asset_cache, game_object_types, environment);
+std::unique_ptr<openglyph::Scene>
+create_scene(const openglyph::Map& map, const GameContext& context, openglyph::PlayerList& players)
+{
+    openglyph::Environment environment{};
+    if (!map.environments.empty()) {
+        assert(map.active_environment < map.environments.size());
+        environment = map.environments[map.active_environment];
+    }
 
-        for (const auto& obj : map.objects) {
-            if (const auto* type = game_object_types.get(obj.type_crc)) {
-                auto object = std::make_shared<khepri::scene::SceneObject>();
+    auto scene = std::make_unique<openglyph::Scene>(
+        context.asset_cache, context.game_data.game_object_types, environment);
 
-                // Store a (dumb, non-owning) reference to the GameObjectType
-                object->user_data(type);
+    for (const auto& obj : map.objects) {
+        if (const auto* type = context.game_data.game_object_types.get(obj.type_crc)) {
+            if (const auto* faction = context.game_data.factions.get(obj.owner_faction)) {
+                auto faction_players =
+                    players.all() | std::views::filter(BelongsToFaction(*faction));
+                // Every faction should have a player for ownership, even if it's a dummy one.
+                assert(faction_players.begin() != faction_players.end());
+
+                // The map assigns object ownership by factions, so we just pick the first player
+                // that belongs to that faction as owner for the object.
+                const auto& owner = *faction_players.begin();
+
+                auto object = std::make_shared<openglyph::GameObject>(*type, owner);
 
                 if (const auto* render_model =
-                        asset_cache.get_render_model(type->space_model_name)) {
+                        context.asset_cache.get_render_model(type->space_model_name)) {
                     auto& behavior =
                         object->create_behavior<openglyph::RenderBehavior>(*render_model);
                     behavior.scale(type->scale_factor);
@@ -77,21 +89,9 @@ create_scene(std::string_view map_name, openglyph::AssetLoader& asset_loader,
                 scene->add_object(std::move(object));
             }
         }
-
-        // Find the first "player 0" marker to place the camera at.
-        for (const auto& object : scene->objects<openglyph::MarkerBehavior>()) {
-            if (const auto** type_ptr = object->user_data<const openglyph::GameObjectType*>()) {
-                if (khepri::case_insensitive_equals((*type_ptr)->name,
-                                                    "Player_0_Spawn_Point_Marker")) {
-                    camera.target({object->position().x, object->position().y});
-                    break;
-                }
-            }
-        }
-
-        return scene;
     }
-    return {};
+
+    return scene;
 }
 
 auto& get_render_pipeline(openglyph::AssetCache& asset_cache, std::string_view name)
@@ -146,23 +146,44 @@ private:
 
 } // namespace
 
-TacticalGameMode::TacticalGameMode(const GameContext& context, const GameData& game_data)
-    : GameMode(context, game_data.string_database)
+TacticalGameMode::TacticalGameMode(const GameContext& context, openglyph::PlayerList& players,
+                                   const GameOptions& options)
+    : GameMode(context)
+    , m_players(players)
+    , m_options(options)
     , m_camera(create_camera(context.renderer.render_size()))
     , m_render_size_connection(
           context.renderer.add_render_size_listener([&](const khepri::Size& size) {
               m_camera.aspect(static_cast<float>(size.width) / size.height);
           }))
-    , m_rts_camera(create_rts_camera(game_data, m_camera))
+    , m_rts_camera(create_rts_camera(context.game_data, m_camera))
     , m_tactical_mode_input_handler(m_rts_camera, context.window)
-    , m_scene(create_scene("_MP_SPACE_ALDERAAN", context.asset_loader, context.asset_cache,
-                           game_data.game_object_types, m_rts_camera))
     , m_scene_renderer(context.renderer, get_render_pipeline(context.asset_cache, "Default"))
 {
     // First add the capture widget to the canvas. This will catch all mouse and key events that
     // aren't used by dialogs, etc.
     ui().canvas().add(std::make_shared<EventCaptureWidget>(
         khepri::ui::Layout::fill(), [this](const auto& event) { on_event(event); }));
+
+    const auto map = load_map("_MP_SPACE_ALDERAAN", context);
+    m_scene        = create_scene(map, context, m_players);
+    set_initial_camera();
+}
+
+void TacticalGameMode::set_initial_camera()
+{
+    assert(m_scene != nullptr);
+
+    // Set the camera at the the first player marker that belongs to our faction
+    for (const auto& object : m_scene->objects<openglyph::MarkerBehavior>()) {
+        if (&object->owner().faction() == &m_players.local_player().faction()) {
+            if (khepri::case_insensitive_equals(object->type().name,
+                                                "Player_0_Spawn_Point_Marker")) {
+                m_rts_camera.target({object->position().x, object->position().y});
+                break;
+            }
+        }
+    }
 }
 
 bool TacticalGameMode::on_event(const khepri::ui::Event& event)

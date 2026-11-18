@@ -1,8 +1,8 @@
 #pragma once
 
-#include "game_data.hpp"
 #include "game_mode.hpp"
 
+#include <openglyph/game/player_list.hpp>
 #include <openglyph/game/scene_renderer.hpp>
 #include <openglyph/ui/input.hpp>
 
@@ -14,14 +14,21 @@ namespace openeaw {
 class TacticalGameMode final : public GameMode
 {
 public:
-    TacticalGameMode(const GameContext& context, const GameData& game_data);
+    struct GameOptions
+    {};
+
+    explicit TacticalGameMode(const GameContext& context, openglyph::PlayerList& players,
+                              const GameOptions& options);
 
     void render() override;
     void update(double delta_time) override;
 
 private:
+    void set_initial_camera();
     bool on_event(const khepri::ui::Event& event);
 
+    openglyph::PlayerList&                  m_players;
+    const GameOptions                       m_options;
     khepri::renderer::Camera                m_camera;
     khepri::ScopedConnection                m_render_size_connection;
     khepri::game::RtsCameraController       m_rts_camera;

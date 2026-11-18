@@ -73,6 +73,13 @@ public:
      *
      * \param[in] items the new items
      */
+    void items(std::span<const std::u16string_view> items);
+
+    /**
+     * Sets the listbox's items
+     *
+     * \param[in] items the new items
+     */
     void items(std::span<const std::u16string> items);
 
     /**
@@ -115,6 +122,7 @@ protected:
     void on_event(const Event& e) override;
 
 private:
+    void set_items(std::vector<std::u16string>&& items);
     void update_items_layout();
 
     Label::Style                        m_labels_style;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "game_context.hpp"
 #include "game_data.hpp"
 #include "game_modes/game_mode.hpp"
 
@@ -12,11 +13,14 @@
 
 namespace openeaw {
 
-class GameModeStack : public khepri::ui::InputEventHandler
+class GameController : public khepri::ui::InputEventHandler
 {
 public:
-    GameModeStack(const GameContext& context, const GameData& game_data)
-        : m_context(context), m_game_data(game_data)
+    explicit GameController(khepri::application::Window& window,
+                            openglyph::AssetLoader&      asset_loader,
+                            openglyph::AssetCache&       asset_cache,
+                            khepri::renderer::Renderer& renderer, const GameData& game_data)
+        : m_context({window, asset_loader, asset_cache, renderer, *this, game_data})
     {
     }
 
@@ -42,8 +46,7 @@ public:
     template <typename GameModeType, typename... Args>
     void activate_game_mode(Args&&... args)
     {
-        auto game_mode =
-            std::make_unique<GameModeType>(m_context, m_game_data, std::forward<Args>(args)...);
+        auto game_mode = std::make_unique<GameModeType>(m_context, std::forward<Args>(args)...);
         if (!m_game_modes.empty()) {
             m_game_modes.back()->on_deactivated();
         }
@@ -70,8 +73,7 @@ public:
     }
 
 private:
-    const GameContext& m_context;
-    const GameData&    m_game_data;
+    const GameContext m_context;
 
     std::vector<std::unique_ptr<openeaw::GameMode>> m_game_modes;
 };

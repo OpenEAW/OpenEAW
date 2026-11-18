@@ -1,6 +1,7 @@
 #pragma once
 
 #include "environment.hpp"
+#include "game_object.hpp"
 #include "game_object_type_store.hpp"
 
 #include <khepri/scene/scene.hpp>
@@ -68,12 +69,16 @@ public:
      */
     void remove_object(const std::shared_ptr<khepri::scene::SceneObject>& object);
 
+    /**
+     * Returns all objects in the scene that have a specified behavior.
+     * \tparam BehaviorType the behavior that must be present on returned objects.
+     */
     template <typename BehaviorType>
-    std::vector<std::shared_ptr<khepri::scene::SceneObject>> objects() const
+    std::vector<std::shared_ptr<GameObject>> objects() const
     {
         // Combine the objects from the foreground and background scenes
-        auto result    = m_foreground_scene.objects<BehaviorType>();
-        auto bg_result = m_background_scene.objects<BehaviorType>();
+        auto result    = m_foreground_scene.objects<BehaviorType, GameObject>();
+        auto bg_result = m_background_scene.objects<BehaviorType, GameObject>();
         result.insert(result.end(), bg_result.begin(), bg_result.end());
         return result;
     }

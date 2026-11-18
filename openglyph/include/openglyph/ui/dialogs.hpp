@@ -197,7 +197,7 @@ public:
     }
 
     // Sets the items on a multi-item select widget (e.g. combobox or listbox)
-    void items(std::string_view widget_name, std::span<const std::u16string> items)
+    void items(std::string_view widget_name, std::span<const std::u16string_view> items)
     {
         if (auto widget = m_root_widget->find_child(widget_name)) {
             if (auto listbox = std::dynamic_pointer_cast<khepri::ui::Listbox>(widget)) {
@@ -206,6 +206,37 @@ public:
                 combobox->items(items);
             }
         }
+    }
+
+    /**
+     * Selects the item at the specified index of a multi-item select widget (e.g. combobox or
+     * listbox).
+     */
+    void select(std::string_view widget_name, std::optional<int> index)
+    {
+        if (auto widget = m_root_widget->find_child(widget_name)) {
+            if (auto listbox = std::dynamic_pointer_cast<khepri::ui::Listbox>(widget)) {
+                return listbox->select(index);
+            } else if (auto combobox = std::dynamic_pointer_cast<khepri::ui::Combobox>(widget)) {
+                return combobox->select(index);
+            }
+        }
+    }
+
+    /**
+     * Returns the index of the selected item (if any) of a multi-item select widget (e.g. combobox
+     * or listbox)
+     */
+    std::optional<int> selection(std::string_view widget_name)
+    {
+        if (auto widget = m_root_widget->find_child(widget_name)) {
+            if (auto listbox = std::dynamic_pointer_cast<khepri::ui::Listbox>(widget)) {
+                return listbox->selection();
+            } else if (auto combobox = std::dynamic_pointer_cast<khepri::ui::Combobox>(widget)) {
+                return combobox->selection();
+            }
+        }
+        return {};
     }
 
     void close();

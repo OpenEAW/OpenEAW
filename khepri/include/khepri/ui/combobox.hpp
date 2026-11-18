@@ -74,7 +74,7 @@ public:
      *
      * \param[in] items the new items
      */
-    void items(std::span<const std::u16string> items);
+    void items(std::span<const std::u16string_view> items);
 
     /**
      * Clears the combobox's items and selection

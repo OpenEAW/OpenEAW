@@ -8,9 +8,10 @@ namespace {
 constexpr auto UPDATE_STEP_TIME = 1.0 / 60;
 } // namespace
 
-GameMode::GameMode(const GameContext& context, const openglyph::StringDatabase& string_database)
+GameMode::GameMode(const GameContext& context)
     : m_context(context)
-    , m_ui(context.asset_loader, context.asset_cache, string_database, context.renderer)
+    , m_ui(context.asset_loader, context.asset_cache, context.game_data.string_database,
+           context.renderer)
 {
 }
 

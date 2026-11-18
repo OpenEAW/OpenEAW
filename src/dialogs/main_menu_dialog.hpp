@@ -1,6 +1,6 @@
 #pragma once
 
-#include "single_player_menu_dialog.hpp"
+#include "game_context.hpp"
 
 #include <openglyph/ui/context.hpp>
 #include <openglyph/ui/dialogs.hpp>
@@ -21,7 +21,7 @@ public:
     // Called before the dialog is created and added to the canvas
     static void before_dialog_creation(openglyph::ui::Context& context);
 
-    explicit MainMenuDialog(openglyph::ui::Dialog& dialog_, GameModeStack& game_mode_stack);
+    MainMenuDialog(openglyph::ui::Dialog& dialog_, const GameContext& context);
 
     void on_deactivated() override;
     void on_activated() override;

@@ -11,7 +11,11 @@ add_library(${PROJECT_NAME}
     src/assets/io/map.cpp
     src/assets/io/mega_texture.cpp
     src/assets/io/string_database.cpp
+    src/game/faction_list.cpp
     src/game/game_object_type_store.cpp
+    src/game/game_object.cpp
+    src/game/player_list.cpp
+    src/game/player.cpp
     src/game/scene_renderer.cpp
     src/game/scene.cpp
     src/game/tactical_camera_store.cpp

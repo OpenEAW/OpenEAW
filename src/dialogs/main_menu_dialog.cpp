@@ -1,4 +1,5 @@
 #include "main_menu_dialog.hpp"
+#include "single_player_menu_dialog.hpp"
 
 #include <khepri/ui/image.hpp>
 #include <openglyph/ui/ui.hpp>
@@ -16,7 +17,7 @@ void MainMenuDialog::before_dialog_creation(openglyph::ui::Context& context)
     context.canvas().add(std::move(image));
 }
 
-MainMenuDialog::MainMenuDialog(openglyph::ui::Dialog& dialog_, GameModeStack& game_mode_stack)
+MainMenuDialog::MainMenuDialog(openglyph::ui::Dialog& dialog_, const GameContext& context)
     : DialogController(dialog_)
 {
     // For now we don't support anything yet, other than exiting the game.
@@ -30,9 +31,8 @@ MainMenuDialog::MainMenuDialog(openglyph::ui::Dialog& dialog_, GameModeStack& ga
     dialog_.disable("IDC_MAIN_MENU_PLAY_DEMO");
     dialog_.visible("IDC_MAIN_MENU_PLAY_DEMO", false);
 
-    dialog_.on_button("IDC_MAIN_MENU_SINGLE_PLAYER_GAMES", [&] {
-        dialog().ui().activate_dialog<SinglePlayerMenuDialog>(game_mode_stack);
-    });
+    dialog_.on_button("IDC_MAIN_MENU_SINGLE_PLAYER_GAMES",
+                      [&] { dialog().ui().activate_dialog<SinglePlayerMenuDialog>(context); });
 
     dialog_.on_button("IDC_MAIN_MENU_EXIT2", [&] { dialog().close(); });
 }
