@@ -24,7 +24,7 @@ struct GameObjectType final
     double scale_factor{1.0};
 
     /// Should this object be rendered in the background layer?
-    bool is_in_background;
+    bool is_in_background{false};
 
     /// Is this type a marker?
     bool is_marker{false};

@@ -55,12 +55,7 @@ public:
     [[nodiscard]] const GameObjectType* get(std::uint32_t crc) const noexcept;
 
 private:
-    void read_game_object_types(khepri::io::Stream& stream);
-
-    GameObjectType* read_game_object_type(const XmlParser::Node& node);
-
-    // Copies a string into @a m_memory_resource and returns a view to the copied string
-    std::string_view copy_string(std::string_view str);
+    class GameObjectTypeReader;
 
     // Typically, there are thousands of GameObjectType instances, using a monotonic_buffer_resource
     // to store them significantly speeds up loading and unloading times.
